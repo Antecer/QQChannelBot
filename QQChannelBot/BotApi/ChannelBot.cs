@@ -21,7 +21,11 @@ namespace QQChannelBot.BotApi
         /// </summary>
         public event Action<ChannelBot>? OnWebSocketClosed;
         /// <summary>
-        /// WebSocketClient收到数据时触发
+        /// WebSocketClient发送数据前触发
+        /// </summary>
+        public event Action<ChannelBot, string>? OnWebSoketSending;
+        /// <summary>
+        /// WebSocketClient收到数据后触发
         /// </summary>
         public event Action<ChannelBot, string>? OnWebSocketReceived;
         /// <summary>
@@ -60,43 +64,43 @@ namespace QQChannelBot.BotApi
         /// 鉴权连接成功后触发
         /// <para>注:此时获取的User对象只有3个属性 {id,username,bot}</para>
         /// </summary>
-        public event Action<ChannelBot, User?>? ReadyAction;
+        public event Action<ChannelBot, User?>? OnReady;
         /// <summary>
         /// 恢复连接成功后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement?>? ResumedAction;
+        public event Action<ChannelBot, JsonElement?>? OnResumed;
         /// <summary>
         /// 频道信息变更后触发
         /// <para>加入频道, 资料变更, 退出频道</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? GuildAction;
+        public event Action<ChannelBot, JsonElement?, ActionType>? OnGuildMsg;
         /// <summary>
         /// 子频道被修改后触发
         /// <para>创建子频道, 更新子频道, 删除子频道</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? ChannelAction;
+        public event Action<ChannelBot, JsonElement?, ActionType>? OnChannelMsg;
         /// <summary>
         /// 成员信息变更后触发
         /// <para>成员加入, 资料变更, 移除成员</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? GuildMemberAction;
+        public event Action<ChannelBot, JsonElement?, ActionType>? OnGuildMemberMsg;
         /// <summary>
         /// 修改表情表态后触发
         /// <para>添加表情表态, 删除表情表态</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? MessageReactionAction;
+        public event Action<ChannelBot, JsonElement?, ActionType>? OnMessageReaction;
         /// <summary>
         /// 机器人收到私信后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? DirectMessageAction;
+        public event Action<ChannelBot, JsonElement?, ActionType>? OnDirectMessage;
         /// <summary>
         /// 音频状态变更后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? AudioAction;
+        public event Action<ChannelBot, JsonElement?, ActionType>? OnAudioMsg;
         /// <summary>
         /// 收到 @机器人 消息后触发
         /// </summary>
-        public event Action<ChannelBot, Message, ActionType>? AtMessageAction;
+        public event Action<ChannelBot, Message, ActionType>? OnAtMessage;
         #endregion
 
         /// <summary>
@@ -139,7 +143,7 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// Socket客户端
         /// </summary>
-        private ClientWebSocket? WebSocketClient { get; set; }
+        private static ClientWebSocket WebSocketClient { get; set; } = new();
         /// <summary>
         /// Socket客户端收到的最新的消息的s，如果是第一次连接，传null
         /// </summary>
@@ -165,10 +169,6 @@ namespace QQChannelBot.BotApi
         /// Socket客户端存储的SessionId
         /// </summary>
         private string? WebSoketSessionId { get; set; }
-        /// <summary>
-        /// WebSocket取消操作通知
-        /// </summary>
-        private CancellationTokenSource? WebSocketCancellationTokenSource { get; set; }
         /// <summary>
         /// WebSocket接收缓冲区
         /// </summary>
@@ -463,11 +463,6 @@ namespace QQChannelBot.BotApi
             if (!res.IsSuccessStatusCode) Log.Debug(await res.Content.ReadAsStringAsync());
             return await res.Content.ReadFromJsonAsync<Message>();
         }
-        public async Task<Message?> SendMessageAsync(string channel_id, string content)
-        {
-            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/channels/{channel_id}/messages", new { content });
-            return await res.Content.ReadFromJsonAsync<Message>();
-        }
         /// <summary>
         /// 发送文本消息 (可使用内嵌格式)
         /// <para>
@@ -571,7 +566,7 @@ namespace QQChannelBot.BotApi
         /// <returns>新创建的 Schedule 对象</returns>
         public async Task<Schedule?> CreateScheduleAsync(string channel_id, Schedule schedule)
         {
-            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/channels/{channel_id}/schedules", schedule);
+            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/channels/{channel_id}/schedules", new { schedule });
             return await res.Content.ReadFromJsonAsync<Schedule>();
         }
         /// <summary>
@@ -633,17 +628,13 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 关闭WebSocket连接并立即释放占用的资源
         /// </summary>
+        /// <param name="desc">关闭原因</param>
         /// <returns></returns>
-        public void CloseWebSocket()
+        public void CloseWebSocket(string desc)
         {
             try
             {
-                WebSocketCancellationTokenSource?.Cancel();
-                WebSocketCancellationTokenSource?.Dispose();
-                WebSocketClient?.Abort();
-                WebSocketClient?.Dispose();
-                WebSocketCancellationTokenSource = null;
-                WebSocketClient = null;
+                WebSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, desc, CancellationToken.None);
                 Log.Info($"[WebScoket] WebSocketClient Closed!");
                 OnWebSocketClosed?.Invoke(this);
             }
@@ -665,15 +656,13 @@ namespace QQChannelBot.BotApi
             {
                 try
                 {
-                    if (WebSocketClient != null) CloseWebSocket();
-                    WebSocketClient = new();
-                    WebSocketCancellationTokenSource = new();
                     string? GatewayUrl = GetWssUrlWithShared().Result;
                     if (Uri.TryCreate(GatewayUrl, UriKind.Absolute, out Uri? webSocketUri))
                     {
-                        await WebSocketClient.ConnectAsync(webSocketUri, WebSocketCancellationTokenSource.Token).ConfigureAwait(false);
+                        await WebSocketClient.ConnectAsync(webSocketUri, CancellationToken.None).ConfigureAwait(false);
                         OnWebSocketConnected?.Invoke(this);
                         _ = ReceiveAsync();
+                        break;
                     }
                     else
                     {
@@ -686,6 +675,7 @@ namespace QQChannelBot.BotApi
                     if (RetryCount > 0)
                     {
                         Log.Info($"[WebSocket] Try again in 10 seconds...");
+                        CloseWebSocket("ConnectError");
                         await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                     }
                 }
@@ -699,7 +689,7 @@ namespace QQChannelBot.BotApi
         {
             try
             {
-                if (WebSocketClient?.State == WebSocketState.Open)
+                if (WebSocketClient.State == WebSocketState.Open)
                 {
                     var data = new
                     {
@@ -713,7 +703,7 @@ namespace QQChannelBot.BotApi
                         }
                     };
                     Log.Info($"[WebSocket] Identify Sending...");
-                    await WebSocketClient.SendAsync(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data)), WebSocketMessageType.Text, true, WebSocketCancellationTokenSource?.Token ?? CancellationToken.None).ConfigureAwait(false);
+                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true, CancellationToken.None);
                 }
                 else throw new Exception("WebSocket Connection Broken!");
             }
@@ -732,7 +722,7 @@ namespace QQChannelBot.BotApi
             {
                 var data = new { op = Opcode.Heartbeat, s = WssMsgLastS };
                 Log.Info($"[WebSocket] Heartbeat Sending...");
-                await WebSocketClient!.SendAsync(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data)), WebSocketMessageType.Text, true, WebSocketCancellationTokenSource?.Token ?? CancellationToken.None).ConfigureAwait(false);
+                await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -747,22 +737,18 @@ namespace QQChannelBot.BotApi
         {
             try
             {
-                if (WebSocketClient != null)
+                var data = new
                 {
-                    var data = new
+                    op = Opcode.Resume,
+                    d = new
                     {
-                        op = Opcode.Resume,
-                        d = new
-                        {
-                            token = $"Bot {BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}",
-                            session_id = WebSoketSessionId,
-                            seq = WssMsgLastS
-                        }
-                    };
-                    Log.Info($"[WebSocket] Resume Sending...");
-                    await WebSocketClient.SendAsync(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data)), WebSocketMessageType.Text, true, WebSocketCancellationTokenSource?.Token ?? CancellationToken.None).ConfigureAwait(false);
-                }
-                else throw new Exception("WebSocketClient Is Closed!");
+                        token = $"Bot {BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}",
+                        session_id = WebSoketSessionId,
+                        seq = WssMsgLastS
+                    }
+                };
+                Log.Info($"[WebSocket] Resume Sending...");
+                await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -770,7 +756,21 @@ namespace QQChannelBot.BotApi
             }
         }
         /// <summary>
-        /// 接收WebSocket下传的数据
+        /// WebScoket发送数据到服务端
+        /// </summary>
+        /// <param name="data">要发送的数据</param>
+        /// <param name="msgType">WebSocket消息类型</param>
+        /// <param name="endOfMsg">表示数据已发送结束</param>
+        /// <param name="cancelToken">用于传播应取消此操作的通知的取消令牌。</param>
+        /// <returns></returns>
+        private async Task WebSocketSendAsync(string data, WebSocketMessageType msgType = WebSocketMessageType.Text, bool endOfMsg = true, CancellationToken? cancelToken = null)
+        {
+            Log.Debug($"[WebSocket][Send] {data}");
+            OnWebSoketSending?.Invoke(this, data);
+            await WebSocketClient.SendAsync(Encoding.UTF8.GetBytes(data), msgType, endOfMsg, cancelToken ?? CancellationToken.None);
+        }
+        /// <summary>
+        /// WebSocket接收服务端数据
         /// </summary>
         /// <returns></returns>
         private async Task ReceiveAsync()
@@ -782,7 +782,7 @@ namespace QQChannelBot.BotApi
             }
             try
             {
-                WebSocketReceiveResult result = await WebSocketClient.ReceiveAsync(ReceiveBuffer, WebSocketCancellationTokenSource?.Token ?? CancellationToken.None).ConfigureAwait(false);
+                WebSocketReceiveResult result = await WebSocketClient.ReceiveAsync(ReceiveBuffer, CancellationToken.None).ConfigureAwait(false);
                 if (result == null)
                 {
                     Log.Warn($"[WebSocket] Received Warn: No Data Received!");
@@ -790,7 +790,7 @@ namespace QQChannelBot.BotApi
                 else if (result?.MessageType == WebSocketMessageType.Close)
                 {
                     Log.Warn($"[WebSocket] Receive: The server sends a Close message.");
-                    CloseWebSocket();
+                    CloseWebSocket("ServerDisconnected");
                     return;
                 }
                 else if (result?.MessageType != WebSocketMessageType.Text)
@@ -809,7 +809,7 @@ namespace QQChannelBot.BotApi
             catch (Exception e)
             {
                 Log.Error($"[WebSocket] Receive Error: {e.Message}");
-                CloseWebSocket();
+                CloseWebSocket("ReceiveError");
                 return;
             }
             await Task.Factory.StartNew(async () => { await ReceiveAsync(); }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
@@ -827,7 +827,7 @@ namespace QQChannelBot.BotApi
             {
                 // Receive 服务端进行消息推送
                 case (int)Opcode.Dispatch:
-                    Log.Debug($"[WebSocket][OpEvent] Dispatch: {wssJson.GetRawText()}");
+                    Log.Debug($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
                     OnDispatch?.Invoke(this, wssJson);
                     WssMsgLastS = wssJson.GetProperty("s").GetInt32();
                     if (!wssJson.TryGetProperty("t", out JsonElement t)) break;
@@ -835,48 +835,47 @@ namespace QQChannelBot.BotApi
                     switch (type)
                     {
                         case "READY":
-                            WebSoketSessionId = wssJson.GetProperty("d").GetProperty("session_id").GetString();
                             await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").RootElement).ConfigureAwait(false);
-
+                            WebSoketSessionId = wssJson.GetProperty("d").GetProperty("session_id").GetString();
                             UserInfo = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user").GetRawText());
-                            ReadyAction?.Invoke(this, UserInfo);
+                            OnReady?.Invoke(this, UserInfo);
                             break;
                         case "RESUMED":
-                            ResumedAction?.Invoke(this, wssJson);
+                            OnResumed?.Invoke(this, wssJson);
                             break;
                         case "GUILD_CREATE":
                         case "GUILD_UPDATE":
                         case "GUILD_DELETE":
                             /*频道事件*/
-                            GuildAction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            OnGuildMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
                             break;
                         case "CHANNEL_CREATE":
                         case "CHANNEL_UPDATE":
                         case "CHANNEL_DELETE":
                             /*子频道事件*/
-                            ChannelAction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            OnChannelMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
                             break;
                         case "GUILD_MEMBER_ADD":
                         case "GUILD_MEMBER_UPDATE":
                         case "GUILD_MEMBER_REMOVE":
                             /*频道成员事件*/
-                            GuildMemberAction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            OnGuildMemberMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
                             break;
                         case "MESSAGE_REACTION_ADD":
                         case "MESSAGE_REACTION_REMOVE":
                             /*表情表态事件*/
-                            MessageReactionAction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            OnMessageReaction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
                             break;
                         case "DIRECT_MESSAGE_CREATE":
                             /*机器人收到私信事件*/
-                            DirectMessageAction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            OnDirectMessage?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
                             break;
                         case "AUDIO_START":
                         case "AUDIO_FINISH":
                         case "AUDIO_ON_MIC":
                         case "AUDIO_OFF_MIC":
                             /*音频事件*/
-                            AudioAction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            OnAudioMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
                             break;
                         case "AT_MESSAGE_CREATE":
                             /*收到 @机器人 消息事件*/
@@ -889,7 +888,7 @@ namespace QQChannelBot.BotApi
                             }
                             else
                             {
-                                AtMessageAction?.Invoke(this, message, (ActionType)Enum.Parse(typeof(ActionType), type));
+                                OnAtMessage?.Invoke(this, message, (ActionType)Enum.Parse(typeof(ActionType), type));
                             }
                             break;
                         default:
@@ -899,9 +898,9 @@ namespace QQChannelBot.BotApi
                     break;
                 // Send&Receive 客户端或服务端发送心跳
                 case (int)Opcode.Heartbeat:
-                    Log.Debug($"[WebSocket][OpEvent] {(wssJson.GetProperty("d").GetString() == null ? "Client" : "Server")} sends a heartbeat!");
+                    Log.Debug($"[WebSocket][Op01] {(wssJson.GetProperty("d").GetString() == null ? "Client" : "Server")} sends a heartbeat!");
                     OnHeartbeat?.Invoke(this, wssJson);
-                    if (WebSocketClient?.State == WebSocketState.Open)
+                    if (WebSocketClient.State == WebSocketState.Open)
                     {
                         await SendHeartBeatAsync().ConfigureAwait(false);
                         _ = Task.Factory.StartNew(async () =>
@@ -913,42 +912,42 @@ namespace QQChannelBot.BotApi
                     break;
                 // Send 客户端发送鉴权
                 case (int)Opcode.Identify:
-                    Log.Debug($"[WebSocket][OpEvent] Client send authentication!");
+                    Log.Debug($"[WebSocket][Op02] Client send authentication!");
                     OnIdentify?.Invoke(this, wssJson);
-                    await SendIdentifyAsync().ConfigureAwait(false);
+                    await SendIdentifyAsync();
                     break;
                 // Send 客户端恢复连接
                 case (int)Opcode.Resume:
-                    Log.Debug($"[WebSocket][OpEvent] Client resumes connection!");
+                    Log.Debug($"[WebSocket][Op06] Client resumes connection!");
                     OnResume?.Invoke(this, wssJson);
-                    await SendResumeAsync().ConfigureAwait(false);
+                    await SendResumeAsync();
                     break;
                 // Receive 服务端通知客户端重新连接
                 case (int)Opcode.Reconnect:
-                    Log.Info($"[WebSocket][OpEvent] Server asks the client to reconnect!");
+                    Log.Info($"[WebSocket][Op07] Server asks the client to reconnect!");
                     OnReconnect?.Invoke(this, wssJson);
                     await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Resume}}}").RootElement).ConfigureAwait(false);
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case (int)Opcode.InvalidSession:
-                    Log.Info($"[WebSocket][OpEvent] 客户端鉴权信息错误!");
+                    Log.Info($"[WebSocket][Op09] 客户端鉴权信息错误!");
                     OnInvalidSession?.Invoke(this, wssJson);
                     break;
                 // Receive 当客户端与网关建立ws连接之后，网关下发的第一条消息
                 case (int)Opcode.Hello:
-                    Log.Info($"[WebSocket][OpEvent] Successfully connected to the gateway!");
+                    Log.Info($"[WebSocket][Op10] Successfully connected to the gateway!");
                     OnHello?.Invoke(this, wssJson);
                     HeartbeatInterval = wssJson.GetProperty("d").GetProperty("heartbeat_interval").GetInt32();
                     await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Identify}}}").RootElement).ConfigureAwait(false);
                     break;
                 // Receive 当发送心跳成功之后，就会收到该消息
                 case (int)Opcode.HeartbeatACK:
-                    Log.Info($"[WebSocket][OpEvent] HeartbeatACK Received!");
+                    Log.Info($"[WebSocket][Op11] HeartbeatACK Received!");
                     OnHeartbeatACK?.Invoke(this, wssJson);
                     break;
                 // 未知操作码
                 default:
-                    Log.Warn($"[WebSocket][OpEvent] Unknown Opcode: {opcode}");
+                    Log.Warn($"[WebSocket][OpNC] Unknown Opcode: {opcode}");
                     break;
             }
         }
@@ -957,14 +956,10 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 关闭机器人并释放所有占用的资源
         /// </summary>
-        public void Close()
+        public static void Close()
         {
-            WebSocketCancellationTokenSource?.Cancel();
-            WebSocketCancellationTokenSource?.Dispose();
-            WebSocketClient?.Abort();
-            WebSocketClient?.Dispose();
-            WebSocketCancellationTokenSource = null;
-            WebSocketClient = null;
+            WebSocketClient.Abort();
+            WebSocketClient.Dispose();
             WebHttpClient.CancelPendingRequests();
             WebHttpClient.Dispose();
         }

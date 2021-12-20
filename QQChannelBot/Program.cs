@@ -30,10 +30,10 @@ namespace QQChannelBot
                 BotAppId = credential["BotAppId"],
                 BotToken = credential["BotToken"],
                 BotSecret = credential["BotSecret"]
-            }, false);
+            });
 
             // 订阅 ReadyAction 事件，这里根据机器人信息修改控制台标题
-            bot.ReadyAction += (sender, e) => { Console.Title = $"QCBot: {e?.UserName}<{e?.Id}>"; };
+            bot.OnReady += (sender, e) => { Console.Title = $"QCBot: {e?.UserName}<{e?.Id}>"; };
 
             // 注册自定义命令，这里是让机器人复读用户的消息
             bot.AddCommand("复读", async (sender, e, msg) =>
@@ -65,19 +65,13 @@ namespace QQChannelBot
             // 订阅 AtMessageAction 事件，处理所有收到的 @机器人 消息
             // 注1：被 AddCommand 命令匹配的消息不会出现在这里
             // 注2：若要接收服务器推送的所有消息，请订阅 OnDispatch 事件
-            bot.AtMessageAction += async (sender, e, type) =>
+            bot.OnAtMessage += async (sender, e, type) =>
             {
                 await sender.SendMessageAsync(e.ChannelId, new MessageToCreate()
                 {
                     Content = e.Content.TrimStartString(MsgTag.UserTag(bot.UserInfo?.Id), MsgTag.UserTag(e.Author.Id)),
                     MsgId = e.Id
                 });
-            };
-
-            // 订阅进程退出事件
-            AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
-            {
-                bot.Close();
             };
 
             // 启动机器人
