@@ -1,4 +1,7 @@
 #QQ机器人框架
+
+[![NuGet](https://img.shields.io/nuget/v/QQChannelBot.svg)](https://www.nuget.org/packages/QQChannelBot) [![NuGet downloads](https://img.shields.io/nuget/dt/QQChannelBot)](https://www.nuget.org/packages/QQChannelBot)
+
 使用.NET6技术封装的QQ机器人通信框架
 
 ##使用说明
