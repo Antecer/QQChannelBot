@@ -2,10 +2,30 @@
 
 namespace QQChannelBot.MsgHelper
 {
+    /// <summary>
+    /// Embed消息对象
+    /// </summary>
     public class MsgEmbed
     {
         /// <summary>
         /// 构建Embed消息
+        /// <code>
+        /// 示例:
+        /// |{
+        /// |    "content": "普通消息内容",
+        /// |    "embed": {
+        /// |        "title": "标题",
+        /// |        "prompt": "消息通知",
+        /// |        "thumbnail": { "url": "缩略图url"},
+        /// |        "fields": [
+        /// |            { "name": "第一行内容"},
+        /// |            { "name": "第二行内容"},
+        /// |            { "name": "第三行内容"}
+        /// |        ]
+        /// |    }
+        /// |    "msg_id": "要回复的消息Id"
+        /// |}
+        /// </code>
         /// <para>详情查阅QQ机器人文档 <see href="https://bot.q.qq.com/wiki/develop/api/openapi/message/template/embed_message.html">embed消息</see></para>
         /// </summary>
         /// <param name="replyMsgId">要回复的消息id, 空字符串表示发送主动消息</param>
@@ -15,7 +35,7 @@ namespace QQChannelBot.MsgHelper
         }
 
         /// <summary>
-        /// 构建完成的Embed消息体
+        /// 返回构建完成的Embed消息对象
         /// </summary>
         public MessageToCreate Body
         {
