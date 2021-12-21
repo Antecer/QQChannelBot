@@ -17,18 +17,18 @@ namespace QQChannelBot.BotApi
         /// 频道Id
         /// </summary>
         [JsonPropertyName("guild_id")]
-        public string? GuildId { get; set; }
+        public string GuildId { get; set; } = "";
 
         /// <summary>
         /// 身份组
         /// </summary>
         [JsonPropertyName("roles")]
-        public Role? Roles { get; set; }
+        public Role[] Roles { get; set; } = Array.Empty<Role>();
         /// <summary>
         /// 默认分组上限
         /// </summary>
         [JsonPropertyName("role_num_limit")]
-        public string? RoleNumLimit { get; set; }
+        public string RoleNumLimit { get; set; } = "";
     }
 
     /// <summary>
@@ -107,21 +107,36 @@ namespace QQChannelBot.BotApi
         /// ARGB的HEX十六进制颜色值转换后的十进制数值
         /// </summary>
         [JsonPropertyName("color")]
-        public uint Color { get; set; }
+        private uint? Color { get; set; }
         /// <summary>
         /// ARGB的HTML十六进制颜色值
-        /// <para>例：#FFFFFFFF</para>
+        /// <para>支持这些格式：#FFFFFFFF #FFFFFF #FFFF #FFF</para>
+        /// <para><em>注: 因官方API有BUG，框架暂时强制Alpha通道固定为1.0 [2021-12-21]</em></para>
         /// </summary>
         [JsonIgnore]
-        public string HexColor
+        public string? HexColor
         {
-            get => $"#{Color:X8}";
-            set => Color = Convert.ToUInt32(value.TrimStart('#'), 16);
+            get
+            {
+                return Color != null ? $"#{Color:X8}" : null;
+            }
+            set
+            {
+                value = value?.Trim('#') ?? "#000";
+                Color = value.Length switch
+                {
+                    3 => Convert.ToUInt32($"{value[0]}{value[0]}{value[1]}{value[1]}{value[2]}{value[2]}", 16),
+                    4 => Convert.ToUInt32($"{value[0]}{value[0]}{value[1]}{value[1]}{value[2]}{value[2]}{value[3]}{value[3]}", 16),
+                    6 => Convert.ToUInt32(value, 16),
+                    8 => Convert.ToUInt32(value, 16),
+                    _ => 0x0
+                } | 0xFF000000;
+            }
         }
         /// <summary>
         /// 在成员列表中单独展示: 0-否, 1-是
         /// </summary>
         [JsonPropertyName("hoist")]
-        public int Hoist { get; set; }
+        public int? Hoist { get; set; }
     }
 }
