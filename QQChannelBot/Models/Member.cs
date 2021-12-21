@@ -11,12 +11,12 @@ namespace QQChannelBot.Models
         /// 用户基础信息，来自QQ资料，只有成员相关接口中会填充此信息
         /// </summary>
         [JsonPropertyName("user")]
-        public User? User { get; set; }
+        public User User { get; set; } = new();
         /// <summary>
         /// 用户在频道内的昵称(默认为空)
         /// </summary>
         [JsonPropertyName("nick")]
-        public string? Nick { get; set; }
+        public string Nick { get; set; } = "";
         /// <summary>
         /// 用户在频道内的身份组ID, 默认值可参考DefaultRoles
         /// </summary>

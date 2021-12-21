@@ -11,12 +11,12 @@ namespace QQChannelBot.Models
         /// 子频道 id
         /// </summary>
         [JsonPropertyName("channel_id")]
-        public string? ChaannelId { get; set; }
+        public string ChaannelId { get; set; } = "";
         /// <summary>
         /// 用户 id
         /// </summary>
         [JsonPropertyName("user_id")]
-        public string? UserId { get; set; }
+        public string UserId { get; set; } = "";
         /// <summary>
         /// 用户拥有的子频道权限
         /// <para>
@@ -25,6 +25,6 @@ namespace QQChannelBot.Models
         /// </para>
         /// </summary>
         [JsonPropertyName("permissions")]
-        public string? Permissions { get; set; }
+        public string Permissions { get; set; } = "0";
     }
 }

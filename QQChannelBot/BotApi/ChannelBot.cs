@@ -263,11 +263,17 @@ namespace QQChannelBot.BotApi
         /// 创建频道身份组
         /// </summary>
         /// <param name="guild_id">频道id</param>
-        /// <param name="filter">标识需要设置哪些字段</param>
         /// <param name="info">携带需要设置的字段内容</param>
+        /// <param name="filter">标识需要设置哪些字段,若不填则根据Info自动推测</param>
         /// <returns></returns>
-        public async Task<CreateRoleRes?> CreateRoleAsync(string guild_id, Filter filter, Info info)
+        public async Task<CreateRoleRes?> CreateRoleAsync(string guild_id, Info info, Filter? filter = null)
         {
+            filter ??= new Filter()
+            {
+                Name = info.Name == null ? 0 : 1,
+                Color = info.HexColor == null ? 0 : 1,
+                Hoist = info.Hoist == null ? 0 : 1
+            };
             HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/guilds/{guild_id}/roles", new { filter, info });
             return await res.Content.ReadFromJsonAsync<CreateRoleRes>();
         }
@@ -276,11 +282,17 @@ namespace QQChannelBot.BotApi
         /// </summary>
         /// <param name="guild_id"></param>
         /// <param name="role_id"></param>
-        /// <param name="filter">标识需要修改哪些字段</param>
         /// <param name="info">携带需要修改的字段内容</param>
+        /// <param name="filter">标识需要设置哪些字段,若不填则根据Info自动推测</param>
         /// <returns></returns>
-        public async Task<ModifyRolesRes?> ModifyRolesAsync(string guild_id, string role_id, Filter filter, Info info)
+        public async Task<ModifyRolesRes?> ModifyRolesAsync(string guild_id, string role_id, Info info, Filter? filter = null)
         {
+            filter ??= new Filter()
+            {
+                Name = info.Name == null ? 0 : 1,
+                Color = info.HexColor == null ? 0 : 1,
+                Hoist = info.Hoist == null ? 0 : 1
+            };
             HttpResponseMessage res = await WebHttpClient.PatchAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", JsonContent.Create(new { filter, info }));
             return await res.Content.ReadFromJsonAsync<ModifyRolesRes>();
         }

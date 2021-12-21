@@ -11,12 +11,12 @@ namespace QQChannelBot.Models
         /// 用户 id
         /// </summary>
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public string Id { get; set; } = "";
         /// <summary>
         /// 用户名
         /// </summary>
         [JsonPropertyName("username")]
-        public string? UserName { get; set; }
+        public string? UserName { get; set; } = "";
         /// <summary>
         /// 用户头像地址
         /// </summary>

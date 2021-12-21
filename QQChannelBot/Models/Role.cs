@@ -17,32 +17,32 @@ namespace QQChannelBot.Models
         /// </para>
         /// </summary>
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         /// <summary>
         /// 身分组名称
         /// </summary>
         [JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         /// <summary>
         /// ARGB的HEX十六进制颜色值转换后的十进制数值
         /// </summary>
         [JsonPropertyName("color")]
-        public uint? Color { get; set; }
+        public uint Color { get; set; }
         /// <summary>
         /// 该身分组是否在成员列表中单独展示: 0-否, 1-是
         /// </summary>
         [JsonPropertyName("hoist")]
-        public uint? Hoist { get; set; }
+        public uint Hoist { get; set; }
         /// <summary>
         /// 该身分组的人数
         /// </summary>
         [JsonPropertyName("number")]
-        public uint? Number { get; set; }
+        public uint Number { get; set; }
         /// <summary>
         /// 成员上限
         /// </summary>
         [JsonPropertyName("member_limit")]
-        public uint? MemberLimit { get; set; }
+        public uint MemberLimit { get; set; }
     }
 
     public class DefaultRoles
