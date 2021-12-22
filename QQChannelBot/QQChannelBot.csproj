@@ -9,7 +9,7 @@
     <Copyright>Copyright © 2021 Antecer. All rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/Antecer/QQChannelBot</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Antecer/QQChannelBot.git</RepositoryUrl>
-    <PackageTags>QQ;Channel;Bot;频道;机器人</PackageTags>
+    <PackageTags>修复掉线重连失败的bug；新增频道禁言功能。</PackageTags>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

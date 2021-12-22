@@ -255,6 +255,37 @@ namespace QQChannelBot.BotApi
         {
             return await WebHttpClient.GetFromJsonAsync<Guild>($"{ApiOrigin}/guilds/{guild_id}");
         }
+        /// <summary>
+        /// 频道指定成员禁言
+        /// <para>
+        /// MuteMode - 禁言模式<br/>
+        /// mute_end_timestamp: 禁言到期时间戳，绝对时间戳，单位：秒<br/>
+        /// mute_seconds: 禁言多少秒
+        /// </para>
+        /// </summary>
+        /// <param name="guild_id">频道id</param>
+        /// <param name="user_id">成员id</param>
+        /// <param name="muteMode">禁言模式</param>
+        /// <returns></returns>
+        public async Task<HttpResponseMessage> MuteMemberAsync(string guild_id, string user_id, MuteMode muteMode)
+        {
+            return await WebHttpClient.PatchAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/mute", JsonContent.Create(muteMode));
+        }
+        /// <summary>
+        /// 频道全局禁言
+        /// <para>
+        /// MuteMode - 禁言模式:<br/>
+        /// mute_end_timestamp 禁言到期时间戳，绝对时间戳，单位：秒<br/>
+        /// mute_seconds 禁言多少秒
+        /// </para>
+        /// </summary>
+        /// <param name="guild_id">频道id</param>
+        /// <param name="muteMode">禁言模式</param>
+        /// <returns></returns>
+        public async Task<HttpResponseMessage> MuteGuildAsync(string guild_id, MuteMode muteMode)
+        {
+            return await WebHttpClient.PatchAsync($"{ApiOrigin}/guilds/{guild_id}/mute", JsonContent.Create(muteMode));
+        }
         #endregion
 
         #region 频道身份组API

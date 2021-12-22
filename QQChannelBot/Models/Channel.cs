@@ -95,10 +95,10 @@ namespace QQChannelBot.Models
         [JsonPropertyName("sub_type")]
         public ChannelSubType SubType { get; set; }
         /// <summary>
-        /// 频道位置排序，必填，而且不能够和其他子频道的值重复
+        /// 频道位置排序，非必填，但不能够和其他子频道的值重复
         /// </summary>
         [JsonPropertyName("position")]
-        public int Possition { get; set; }
+        public int? Possition { get; set; }
         /// <summary>
         /// 分组 id
         /// </summary>
