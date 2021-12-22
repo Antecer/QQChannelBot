@@ -298,6 +298,7 @@ namespace QQChannelBot.BotApi
         }
         /// <summary>
         /// 删除身份组
+        /// <para><em>HTTP状态码 204 表示成功</em></para>
         /// </summary>
         /// <param name="guild_id">频道id</param>
         /// <param name="role_id">身份Id</param>
@@ -320,14 +321,12 @@ namespace QQChannelBot.BotApi
         /// <returns></returns>
         public async Task AddMemberToRoleAsync(string guild_id, string user_id, string role_id, string? channel_id = null)
         {
-            if (channel_id == null)
+            await WebHttpClient.SendAsync(new()
             {
-                await WebHttpClient.PutAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", null);
-            }
-            else
-            {
-                await WebHttpClient.PutAsJsonAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", new Channel { Id = channel_id });
-            }
+                Method = HttpMethod.Put,
+                RequestUri = new Uri($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}"),
+                Content = channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } })
+            });
         }
         /// <summary>
         /// 删除频道身份组成员
@@ -344,14 +343,12 @@ namespace QQChannelBot.BotApi
         /// <returns></returns>
         public async Task DeleteMemberToRoleAsync(string guild_id, string user_id, string role_id, string? channel_id = null)
         {
-            if (channel_id == null)
+            await WebHttpClient.SendAsync(new()
             {
-                await WebHttpClient.DeleteAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}");
-            }
-            else
-            {
-                Console.WriteLine("[删除频道身份组成员] 删除子频道管理员身份组功能暂未实现");
-            }
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}"),
+                Content = channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } })
+            });
         }
         #endregion
 

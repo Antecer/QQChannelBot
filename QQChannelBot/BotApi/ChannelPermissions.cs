@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using QQChannelBot.Models;
+using QQChannelBot.MsgHelper;
 
 namespace QQChannelBot.BotApi
 {
@@ -77,6 +79,18 @@ namespace QQChannelBot.BotApi
     public class Filter
     {
         /// <summary>
+        /// 配置筛选器
+        /// </summary>
+        /// <param name="setName">设置名称</param>
+        /// <param name="setColor">设置颜色</param>
+        /// <param name="setHoist">设置在成员列表中单独展示</param>
+        public Filter(bool setName = false, bool setColor = false, bool setHoist = false)
+        {
+            Name = setName ? 1 : 0;
+            Color = setColor ? 1 : 0;
+            Hoist = setHoist ? 1 : 0;
+        }
+        /// <summary>
         /// 是否设置名称: 0-否, 1-是
         /// </summary>
         [JsonPropertyName("name")]
@@ -99,19 +113,41 @@ namespace QQChannelBot.BotApi
     public class Info
     {
         /// <summary>
+        /// 构造身份组信息
+        /// </summary>
+        /// <param name="name">身份组名称</param>
+        /// <param name="colorHex">ARGB的HTML十六进制颜色值</param>
+        /// <param name="hoist">在成员列表中单独展示: 0-否, 1-是</param>
+        public Info(string? name = null, string? colorHex = null, int? hoist = null)
+        {
+            Name = name;
+            HexColor = colorHex;
+            Hoist = hoist;
+        }
+        /// <summary>
         /// 名称
         /// </summary>
         [JsonPropertyName("name")]
         public string? Name { get; set; }
+        [JsonIgnore]
+        private uint? ColorVal { get; set; }
         /// <summary>
         /// ARGB的HEX十六进制颜色值转换后的十进制数值
         /// </summary>
         [JsonPropertyName("color")]
-        private uint? Color { get; set; }
+        public uint? Color
+        {
+            get => ColorVal;
+            set => ColorVal = 0xFF000000 | value;
+        }
         /// <summary>
         /// ARGB的HTML十六进制颜色值
-        /// <para>支持这些格式：#FFFFFFFF #FFFFFF #FFFF #FFF</para>
-        /// <para><em>注: 因官方API有BUG，框架暂时强制Alpha通道固定为1.0 [2021-12-21]</em></para>
+        /// <para>
+        /// 支持这些格式(忽略大小写和前后空白字符)：<br/>
+        /// #FFFFFFFF #FFFFFF #FFFF #FFF<br/>
+        /// 0xFFFFFFFF 0xFFFFFF 0xFFFF 0xFFF
+        /// </para>
+        /// <para><em>注: 因官方API有BUG，框架暂时强制Alpha通道固定为1.0，对功能无影响。 [2021-12-21]</em></para>
         /// </summary>
         [JsonIgnore]
         public string? HexColor
@@ -122,7 +158,7 @@ namespace QQChannelBot.BotApi
             }
             set
             {
-                value = value?.Trim('#') ?? "#000";
+                value = Regex.IsMatch(value?.Trim() ?? "", @"^(#|0x)?[0-9a-fA-F]+$") ? value!.Trim().TrimStart('#').TrimStartString("0x") : "";
                 Color = value.Length switch
                 {
                     3 => Convert.ToUInt32($"{value[0]}{value[0]}{value[1]}{value[1]}{value[2]}{value[2]}", 16),
