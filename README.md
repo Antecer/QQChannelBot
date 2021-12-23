@@ -50,42 +50,59 @@ bot.Start();
 ```
 
 ## 以下是API调用玩法示例
-#### 注：所有API调用均未对指令发出者做鉴权判断，使用者调用时需要自己加入权限判断。
+#### 注：AddCommand注册普通指令，任何成员可触发；AddCommandSuper注册管理员指令，仅仅频道组、管理员、子频道管理员可触发
 ```
-// 如：限制 仅管理员、频道主、子频道管理员 能触发指令
-bot.AddCommand("创建公告", async (sender, e, msg) =>
+// 注册自定义命令，这里测试embed消息 ( 实现功能为获取用户信息，指令格式： @机器人 UserInfo @用户 )
+bot.AddCommand("用户信息", async (sender, e, msg) =>
 {
-    if (!e.Member.Roles.Any(r => "234".Contains(r))) return; // 如果发送指令的用户没有管理权限，就不运行后续代码
-    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
-    await bot.CreateAnnouncesAsync(sendmsg!);
+    string userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : e.Author.Id;
+    Member member = await bot.GetGuildMemberAsync(e.GuildId, userId) ?? new()
+    {
+        User = e.Author,
+        Roles = e.Member.Roles,
+        JoinedAt = e.Member.JoinedAt,
+    };
+    GuildRoles? grs = await bot.GetGuildRolesAsync(e.GuildId);
+    var roles = grs?.Roles.Where(gr => member.Roles.Contains(gr.Id)).Select(gr => gr.Name).ToList() ?? new List<string> { "未知身份组" };
+    MsgEmbed ReplyEmbed = new(e.Id)
+    {
+        Title = member.User.UserName,
+        Thumbnail = member.User.Avatar,
+        Fields = new()
+        {
+            new() { Name = $"用户昵称：{member.Nick}" },
+            new() { Name = $"账户类别：{(member.User.Bot ? "机器人" : "人类")}" },
+            new() { Name = $"角色分类：{string.Join("、", roles)}" },
+            new() { Name = $"加入时间：{member.JoinedAt.Remove(member.JoinedAt.IndexOf('+'))}" },
+        }
+    };
+    await sender.SendMessageAsync(e.ChannelId, ReplyEmbed.Body);
 });
-```
-```cs
 // 指令格式：@机器人 创建公告 公告内容
-bot.AddCommand("创建公告", async (sender, e, msg) =>
+bot.AddCommandSuper("创建公告", async (sender, e, msg) =>
 {
     Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
     await bot.CreateAnnouncesAsync(sendmsg!);
 });
 // 指令格式：@机器人 删除公告
-bot.AddCommand("删除公告", async (sender, e, msg) =>
+bot.AddCommandSuper("删除公告", async (sender, e, msg) =>
 {
     await bot.DeleteAnnouncesAsync(e.ChannelId);
 });
 // 指令格式：@机器人 创建全局公告 公告内容
-bot.AddCommand("创建全局公告", async (sender, e, msg) =>
+bot.AddCommandSuper("创建全局公告", async (sender, e, msg) =>
 {
     Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
     await bot.CreateAnnouncesGlobalAsync(sendmsg!);
 });
 // 指令格式：@机器人 删除全局公告
-bot.AddCommand("删除全局公告", async (sender, e, msg) =>
+bot.AddCommandSuper("删除全局公告", async (sender, e, msg) =>
 {
     await bot.DeleteAnnouncesGlobalAsync(e.ChannelId);
 });
 // 指令格式：@机器人 禁言 @用户 10天
 // 或使用格式：@机器人 禁言 @用户 到 2077-12-12 23:59:59
-bot.AddCommand("禁言", async (sender, e, msg) =>
+bot.AddCommandSuper("禁言", async (sender, e, msg) =>
 {
     string? userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : null;
     if (userId == null)
@@ -113,7 +130,7 @@ bot.AddCommand("禁言", async (sender, e, msg) =>
     });
 });
 // 指令格式：@机器人 解除禁言 @用户
-bot.AddCommand("解除禁言", async (sender, e, msg) =>
+bot.AddCommandSuper("解除禁言", async (sender, e, msg) =>
 {
     string? userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : null;
     if (userId == null)
@@ -126,7 +143,7 @@ bot.AddCommand("解除禁言", async (sender, e, msg) =>
 });
 // 指令格式：@机器人 全体禁言 10天
 // 或使用格式：@机器人 全体禁言 到 2077-12-12 23:59:59
-bot.AddCommand("全体禁言", async (sender, e, msg) =>
+bot.AddCommandSuper("全员禁言", async (sender, e, msg) =>
 {
     Match? timeGroups = Regex.IsMatch(msg, @"(\d+)(天|小时|时|分|秒)") ? Regex.Match(msg, @"(\d+)(天|小时|时|分|秒)") : null;
     string timeType = timeGroups?.Groups[2].Value ?? "秒";
@@ -148,7 +165,7 @@ bot.AddCommand("全体禁言", async (sender, e, msg) =>
     });
 });
 // 指令格式：@机器人 解除全体禁言
-bot.AddCommand("解除全体禁言", async (sender, e, msg) =>
+bot.AddCommandSuper("解除全员禁言", async (sender, e, msg) =>
 {
     await bot.MuteGuildAsync(e.GuildId, new MuteTime(0));
     await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"已解除全员禁言", e.Id));
