@@ -61,7 +61,7 @@ namespace QQChannelBot.Models
         /// 消息中@的人
         /// </summary>
         [JsonPropertyName("mentions")]
-        public User[]? Mentions { get; set; }
+        public List<User>? Mentions { get; set; }
         /// <summary>
         /// 消息创建者的member信息
         /// </summary>
@@ -79,6 +79,20 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MessageToCreate
     {
+        /// <summary>
+        /// 构建消息体结构
+        /// </summary>
+        public MessageToCreate() { }
+        /// <summary>
+        /// 构建消息体结构
+        /// </summary>
+        /// <param name="content">消息内容</param>
+        /// <param name="msgId">要回复的消息id，不填视为发送主动消息</param>
+        public MessageToCreate(string content, string? msgId = null)
+        {
+            Content = content;
+            MsgId = msgId;
+        }
         /// <summary>
         /// 消息内容，文本内容，支持内嵌格式
         /// </summary>

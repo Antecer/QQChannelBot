@@ -53,22 +53,4 @@ namespace QQChannelBot.Models
         [JsonPropertyName("joined_at")]
         public string? JoinedAt { get; set; }
     }
-
-    /// <summary>
-    /// 禁言模式
-    /// </summary>
-    public class MuteMode
-    {
-        /// <summary>
-        /// 禁言到期时间戳，绝对时间戳，单位：秒
-        /// <para><em>这里单词timestamp拼写错误，等待官方修复 [2021年12月22日]</em></para>
-        /// </summary>
-        [JsonPropertyName("mute_end_timstamp")]
-        public string? MuteEndTimestamp { get; set; }
-        /// <summary>
-        /// 禁言多少秒
-        /// </summary>
-        [JsonPropertyName("mute_seconds")]
-        public string? MuteSeconds { get; set; }
-    }
 }

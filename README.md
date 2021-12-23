@@ -48,3 +48,99 @@ bot.OnAtMessage += async (sender, e, type) =>
 ```cs
 bot.Start();
 ```
+
+##以下是API调用玩法示例
+```cs
+// 指令格式：@机器人 创建公告 公告内容
+bot.AddCommand("创建公告", async (sender, e, msg) =>
+{
+    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
+    await bot.CreateAnnouncesAsync(sendmsg!);
+});
+// 指令格式：@机器人 删除公告
+bot.AddCommand("删除公告", async (sender, e, msg) =>
+{
+    await bot.DeleteAnnouncesAsync(e.ChannelId);
+});
+// 指令格式：@机器人 创建全局公告 公告内容
+bot.AddCommand("创建全局公告", async (sender, e, msg) =>
+{
+    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
+    await bot.CreateAnnouncesGlobalAsync(sendmsg!);
+});
+// 指令格式：@机器人 删除全局公告
+bot.AddCommand("删除全局公告", async (sender, e, msg) =>
+{
+    await bot.DeleteAnnouncesGlobalAsync(e.ChannelId);
+});
+// 指令格式：@机器人 禁言 @用户 10天
+// 或使用格式：@机器人 禁言 @用户 到 2077-12-12 23:59:59
+bot.AddCommand("禁言", async (sender, e, msg) =>
+{
+    string? userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : null;
+    if (userId == null)
+    {
+        await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"{MsgTag.UserTag(e.Author.Id)} 未指定禁言的用户!", e.Id));
+        return;
+    }
+    Match? timeGroups = Regex.IsMatch(msg, @"(\d+)(天|小时|时|分|秒)") ? Regex.Match(msg, @"(\d+)(天|小时|时|分|秒)") : null;
+    string timeType = timeGroups?.Groups[2].Value ?? "秒";
+    int timeDelay = int.Parse(timeGroups?.Groups[1].Value ?? "60");
+    int delaySecond = timeType switch
+    {
+        "天" => 60 * 60 * 24,
+        "小时" => 60 * 60,
+        "时" => 60 * 60,
+        "分" => 60,
+        _ => 1
+    } * timeDelay;
+    string? timsTamp = Regex.IsMatch(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d") ? Regex.Match(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d").Groups[0].Value : null;
+    await bot.MuteMemberAsync(e.GuildId, userId, timsTamp != null ? new MuteTime(timsTamp) : new MuteTime(delaySecond));
+    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate()
+    {
+        Content = $"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已被禁言{(timsTamp != null ? "，解除时间：" + timsTamp : timeDelay.ToString() + timeType)}",
+        MsgId = e.Id
+    });
+});
+// 指令格式：@机器人 解除禁言 @用户
+bot.AddCommand("解除禁言", async (sender, e, msg) =>
+{
+    string? userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : null;
+    if (userId == null)
+    {
+        await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"{MsgTag.UserTag(e.Author.Id)} 未指定解除的用户!", e.Id));
+        return;
+    }
+    await bot.MuteMemberAsync(e.GuildId, userId, new MuteTime(0));
+    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已解除禁言", e.Id));
+});
+// 指令格式：@机器人 全体禁言 10天
+// 或使用格式：@机器人 全体禁言 到 2077-12-12 23:59:59
+bot.AddCommand("全体禁言", async (sender, e, msg) =>
+{
+    Match? timeGroups = Regex.IsMatch(msg, @"(\d+)(天|小时|时|分|秒)") ? Regex.Match(msg, @"(\d+)(天|小时|时|分|秒)") : null;
+    string timeType = timeGroups?.Groups[2].Value ?? "秒";
+    int timeDelay = int.Parse(timeGroups?.Groups[1].Value ?? "60");
+    int delaySecond = timeType switch
+    {
+        "天" => 60 * 60 * 24,
+        "小时" => 60 * 60,
+        "时" => 60 * 60,
+        "分" => 60,
+        _ => 1
+    } * timeDelay;
+    string? timsTamp = Regex.IsMatch(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d") ? Regex.Match(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d").Groups[0].Value : null;
+    await bot.MuteGuildAsync(e.GuildId, timsTamp != null ? new MuteTime(timsTamp) : new MuteTime(delaySecond));
+    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate()
+    {
+        Content = $"{e.Author.UserName} 已启用全员禁言{(timsTamp != null ? "，解除时间：" + timsTamp : timeDelay.ToString() + timeType)}",
+        MsgId = e.Id
+    });
+});
+// 指令格式：@机器人 解除全体禁言
+bot.AddCommand("解除全体禁言", async (sender, e, msg) =>
+{
+    await bot.MuteGuildAsync(e.GuildId, new MuteTime(0));
+    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"已解除全员禁言", e.Id));
+});
+```
