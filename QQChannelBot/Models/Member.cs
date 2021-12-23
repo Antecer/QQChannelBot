@@ -27,6 +27,21 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("joined_at")]
         public string JoinedAt { get; set; } = "null";
+        /// <summary>
+        /// 该字段作用未知，等待官方文档更新
+        /// </summary>
+        [JsonPropertyName("deaf")]
+        public bool Deaf { get; set; } = false;
+        /// <summary>
+        /// 该字段作用未知，等待官方文档更新
+        /// </summary>
+        [JsonPropertyName("mute")]
+        public bool Mute { get; set; } = false;
+        /// <summary>
+        /// 该字段作用未知，等待官方文档更新
+        /// </summary>
+        [JsonPropertyName("pending")]
+        public bool Pending { get; set; } = false;
     }
 
     /// <summary>
