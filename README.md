@@ -50,6 +50,16 @@ bot.Start();
 ```
 
 ## 以下是API调用玩法示例
+#### 注：所有API调用均未对指令发出者做鉴权判断，使用者调用时需要自己加入权限判断。
+```
+// 如：限制 仅管理员、频道主、子频道管理员 能触发指令
+bot.AddCommand("创建公告", async (sender, e, msg) =>
+{
+    if (!e.Member.Roles.Any(r => "234".Contains(r))) return; // 如果发送指令的用户没有管理权限，就不运行后续代码
+    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
+    await bot.CreateAnnouncesAsync(sendmsg!);
+});
+```
 ```cs
 // 指令格式：@机器人 创建公告 公告内容
 bot.AddCommand("创建公告", async (sender, e, msg) =>
