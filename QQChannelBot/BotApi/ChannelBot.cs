@@ -406,6 +406,37 @@ namespace QQChannelBot.BotApi
 
         #region 公告API
         /// <summary>
+        /// 创建频道全局公告
+        /// </summary>
+        /// <param name="guild_id">频道id</param>
+        /// <param name="channel_id">消息所在子频道id</param>
+        /// <param name="message_id">消息id</param>
+        /// <returns></returns>
+        public async Task<Announces?> CreateAnnouncesGlobalAsync(string guild_id, string channel_id, string message_id)
+        {
+            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/guilds/{guild_id}/announces", new { channel_id, message_id });
+            return await res.Content.ReadFromJsonAsync<Announces>();
+        }
+        /// <summary>
+        /// 创建频道全局公告
+        /// </summary>
+        /// <param name="msg">用于创建公告的消息对象</param>
+        /// <returns></returns>
+        public async Task<Announces?> CreateAnnouncesGlobalAsync(Message msg)
+        {
+            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/guilds/{msg.GuildId}/announces", new { msg.ChannelId, msg.Content });
+            return await res.Content.ReadFromJsonAsync<Announces>();
+        }
+        /// <summary>
+        /// 删除频道全局公告
+        /// </summary>
+        /// <param name="guild_id">频道id</param>
+        /// <returns>HTTP 状态码 204</returns>
+        public async Task<HttpResponseMessage> DeleteAnnouncesGlobalAsync(string guild_id)
+        {
+            return await WebHttpClient.DeleteAsync($"{ApiOrigin}/guilds/{guild_id}/announces/all");
+        }
+        /// <summary>
         /// 创建子频道公告
         /// <para>
         /// 机器人设置消息为指定子频道公告
@@ -428,10 +459,11 @@ namespace QQChannelBot.BotApi
         /// <param name="channel_id">子频道id</param>
         /// <param name="message_id">消息id</param>
         /// <returns></returns>
-        public async Task DeleteAnnouncesAsync(string channel_id, string message_id)
+        public async Task<HttpResponseMessage> DeleteAnnouncesAsync(string channel_id)
         {
-            await WebHttpClient.DeleteAsync($"{ApiOrigin}/channels/{channel_id}/announces/{message_id}");
+            return await WebHttpClient.DeleteAsync($"{ApiOrigin}/channels/{channel_id}/announces/all");
         }
+
         #endregion
 
         #region 子频道API
