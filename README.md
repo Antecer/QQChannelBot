@@ -1,10 +1,10 @@
-#QQ机器人框架
+# QQ机器人框架
 
 [![NuGet](https://img.shields.io/nuget/v/QQChannelBot.svg)](https://www.nuget.org/packages/QQChannelBot) [![NuGet downloads](https://img.shields.io/nuget/dt/QQChannelBot)](https://www.nuget.org/packages/QQChannelBot)
 
 使用.NET6技术封装的QQ机器人通信框架
 
-##使用说明
+## 使用说明
 
 1.配置日志输出等级
 ``` cs
@@ -49,7 +49,7 @@ bot.OnAtMessage += async (sender, e, type) =>
 bot.Start();
 ```
 
-##以下是API调用玩法示例
+## 以下是API调用玩法示例
 ```cs
 // 指令格式：@机器人 创建公告 公告内容
 bot.AddCommand("创建公告", async (sender, e, msg) =>
