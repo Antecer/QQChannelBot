@@ -202,7 +202,7 @@ namespace QQChannelBot.Models
         /// kv值列表
         /// </summary>
         [JsonPropertyName("kv")]
-        public MessageArkKv[]? Kv { get; set; }
+        public List<MessageArkKv> Kv { get; set; } = new();
     }
 
     /// <summary>
@@ -211,14 +211,14 @@ namespace QQChannelBot.Models
     public class MessageArkKv
     {
         [JsonPropertyName("key")]
-        public string? Key { get; set; }
+        public string Key { get; set; } = "";
         [JsonPropertyName("value")]
         public string? Value { get; set; }
         /// <summary>
         /// ark obj类型的列表
         /// </summary>
         [JsonPropertyName("obj")]
-        public MessageArkObj[]? Obj { get; set; }
+        public List<MessageArkObj>? Obj { get; set; }
     }
 
     /// <summary>
@@ -230,7 +230,7 @@ namespace QQChannelBot.Models
         /// ark objkv列表
         /// </summary>
         [JsonPropertyName("obj_kv")]
-        public MessageArkObjKv[]? ObjKv { get; set; }
+        public List<MessageArkObjKv>? ObjKv { get; set; }
     }
 
     /// <summary>
@@ -238,8 +238,15 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MessageArkObjKv
     {
+        public MessageArkObjKv() { }
+        public MessageArkObjKv(string key, string value)
+        {
+            Key = key;
+            Value = value;
+        }
+
         [JsonPropertyName("key")]
-        public string? Key { get; set; }
+        public string Key { get; set; } = "";
         [JsonPropertyName("value")]
         public string? Value { get; set; }
     }

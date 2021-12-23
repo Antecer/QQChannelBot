@@ -29,7 +29,7 @@ namespace QQChannelBot.MsgHelper
         /// <para>详情查阅QQ机器人文档 <see href="https://bot.q.qq.com/wiki/develop/api/openapi/message/template/embed_message.html">embed消息</see></para>
         /// </summary>
         /// <param name="replyMsgId">要回复的消息id, 空字符串表示发送主动消息</param>
-        public MsgEmbed(string replyMsgId)
+        public MsgEmbed(string replyMsgId = "")
         {
             ReplyMsgId = replyMsgId;
         }

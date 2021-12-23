@@ -171,3 +171,40 @@ bot.AddCommandSuper("解除全员禁言", async (sender, e, msg) =>
     await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"已解除全员禁言", e.Id));
 });
 ```
+
+## Ark模板消息构建方法
+```cs
+// Ark23测试通过
+await sender.SendMessageAsync(e.ChannelId, new MsgArk23(e.Id)
+    .SetDesc("描述")
+    .SetPrompt("提示消息")
+    .AddLine("第一行内容")
+    .AddLine("第二行内容")
+    .AddLine("百度")
+    .AddLine("淘宝")
+    .AddLine("腾讯")
+    .AddLine("微软")
+    .AddLine("最后一行"));
+
+// Ark24测试通过
+await sender.SendMessageAsync(e.ChannelId, new MsgArk24()
+    .SetReplyMsgId(e.Id)
+    .SetDesc("描述")
+    .SetPrompt("提示")
+    .SetTitle("标题")
+    .SetMetaDesc("详情")
+    .SetImage("")
+    .SetLink("")
+    .SetSubTitle("子标题"));
+
+// Ark34测试通过
+await sender.SendMessageAsync(e.ChannelId, new MsgArk34()
+    .SetReplyMsgId(e.Id)
+    .SetDesc("描述")
+    .SetPrompt("提示")
+    .SetMetaTitle("标题")
+    .SetMetaDesc("详情")
+    .SetMetaIcon("")
+    .SetMetaPreview("")
+    .SetMetaUrl(""));
+```
