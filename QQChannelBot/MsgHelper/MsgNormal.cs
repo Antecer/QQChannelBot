@@ -23,9 +23,11 @@ namespace QQChannelBot.MsgHelper
         /// </code>
         /// </summary>
         /// <param name="replyMsgId">要回复的消息id, 空字符串表示发送主动消息</param>
-        public MsgNormal(string replyMsgId)
+        /// <param name="content">消息内容</param>
+        public MsgNormal(string replyMsgId, string content = "")
         {
             ReplyMsgId = replyMsgId;
+            Content = content;
         }
 
         /// <summary>

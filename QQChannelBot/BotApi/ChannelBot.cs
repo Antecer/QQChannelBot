@@ -203,6 +203,10 @@ namespace QQChannelBot.BotApi
         /// </summary>
         private static readonly Dictionary<string, Action<ChannelBot, Message, string>> Commands = new();
         /// <summary>
+        /// 缓存动态注册的管理员指令事件
+        /// </summary>
+        private static readonly Dictionary<string, Action<ChannelBot, Message, string>> SuCommands = new();
+        /// <summary>
         /// 注册消息指令
         /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
         /// </summary>
@@ -229,6 +233,32 @@ namespace QQChannelBot.BotApi
             return this;
         }
         /// <summary>
+        /// 注册管理员消息指令
+        /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
+        /// </summary>
+        /// <param name="command">指令名称</param>
+        /// <param name="commandAction">回调函数</param>
+        /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
+        /// <returns></returns>
+        public ChannelBot AddCommandSuper(string command, Action<ChannelBot, Message, string> commandAction, bool displace = false)
+        {
+            if (SuCommands.ContainsKey(command))
+            {
+                if (displace)
+                {
+                    Log.Warn($"[RegisterCommand][SU] 指令 {command} 已存在,已替换新注册的功能!");
+                    SuCommands[command] = commandAction;
+                }
+                else Log.Warn($"[RegisterCommand][SU] 指令 {command} 已存在,已忽略新功能的注册!");
+            }
+            else
+            {
+                Log.Info($"[RegisterCommand][SU] 指令 {command} 已注册.");
+                SuCommands[command] = commandAction;
+            }
+            return this;
+        }
+        /// <summary>
         /// 删除消息指令
         /// </summary>
         /// <param name="command">指令名称</param>
@@ -237,8 +267,23 @@ namespace QQChannelBot.BotApi
         {
             if (Commands.ContainsKey(command))
             {
-                Log.Info($"[RegisterCommand] 指令 {command} 已删除.");
+                Log.Info($"[RegisterCommand][SU] 指令 {command} 已删除.");
                 Commands.Remove(command);
+            }
+            else Log.Warn($"[RegisterCommand][SU] 指令 {command} 不存在!");
+            return this;
+        }
+        /// <summary>
+        /// 删除管理员消息指令
+        /// </summary>
+        /// <param name="command">指令名称</param>
+        /// <returns></returns>
+        public ChannelBot DelCommandSuper(string command)
+        {
+            if (SuCommands.ContainsKey(command))
+            {
+                Log.Info($"[RegisterCommand] 指令 {command} 已删除.");
+                SuCommands.Remove(command);
             }
             else Log.Warn($"[RegisterCommand] 指令 {command} 不存在!");
             return this;
@@ -395,8 +440,7 @@ namespace QQChannelBot.BotApi
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesGlobalAsync(Message msg)
         {
-            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/guilds/{msg.GuildId}/announces", new { msg.ChannelId, msg.Content });
-            return await res.Content.ReadFromJsonAsync<Announces>();
+            return await CreateAnnouncesGlobalAsync(msg.GuildId, msg.ChannelId, msg.Id);
         }
         /// <summary>
         /// 删除频道全局公告
@@ -433,8 +477,7 @@ namespace QQChannelBot.BotApi
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesAsync(Message msg)
         {
-            HttpResponseMessage res = await WebHttpClient.PostAsJsonAsync($"{ApiOrigin}/channels/{msg.ChannelId}/announces", new { msg.Id });
-            return await res.Content.ReadFromJsonAsync<Announces>();
+            return await CreateAnnouncesAsync(msg.ChannelId, msg.Id);
         }
         /// <summary>
         /// 删除子频道公告
@@ -991,8 +1034,15 @@ namespace QQChannelBot.BotApi
                             /*收到 @机器人 消息事件*/
                             Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
                             string paramStr = message.Content.TrimStartString(MsgTag.UserTag(UserInfo!.Id)).Trim();
-                            string command = Commands.Keys.FirstOrDefault(command => paramStr.StartsWith(command), "");
-                            if (command.Length > 0)
+                            // 识别管理员指令
+                            string suCommand = message.Member.Roles.Any(r => "234".Contains(r)) ? SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "") : "";
+                            // 识别普通指令
+                            string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
+                            if (suCommand.Length > 0)
+                            {
+                                SuCommands[suCommand].Invoke(this, message, paramStr.TrimStartString(suCommand).Trim());
+                            }
+                            else if (command.Length > 0)
                             {
                                 Commands[command].Invoke(this, message, paramStr.TrimStartString(command).Trim());
                             }
