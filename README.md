@@ -60,7 +60,7 @@ bot.AddCommand("用户信息", async (sender, e, msg) =>
         JoinedAt = e.Member.JoinedAt,
     };
     GuildRoles? grs = await bot.GetGuildRolesAsync(e.GuildId);
-    var roles = grs?.Roles.Where(gr => member.Roles.Contains(gr.Id)).Select(gr => gr.Name).ToList() ?? new List<string> { "未知身份组" };
+    var roles = grs?.Roles.Where(gr => member.Roles.Contains(gr.Id)).Select(gr => gr.Name).ToList() ?? new List<string> { "无权获取身份组列表" };
     MsgEmbed ReplyEmbed = new MsgEmbed(e.Id)
     {
         Title = member.User.UserName,
@@ -76,7 +76,7 @@ bot.AddCommand("用户信息", async (sender, e, msg) =>
 // 指令格式：@机器人 创建公告 公告内容
 bot.AddCommandSuper("创建公告", async (sender, e, msg) =>
 {
-    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
+    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, new MsgText(e.Id, msg));
     await bot.CreateAnnouncesAsync(sendmsg!);
 });
 // 指令格式：@机器人 删除公告
@@ -87,7 +87,7 @@ bot.AddCommandSuper("删除公告", async (sender, e, msg) =>
 // 指令格式：@机器人 创建全局公告 公告内容
 bot.AddCommandSuper("创建全局公告", async (sender, e, msg) =>
 {
-    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, msg, e.Id);
+    Message? sendmsg = await bot.SendMessageAsync(e.ChannelId, new MsgText(e.Id, msg));
     await bot.CreateAnnouncesGlobalAsync(sendmsg!);
 });
 // 指令格式：@机器人 删除全局公告
@@ -99,71 +99,63 @@ bot.AddCommandSuper("删除全局公告", async (sender, e, msg) =>
 // 或使用格式：@机器人 禁言 @用户 到 2077-12-12 23:59:59
 bot.AddCommandSuper("禁言", async (sender, e, msg) =>
 {
-    string? userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : null;
+    Match userIdMatcher = Regex.Match(msg, @"<@!(\d+)>");
+    string? userId = userIdMatcher.Success ? userIdMatcher.Groups[1].Value : null;
     if (userId == null)
     {
-        await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"{MsgTag.UserTag(e.Author.Id)} 未指定禁言的用户!", e.Id));
+        await sender.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"{MsgTag.UserTag(e.Author.Id)} 未指定禁言的用户!"));
         return;
     }
-    Match? timeGroups = Regex.IsMatch(msg, @"(\d+)(天|小时|时|分|秒)") ? Regex.Match(msg, @"(\d+)(天|小时|时|分|秒)") : null;
-    string timeType = timeGroups?.Groups[2].Value ?? "秒";
-    int timeDelay = int.Parse(timeGroups?.Groups[1].Value ?? "60");
-    int delaySecond = timeType switch
+    Match tsm = Regex.Match(msg, @"(\d{4})[-年](\d\d)[-月](\d\d)[\s日]*(\d\d)[:点时](\d\d)[:分](\d\d)秒?");
+    if (tsm.Success)
     {
-        "天" => 60 * 60 * 24,
-        "小时" => 60 * 60,
-        "时" => 60 * 60,
-        "分" => 60,
-        _ => 1
-    } * timeDelay;
-    string? timsTamp = Regex.IsMatch(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d") ? Regex.Match(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d").Groups[0].Value : null;
-    await bot.MuteMemberAsync(e.GuildId, userId, timsTamp != null ? new MuteTime(timsTamp) : new MuteTime(delaySecond));
-    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate()
+        string timeStampStr = tsm.Groups[0].Value;
+        await bot.MuteMemberAsync(e.GuildId, userId, new MuteMaker(timeStampStr));
+        await bot.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已被禁言，解除时间：{timeStampStr}"));
+    }
+    else
     {
-        Content = $"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已被禁言{(timsTamp != null ? "，解除时间：" + timsTamp : timeDelay.ToString() + timeType)}",
-        MsgId = e.Id
-    });
+        Match tdm = Regex.Match(msg, @"(\d+)\s*(年|星期|周|日|天|小?时|分钟?|秒钟?)");
+        await bot.MuteMemberAsync(e.GuildId, userId, tdm.Success ? new MuteMaker(tdm.Groups[0].Value) : new MuteTime(60));
+        await bot.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已被禁言{(tdm.Success ? tdm.Groups[0] : "1分钟")}"));
+    }
 });
 // 指令格式：@机器人 解除禁言 @用户
 bot.AddCommandSuper("解除禁言", async (sender, e, msg) =>
 {
-    string? userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : null;
+    Match userIdMatcher = Regex.Match(msg, @"<@!(\d+)>");
+    string? userId = userIdMatcher.Success ? userIdMatcher.Groups[1].Value : null;
     if (userId == null)
     {
-        await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"{MsgTag.UserTag(e.Author.Id)} 未指定解除的用户!", e.Id));
+        await sender.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"{MsgTag.UserTag(e.Author.Id)} 未指定解禁的用户!"));
         return;
     }
     await bot.MuteMemberAsync(e.GuildId, userId, new MuteTime(0));
-    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已解除禁言", e.Id));
+    await sender.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"{e.Mentions!.Find(u => u.Id == userId)?.UserName} 已解除禁言"));
 });
 // 指令格式：@机器人 全体禁言 10天
-// 或使用格式：@机器人 全体禁言 到 2077-12-12 23:59:59
+// 或使用格式：@机器人 全体禁言 到 2077年12月12日23点59分59秒
 bot.AddCommandSuper("全员禁言", async (sender, e, msg) =>
 {
-    Match? timeGroups = Regex.IsMatch(msg, @"(\d+)(天|小时|时|分|秒)") ? Regex.Match(msg, @"(\d+)(天|小时|时|分|秒)") : null;
-    string timeType = timeGroups?.Groups[2].Value ?? "秒";
-    int timeDelay = int.Parse(timeGroups?.Groups[1].Value ?? "60");
-    int delaySecond = timeType switch
+    Match tsm = Regex.Match(msg, @"(\d{4})[-年](\d\d)[-月](\d\d)[\s日]*(\d\d)[:点时](\d\d)[:分](\d\d)秒?");
+    if (tsm.Success)
     {
-        "天" => 60 * 60 * 24,
-        "小时" => 60 * 60,
-        "时" => 60 * 60,
-        "分" => 60,
-        _ => 1
-    } * timeDelay;
-    string? timsTamp = Regex.IsMatch(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d") ? Regex.Match(msg, @"\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d").Groups[0].Value : null;
-    await bot.MuteGuildAsync(e.GuildId, timsTamp != null ? new MuteTime(timsTamp) : new MuteTime(delaySecond));
-    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate()
+        string timeStampStr = tsm.Groups[0].Value;
+        await bot.MuteGuildAsync(e.GuildId, new MuteMaker(timeStampStr));
+        await bot.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"已启用全员禁言，解除时间：{timeStampStr}"));
+    }
+    else
     {
-        Content = $"{e.Author.UserName} 已启用全员禁言{(timsTamp != null ? "，解除时间：" + timsTamp : timeDelay.ToString() + timeType)}",
-        MsgId = e.Id
-    });
+        Match tdm = Regex.Match(msg, @"(\d+)\s*(年|星期|周|日|天|小?时|分钟?|秒钟?)");
+        await bot.MuteGuildAsync(e.GuildId, tdm.Success ? new MuteMaker(tdm.Groups[0].Value) : new MuteTime(60));
+        await bot.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"已启用全员禁言{(tdm.Success ? tdm.Groups[0] : "1分钟")}"));
+    }
 });
 // 指令格式：@机器人 解除全体禁言
 bot.AddCommandSuper("解除全员禁言", async (sender, e, msg) =>
 {
     await bot.MuteGuildAsync(e.GuildId, new MuteTime(0));
-    await sender.SendMessageAsync(e.ChannelId, new MessageToCreate($"已解除全员禁言", e.Id));
+    await sender.SendMessageAsync(e.ChannelId, new MsgText(e.Id, $"已解除全员禁言"));
 });
 ```
 
@@ -173,7 +165,7 @@ bot.AddCommandSuper("解除全员禁言", async (sender, e, msg) =>
 bot.AddCommand("testArk", async (sender, e, msg) =>
 {
     // Ark23测试通过
-    await sender.SendMessageAsync(e.ChannelId, new MsgArk23(e.Id)
+    await bot.SendMessageAsync(e.ChannelId, new MsgArk23(e.Id)
         .SetDesc("描述")
         .SetPrompt("提示消息")
         .AddLine("第一行内容")
@@ -185,7 +177,7 @@ bot.AddCommand("testArk", async (sender, e, msg) =>
         .AddLine("最后一行"));
 
     // Ark24测试通过
-    await sender.SendMessageAsync(e.ChannelId, new MsgArk24()
+    await bot.SendMessageAsync(e.ChannelId, new MsgArk24()
         .SetReplyMsgId(e.Id)
         .SetDesc("描述")
         .SetPrompt("提示")
@@ -196,7 +188,7 @@ bot.AddCommand("testArk", async (sender, e, msg) =>
         .SetSubTitle("子标题"));
 
     // Ark34测试通过
-    await sender.SendMessageAsync(e.ChannelId, new MsgArk34()
+    await bot.SendMessageAsync(e.ChannelId, new MsgArk34()
     {
         MsgId = e.Id,
         Desc = "描述",
@@ -209,6 +201,12 @@ bot.AddCommand("testArk", async (sender, e, msg) =>
     });
 
     // Ark37测试通过
-    await sender.SendMessageAsync(e.ChannelId, new MsgArk37(e.Id, "提示", "标题", "子标题"));
+    await bot.SendMessageAsync(e.ChannelId, new MsgArk37(e.Id, "提示", "标题", "子标题"));
+    
+    // 图片消息测试通过
+    await bot.SendMessageAsync(e.ChannelId, new MsgImage(e.Id)
+    {
+        Image = "http://thirdqq.qlogo.cn/g?b=oidb&k=cSmKqHHUOtQicbia4JGgnkJA&s=0&t=1555550077"
+    });
 });
 ```
