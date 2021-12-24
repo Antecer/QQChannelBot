@@ -8,9 +8,34 @@ namespace QQChannelBot.MsgHelper
     /// </summary>
     public class MsgArk34 : MessageToCreate
     {
-        public MsgArk34(string replyMsgId = "")
+        /// <summary>
+        /// 构造模板消息
+        /// </summary>
+        /// <param name="replyMsgId">要回复的消息id</param>
+        /// <param name="desc">描述</param>
+        /// <param name="prompt">提示</param>
+        /// <param name="metaTitle">标题</param>
+        /// <param name="metaDesc">详情</param>
+        /// <param name="metaIcon">小图标URL</param>
+        /// <param name="metaPreview">大图URL</param>
+        /// <param name="metaUrl">跳转链接</param>
+        public MsgArk34(string replyMsgId = "",
+            string? desc = null,
+            string? prompt = null,
+            string? metaTitle = null,
+            string? metaDesc = null,
+            string? metaIcon = null,
+            string? metaPreview = null,
+            string? metaUrl = null)
         {
             MsgId = replyMsgId;
+            Desc = desc;
+            Prompt = prompt;
+            MetaTitle = metaTitle;
+            MetaDesc = metaDesc;
+            MetaIcon = metaIcon;
+            MetaPreview = metaPreview;
+            MetaUrl = metaUrl;
             Ark = new()
             {
                 TemplateId = 34,
@@ -81,34 +106,33 @@ namespace QQChannelBot.MsgHelper
         /// <returns></returns>
         public MsgArk34 SetMetaDesc(string metaDesc) { MetaDesc = metaDesc; return this; }
         /// <summary>
-        /// 小图标
+        /// 小图标URL
         /// </summary>
         public string? MetaIcon { get => ArkMetaIcon.Value; set => ArkMetaIcon.Value = value; }
         /// <summary>
         /// 设置小图标
         /// </summary>
-        /// <param name="iconLink">小图标链接</param>
+        /// <param name="iconLink">小图标URL</param>
         /// <returns></returns>
         public MsgArk34 SetMetaIcon(string iconLink) { MetaIcon = iconLink; return this; }
         /// <summary>
-        /// 大图
+        /// 大图URL
         /// </summary>
         public string? MetaPreview { get => ArkMetaPreview.Value; set => ArkMetaPreview.Value = value; }
         /// <summary>
-        /// 设置链接
+        /// 设置大图
         /// </summary>
-        /// <param name="metaPreview">大图链接</param>
+        /// <param name="metaPreview">大图URL</param>
         /// <returns></returns>
         public MsgArk34 SetMetaPreview(string metaPreview) { MetaPreview = metaPreview; return this; }
         /// <summary>
-        /// 子标题
-        /// <para><em>子标题显示在模板消息底部</em></para>
+        /// 跳转链接
         /// </summary>
         public string? MetaUrl { get => ArkMetaUrl.Value; set => ArkMetaUrl.Value = value; }
         /// <summary>
-        /// 设置子标题
+        /// 设置跳转链接
         /// </summary>
-        /// <param name="metaUrl">子标题内容</param>
+        /// <param name="metaUrl">跳转链接</param>
         /// <returns></returns>
         public MsgArk34 SetMetaUrl(string metaUrl) { MetaUrl = metaUrl; return this; }
     }

@@ -8,9 +8,34 @@ namespace QQChannelBot.MsgHelper
     /// </summary>
     public class MsgArk24 : MessageToCreate
     {
-        public MsgArk24(string replyMsgId = "")
+        /// <summary>
+        /// 构造模板消息
+        /// </summary>
+        /// <param name="replyMsgId">要回复的消息id</param>
+        /// <param name="desc">描述</param>
+        /// <param name="prompt">提示</param>
+        /// <param name="title">标题</param>
+        /// <param name="metaDesc">详情</param>
+        /// <param name="image">图片URL</param>
+        /// <param name="link">跳转链接</param>
+        /// <param name="subTitle">子标题</param>
+        public MsgArk24(string replyMsgId = "",
+            string? desc = null,
+            string? prompt = null,
+            string? title = null,
+            string? metaDesc = null,
+            string? image = null,
+            string? link = null,
+            string? subTitle = null)
         {
             MsgId = replyMsgId;
+            Desc = desc;
+            Prompt = prompt;
+            Title = title;
+            MetaDesc = metaDesc;
+            Img = image;
+            Link = link;
+            SubTitle = subTitle;
             Ark = new()
             {
                 TemplateId = 24,
@@ -81,13 +106,13 @@ namespace QQChannelBot.MsgHelper
         /// <returns></returns>
         public MsgArk24 SetMetaDesc(string metaDesc) { MetaDesc = metaDesc; return this; }
         /// <summary>
-        /// 图片链接
+        /// 图片URL
         /// </summary>
         public string? Img { get => ArkImage.Value; set => ArkImage.Value = value; }
         /// <summary>
         /// 设置图片
         /// </summary>
-        /// <param name="imgLink">图片链接</param>
+        /// <param name="imgLink">图片URL</param>
         /// <returns></returns>
         public MsgArk24 SetImage(string imgLink) { Img = imgLink; return this; }
         /// <summary>

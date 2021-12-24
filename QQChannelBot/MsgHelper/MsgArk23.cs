@@ -8,9 +8,22 @@ namespace QQChannelBot.MsgHelper
     /// </summary>
     public class MsgArk23 : MessageToCreate
     {
-        public MsgArk23(string replyMsgId = "")
+        /// <summary>
+        /// 构造模板消息
+        /// </summary>
+        /// <param name="replyMsgId">要回复的消息id</param>
+        /// <param name="desc">描述</param>
+        /// <param name="prompt">提示</param>
+        /// <param name="msgLines">多行内容</param>
+        public MsgArk23(string replyMsgId = "",
+            string? desc = null,
+            string? prompt = null,
+            List<MessageArkObj>? msgLines = null)
         {
             MsgId = replyMsgId;
+            Desc = desc;
+            Prompt = prompt;
+            MsgLines = msgLines ?? new();
             Ark = new()
             {
                 TemplateId = 23,
@@ -54,7 +67,7 @@ namespace QQChannelBot.MsgHelper
         /// <summary>
         /// 内容列表
         /// </summary>
-        public List<MessageArkObj> MsgLines { get; set; } = new();
+        public List<MessageArkObj> MsgLines { get; set; }
         /// <summary>
         /// 添加一行内容
         /// <para>
@@ -67,7 +80,7 @@ namespace QQChannelBot.MsgHelper
         /// <returns></returns>
         public MsgArk23 AddLine(string content, string? link = null)
         {
-            List<MessageArkObjKv> ojbk = new List<MessageArkObjKv>()
+            List<MessageArkObjKv> ojbk = new()
             {
                 new(){Key = "desc", Value = content}
             };

@@ -5,82 +5,83 @@ namespace QQChannelBot.MsgHelper
     /// <summary>
     /// Embed消息对象
     /// </summary>
-    public class MsgEmbed
+    public class MsgEmbed : MessageToCreate
     {
         /// <summary>
         /// 构建Embed消息
-        /// <code>
-        /// 示例:
-        /// |{
-        /// |    "content": "普通消息内容",
-        /// |    "embed": {
-        /// |        "title": "标题",
-        /// |        "prompt": "消息通知",
-        /// |        "thumbnail": { "url": "缩略图url"},
-        /// |        "fields": [
-        /// |            { "name": "第一行内容"},
-        /// |            { "name": "第二行内容"},
-        /// |            { "name": "第三行内容"}
-        /// |        ]
-        /// |    }
-        /// |    "msg_id": "要回复的消息Id"
-        /// |}
-        /// </code>
         /// <para>详情查阅QQ机器人文档 <see href="https://bot.q.qq.com/wiki/develop/api/openapi/message/template/embed_message.html">embed消息</see></para>
         /// </summary>
-        /// <param name="replyMsgId">要回复的消息id, 空字符串表示发送主动消息</param>
-        public MsgEmbed(string replyMsgId = "")
+        /// <param name="replyMsgId">要回复的消息id</param>
+        /// <param name="title">标题</param>
+        /// <param name="prompt">提示</param>
+        /// <param name="thumbnail">缩略图URL</param>
+        /// <param name="embedFields">内容列表</param>
+        public MsgEmbed(string replyMsgId = "",
+            string? title = null,
+            string? prompt = null,
+            string? thumbnail = null,
+            List<MessageEmbedField>? embedFields = null)
         {
-            ReplyMsgId = replyMsgId;
-        }
-
-        /// <summary>
-        /// 返回构建完成的Embed消息对象
-        /// </summary>
-        public MessageToCreate Body
-        {
-            get => new()
+            MsgId = replyMsgId;
+            EmbedFields = embedFields ?? new();
+            EmbedClass = new MessageEmbed()
             {
-                Content = Content,
-                Embed = new()
-                {
-                    Title = this.Title,
-                    Prompt = this.Prompt,
-                    Thumbnail = new() { Url = this.Thumbnail },
-                    Fields = Fields.ToArray()
-                },
-                MsgId = ReplyMsgId
+                Thumbnail = EmbedThumbnail,
+                Fields = EmbedFields
             };
+            Title = title;
+            Prompt = prompt;
+            Thumbnail = thumbnail;
+            Embed = EmbedClass;
         }
+        private MessageEmbedThumbnail EmbedThumbnail { get; set; } = new();
+        private MessageEmbed EmbedClass { get; set; }
 
         /// <summary>
-        /// 普通消息内容
+        /// 设置要回复的目标消息
         /// </summary>
-        public string? Content { get; set; }
-
+        /// <param name="msgId">目标消息的Id</param>
+        /// <returns></returns>
+        public MsgEmbed SetReplyMsgId(string msgId) { MsgId = msgId; return this; }
         /// <summary>
         /// 标题
         /// </summary>
-        public string? Title { get; set; }
-
+        public string? Title { get => EmbedClass.Title; set => EmbedClass.Title = value; }
         /// <summary>
-        /// 消息通知
+        /// 设置标题
         /// </summary>
-        public string? Prompt { get; set; }
-
+        /// <param name="title">标题内容</param>
+        /// <returns></returns>
+        public MsgEmbed SetTitle(string title) { Title = title; return this; }
         /// <summary>
-        /// 缩略图url
+        /// 提示
         /// </summary>
-        public string? Thumbnail { get; set; }
-
+        public string? Prompt { get => EmbedClass.Prompt; set => EmbedClass.Prompt = value; }
         /// <summary>
-        /// 消息时间轴
+        /// 设置提示
         /// </summary>
-        public List<MessageEmbedField> Fields = new();
-
+        /// <param name="prompt">提示内容</param>
+        /// <returns></returns>
+        public MsgEmbed SetPrompt(string prompt) { Prompt = prompt; return this; }
         /// <summary>
-        /// 要回复的消息id
+        /// 缩略图URL
         /// </summary>
-        public string? ReplyMsgId { get; set; }
+        public string? Thumbnail { get => EmbedThumbnail.Url; set => EmbedThumbnail.Url = value; }
+        /// <summary>
+        /// 设置缩略图
+        /// </summary>
+        /// <param name="thumbnail">缩略图URL</param>
+        /// <returns></returns>
+        public MsgEmbed SetThumbnail(string thumbnail) { Thumbnail = thumbnail; return this; }
+        /// <summary>
+        /// 消息列表
+        /// </summary>
+        public List<MessageEmbedField> EmbedFields { get; set; }
+        /// <summary>
+        /// 添加一行内容
+        /// </summary>
+        /// <param name="content">行内容</param>
+        /// <returns></returns>
+        public MsgEmbed AddLine(string content) { EmbedFields.Add(new(content)); return this; }
     }
 }
