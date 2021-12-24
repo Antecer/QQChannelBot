@@ -28,10 +28,7 @@ ChannelBot bot = new(new()
 // 　 机器人将回复 123
 bot.AddCommand("复读", async (sender, e, msg) =>
 {
-    await sender.SendMessageAsync(e.ChannelId, new MsgNormal(e.Id)
-    {
-        Content = msg
-    }.Body);
+    await sender.SendMessageAsync(e.ChannelId, new MsgText(e.Id, msg));
 });
 ```
 4.如何接收 @机器人 消息
@@ -50,7 +47,7 @@ bot.Start();
 ```
 
 ## 以下是API调用玩法示例
-#### 注：AddCommand注册普通指令，任何成员可触发；AddCommandSuper注册管理员指令，仅仅频道组、管理员、子频道管理员可触发
+#### 注：AddCommand注册普通指令，任何成员可触发；AddCommandSuper注册管理员指令，仅频道主、管理员、子频道管理员可触发。
 ```
 // 注册自定义命令，这里测试embed消息 ( 实现功能为获取用户信息，指令格式： @机器人 UserInfo @用户 )
 bot.AddCommand("用户信息", async (sender, e, msg) =>
@@ -64,19 +61,17 @@ bot.AddCommand("用户信息", async (sender, e, msg) =>
     };
     GuildRoles? grs = await bot.GetGuildRolesAsync(e.GuildId);
     var roles = grs?.Roles.Where(gr => member.Roles.Contains(gr.Id)).Select(gr => gr.Name).ToList() ?? new List<string> { "未知身份组" };
-    MsgEmbed ReplyEmbed = new(e.Id)
+    MsgEmbed ReplyEmbed = new MsgEmbed(e.Id)
     {
         Title = member.User.UserName,
-        Thumbnail = member.User.Avatar,
-        Fields = new()
-        {
-            new() { Name = $"用户昵称：{member.Nick}" },
-            new() { Name = $"账户类别：{(member.User.Bot ? "机器人" : "人类")}" },
-            new() { Name = $"角色分类：{string.Join("、", roles)}" },
-            new() { Name = $"加入时间：{member.JoinedAt.Remove(member.JoinedAt.IndexOf('+'))}" },
-        }
-    };
-    await sender.SendMessageAsync(e.ChannelId, ReplyEmbed.Body);
+        Prompt = $"{member.User.UserName} 的信息卡",
+        Thumbnail = member.User.Avatar
+    }
+    .AddLine($"用户昵称：{member.Nick}")
+    .AddLine($"账户类别：{(member.User.Bot ? "机器人" : "人类")}")
+    .AddLine($"角色分类：{string.Join("、", roles)}")
+    .AddLine($"加入时间：{member.JoinedAt.Remove(member.JoinedAt.IndexOf('+'))}");
+    await sender.SendMessageAsync(e.ChannelId, ReplyEmbed);
 });
 // 指令格式：@机器人 创建公告 公告内容
 bot.AddCommandSuper("创建公告", async (sender, e, msg) =>
@@ -173,38 +168,47 @@ bot.AddCommandSuper("解除全员禁言", async (sender, e, msg) =>
 ```
 
 ## Ark模板消息构建方法
+#### 注：模板消息的构造支持多种方式，以下尽量展示了不同的构造方式，也可以混合使用各种构造方式。
 ```cs
-// Ark23测试通过
-await sender.SendMessageAsync(e.ChannelId, new MsgArk23(e.Id)
-    .SetDesc("描述")
-    .SetPrompt("提示消息")
-    .AddLine("第一行内容")
-    .AddLine("第二行内容")
-    .AddLine("百度")
-    .AddLine("淘宝")
-    .AddLine("腾讯")
-    .AddLine("微软")
-    .AddLine("最后一行"));
+bot.AddCommand("testArk", async (sender, e, msg) =>
+{
+    // Ark23测试通过
+    await sender.SendMessageAsync(e.ChannelId, new MsgArk23(e.Id)
+        .SetDesc("描述")
+        .SetPrompt("提示消息")
+        .AddLine("第一行内容")
+        .AddLine("第二行内容")
+        .AddLine("百度")
+        .AddLine("淘宝")
+        .AddLine("腾讯")
+        .AddLine("微软")
+        .AddLine("最后一行"));
 
-// Ark24测试通过
-await sender.SendMessageAsync(e.ChannelId, new MsgArk24()
-    .SetReplyMsgId(e.Id)
-    .SetDesc("描述")
-    .SetPrompt("提示")
-    .SetTitle("标题")
-    .SetMetaDesc("详情")
-    .SetImage("")
-    .SetLink("")
-    .SetSubTitle("子标题"));
+    // Ark24测试通过
+    await sender.SendMessageAsync(e.ChannelId, new MsgArk24()
+        .SetReplyMsgId(e.Id)
+        .SetDesc("描述")
+        .SetPrompt("提示")
+        .SetTitle("标题")
+        .SetMetaDesc("详情")
+        .SetImage("")
+        .SetLink("")
+        .SetSubTitle("子标题"));
 
-// Ark34测试通过
-await sender.SendMessageAsync(e.ChannelId, new MsgArk34()
-    .SetReplyMsgId(e.Id)
-    .SetDesc("描述")
-    .SetPrompt("提示")
-    .SetMetaTitle("标题")
-    .SetMetaDesc("详情")
-    .SetMetaIcon("")
-    .SetMetaPreview("")
-    .SetMetaUrl(""));
+    // Ark34测试通过
+    await sender.SendMessageAsync(e.ChannelId, new MsgArk34()
+    {
+        MsgId = e.Id,
+        Desc = "描述",
+        Prompt = "提示",
+        MetaTitle = "标题",
+        MetaDesc = "详情",
+        MetaIcon = "",
+        MetaPreview = "",
+        MetaUrl = ""
+    });
+
+    // Ark37测试通过
+    await sender.SendMessageAsync(e.ChannelId, new MsgArk37(e.Id, "提示", "标题", "子标题"));
+});
 ```
