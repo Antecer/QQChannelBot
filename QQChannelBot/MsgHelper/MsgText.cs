@@ -1,0 +1,33 @@
+﻿using QQChannelBot.Models;
+
+namespace QQChannelBot.MsgHelper
+{
+    /// <summary>
+    /// 文字消息
+    /// </summary>
+    public class MsgText : MessageToCreate
+    {
+        /// <summary>
+        /// 构建文字消息
+        /// </summary>
+        /// <param name="replyMsgId">要回复的消息id</param>
+        /// <param name="content">消息内容</param>
+        public MsgText(string replyMsgId = "", string content = "")
+        {
+            MsgId = replyMsgId;
+            Content = content;
+        }
+        /// <summary>
+        /// 设置要回复的目标消息
+        /// </summary>
+        /// <param name="msgId">目标消息的Id</param>
+        /// <returns></returns>
+        public MsgText SetReplyMsgId(string msgId) { MsgId = msgId; return this; }
+        /// <summary>
+        /// 设置消息内容
+        /// </summary>
+        /// <param name="content">文字内容</param>
+        /// <returns></returns>
+        public MsgText SetContent(string content) { Content = content; return this; }
+    }
+}
