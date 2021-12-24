@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.8</Version>
+    <Version>1.1.0</Version>
     <Description>QQ机器人框架</Description>
     <Copyright>Copyright © 2021 Antecer. All rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/Antecer/QQChannelBot</PackageProjectUrl>
@@ -14,7 +14,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>新增三种Ark消息模板。</PackageReleaseNotes>
+    <PackageReleaseNotes>集中处理Http异常，防止SDK崩溃。</PackageReleaseNotes>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
