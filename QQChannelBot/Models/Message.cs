@@ -146,10 +146,10 @@ namespace QQChannelBot.Models
         [JsonPropertyName("thumbnail")]
         public MessageEmbedThumbnail? Thumbnail { get; set; }
         /// <summary>
-        /// 消息创建时间
+        /// 消息列表
         /// </summary>
         [JsonPropertyName("fields")]
-        public MessageEmbedField[]? Fields { get; set; }
+        public List<MessageEmbedField>? Fields { get; set; }
     }
 
     /// <summary>
@@ -165,10 +165,11 @@ namespace QQChannelBot.Models
     }
 
     /// <summary>
-    /// 消息创建时间对象
+    /// Embed行内容
     /// </summary>
     public class MessageEmbedField
     {
+        public MessageEmbedField(string? name = null) { Name = name; }
         /// <summary>
         /// 字段名
         /// </summary>
