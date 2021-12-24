@@ -1,7 +1,7 @@
 ﻿namespace QQChannelBot.Models
 {
     /// <summary>
-    /// 日程
+    /// 日程对象
     /// </summary>
     public class Schedule
     {

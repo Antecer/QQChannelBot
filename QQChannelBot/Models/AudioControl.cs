@@ -3,10 +3,23 @@
 namespace QQChannelBot.Models
 {
     /// <summary>
-    /// 音频控制
+    /// 音频对象
     /// </summary>
     public class AudioControl
     {
+        public AudioControl() { }
+        /// <summary>
+        /// 构建音频消息
+        /// </summary>
+        /// <param name="status">播放状态</param>
+        /// <param name="audioUrl">音频数据URL</param>
+        /// <param name="text">状态文本</param>
+        public AudioControl(STATUS status, string? audioUrl = null, string? text = null)
+        {
+            AudioUrl = audioUrl;
+            Status = status;
+            Text = text;
+        }
         /// <summary>
         /// 音频数据的url status为0时传
         /// </summary>

@@ -23,14 +23,14 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 禁言到指定时间
         /// </summary>
-        /// <param name="timstamp">解禁时间戳
+        /// <param name="timestamp">解禁时间戳
         /// <para>
         /// 格式："yyyy-MM-dd HH:mm:ss"<br/>
         /// 示例："2077-01-01 08:00:00"
         /// </para></param>
-        public MuteTime(string timstamp)
+        public MuteTime(string timestamp)
         {
-            MuteEndTimestamp = new DateTimeOffset(Convert.ToDateTime(timstamp)).ToUnixTimeSeconds().ToString();
+            MuteEndTimestamp = new DateTimeOffset(Convert.ToDateTime(timestamp)).ToUnixTimeSeconds().ToString();
         }
         /// <summary>
         /// 禁言到期时间戳，绝对时间戳，单位：秒
@@ -48,7 +48,7 @@ namespace QQChannelBot.Models
     /// <summary>
     /// 根据时间字符串构建禁言时间
     /// </summary>
-    public class MuteMake : MuteTime
+    public class MuteMaker : MuteTime
     {
         readonly Regex TypeTimeStamp = new(@"(\d{4})[-年](\d\d)[-月](\d\d)[\s日]*(\d\d)[:点时](\d\d)[:分](\d\d)秒?");
         readonly Regex TypeTimeDelay = new(@"(\d+)\s*(年|星期|周|日|天|小?时|分钟?|秒钟?)");
@@ -60,7 +60,7 @@ namespace QQChannelBot.Models
         /// 倒计时模式 - "^(\d+)\s*(年|星期|周|日|天|小?时|分钟?|秒钟?)?\s*$"
         /// </para>
         /// </summary>
-        public MuteMake(string timeString = "1分钟")
+        public MuteMaker(string timeString = "1分钟")
         {
             if (string.IsNullOrEmpty(timeString)) return;
             Match mts = TypeTimeStamp.Match(timeString);

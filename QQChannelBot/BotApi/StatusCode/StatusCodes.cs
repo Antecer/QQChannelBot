@@ -1,8 +1,10 @@
-﻿namespace QQChannelBot.BotApi.StatusCode
+﻿using System.Text.Json.Serialization;
+
+namespace QQChannelBot.BotApi.StatusCode
 {
     public static class StatusCodes
     {
-        public static readonly Dictionary<int, string> OpenapiCode = new Dictionary<int, string>()
+        public static readonly Dictionary<int, string> OpenapiCode = new()
         {
             { 10001, "UnknownAccount 账号异常" },
             { 10003, "UnknownChannel 子频道异常" },
@@ -16,7 +18,7 @@
             { 11261, "ErrorWrongAppid 参数中缺少 appid，同 11251" },
             { 11262, "ErrorCheckRobot 当前接口不支持使用机器人 Bot Token 调用" },
             { 11263, "ErrorCheckGuildAuth 检查频道权限失败，系统错误，一般重试一次会好，最多只能重试一次" },
-            { 11264, "ErrorGuildAuthNotPass 检查小站权限未通过，管理员添加机器人的时候未授予该接口权限，属于逻辑错误，可提示用户进行授权" },
+            { 11264, "ErrorGuildAuthNotPass 权限未通过，管理员添加机器人的时候未授予该接口权限，属于逻辑错误，可提示用户进行授权" },
             { 11265, "ErrorRobotHasBaned 机器人已经被封禁" },
             { 11241, "ErrorWrongToken 参数中缺少 token" },
             { 11242, "ErrorCheckTokenFailed 校验 token 失败，系统错误，一般重试一次会好，最多只能重试一次" },
@@ -78,5 +80,15 @@
             { 1100308, "触发频道内限频" },
             { 1100499, "其他错误" },
         };
+    }
+
+    public class ApiError
+    {
+
+        [JsonPropertyName("code")]
+        public int? Code { get; set; }
+
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
     }
 }
