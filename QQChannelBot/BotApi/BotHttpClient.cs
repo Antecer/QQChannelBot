@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 
 namespace QQChannelBot.BotApi
 {
@@ -16,8 +10,9 @@ namespace QQChannelBot.BotApi
     {
         /// <summary>
         /// Http客户端
+        /// <para>这里设置禁止重定向：AllowAutoRedirect = false</para>
         /// </summary>
-        public static HttpClient HttpClient { get; } = new(new HttpLoggingHandler(new HttpClientHandler()));
+        public static HttpClient HttpClient { get; } = new(new HttpLoggingHandler(new HttpClientHandler() { AllowAutoRedirect = false }));
 
         /// <summary>
         /// 发起HTTP异步请求
