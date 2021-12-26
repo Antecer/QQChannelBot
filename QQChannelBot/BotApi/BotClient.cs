@@ -136,13 +136,15 @@ namespace QQChannelBot.BotApi
             {
                 string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 int errCode = (int)response.StatusCode;
+                string? errStr = "此错误类型未收录!";
                 responseContent = responseContent.TrimStartString("{}");
                 if (responseContent.StartsWith('{') && responseContent.EndsWith('}'))
                 {
                     ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
                     if (err?.Code != null) errCode = err.Code.Value;
+                    if (err?.Message != null) errStr = err.Message;
                 }
-                string errStr = (StatusCodes.OpenapiCode.TryGetValue(errCode, out string? errMsg) ? errMsg : null) ?? "此错误类型未收录!";
+                if (StatusCodes.OpenapiCode.TryGetValue(errCode, out string? value)) errStr = value;
                 Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
                 if (ReportApiError)
                 {
