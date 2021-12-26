@@ -34,9 +34,8 @@ namespace QQChannelBot.Models
         }
         /// <summary>
         /// 禁言到期时间戳，绝对时间戳，单位：秒
-        /// <para><em>这里单词timestamp拼写错误，等待官方修复 [2021年12月22日]</em></para>
         /// </summary>
-        [JsonPropertyName("mute_end_timstamp")]
+        [JsonPropertyName("mute_end_timestamp")]
         public string? MuteEndTimestamp { get; set; }
         /// <summary>
         /// 禁言多少秒
