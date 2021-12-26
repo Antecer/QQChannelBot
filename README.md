@@ -13,7 +13,7 @@ Log.LogLevel = LogLevel.Debug;
 
 2.创建机器人, 配置参数请查阅 [QQ机器管理后台](https://bot.q.qq.com/#/developer/developer-setting)
 ```cs
-ChannelBot bot = new(new()
+BotClient bot = new(new()
 {
     BotAppId = 开发者ID,
     BotToken = 机器人令牌,

@@ -11,98 +11,98 @@ using QQChannelBot.MsgHelper;
 
 namespace QQChannelBot.BotApi
 {
-    public class ChannelBot
+    public class BotClient
     {
         #region 可以监听的固定事件列表
         /// <summary>
         /// WebSocketClient连接后触发
         /// </summary>
-        public event Action<ChannelBot>? OnWebSocketConnected;
+        public event Action<BotClient>? OnWebSocketConnected;
         /// <summary>
         /// WebSocketClient关闭后触发
         /// </summary>
-        public event Action<ChannelBot>? OnWebSocketClosed;
+        public event Action<BotClient>? OnWebSocketClosed;
         /// <summary>
         /// WebSocketClient发送数据前触发
         /// </summary>
-        public event Action<ChannelBot, string>? OnWebSoketSending;
+        public event Action<BotClient, string>? OnWebSoketSending;
         /// <summary>
         /// WebSocketClient收到数据后触发
         /// </summary>
-        public event Action<ChannelBot, string>? OnWebSocketReceived;
+        public event Action<BotClient, string>? OnWebSocketReceived;
         /// <summary>
         /// 收到服务端推送的消息时触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnDispatch;
+        public event Action<BotClient, JsonElement>? OnDispatch;
         /// <summary>
         /// 客户端发送心跳或收到服务端推送心跳时触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnHeartbeat;
+        public event Action<BotClient, JsonElement>? OnHeartbeat;
         /// <summary>
         /// 客户端发送鉴权时触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnIdentify;
+        public event Action<BotClient, JsonElement>? OnIdentify;
         /// <summary>
         /// 客户端恢复连接时触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnResume;
+        public event Action<BotClient, JsonElement>? OnResume;
         /// <summary>
         /// 服务端通知客户端重新连接时触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnReconnect;
+        public event Action<BotClient, JsonElement>? OnReconnect;
         /// <summary>
         /// 当identify或resume的时候，参数错误的时候触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnInvalidSession;
+        public event Action<BotClient, JsonElement>? OnInvalidSession;
         /// <summary>
         /// 当客户端与网关建立ws连接的时候触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnHello;
+        public event Action<BotClient, JsonElement>? OnHello;
         /// <summary>
         /// 客户端发送心跳被服务端接收后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement>? OnHeartbeatACK;
+        public event Action<BotClient, JsonElement>? OnHeartbeatACK;
         /// <summary>
         /// 鉴权连接成功后触发
         /// <para>注:此时获取的User对象只有3个属性 {id,username,bot}</para>
         /// </summary>
-        public event Action<ChannelBot, User?>? OnReady;
+        public event Action<BotClient, User?>? OnReady;
         /// <summary>
         /// 恢复连接成功后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement?>? OnResumed;
+        public event Action<BotClient, JsonElement?>? OnResumed;
         /// <summary>
         /// 频道信息变更后触发
         /// <para>加入频道, 资料变更, 退出频道</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? OnGuildMsg;
+        public event Action<BotClient, JsonElement?, ActionType>? OnGuildMsg;
         /// <summary>
         /// 子频道被修改后触发
         /// <para>创建子频道, 更新子频道, 删除子频道</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? OnChannelMsg;
+        public event Action<BotClient, JsonElement?, ActionType>? OnChannelMsg;
         /// <summary>
         /// 成员信息变更后触发
         /// <para>成员加入, 资料变更, 移除成员</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? OnGuildMemberMsg;
+        public event Action<BotClient, JsonElement?, ActionType>? OnGuildMemberMsg;
         /// <summary>
         /// 修改表情表态后触发
         /// <para>添加表情表态, 删除表情表态</para>
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? OnMessageReaction;
+        public event Action<BotClient, JsonElement?, ActionType>? OnMessageReaction;
         /// <summary>
         /// 机器人收到私信后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? OnDirectMessage;
+        public event Action<BotClient, JsonElement?, ActionType>? OnDirectMessage;
         /// <summary>
         /// 音频状态变更后触发
         /// </summary>
-        public event Action<ChannelBot, JsonElement?, ActionType>? OnAudioMsg;
+        public event Action<BotClient, JsonElement?, ActionType>? OnAudioMsg;
         /// <summary>
         /// 收到 @机器人 消息后触发
         /// </summary>
-        public event Action<ChannelBot, Message, ActionType>? OnAtMessage;
+        public event Action<BotClient, Message, ActionType>? OnAtMessage;
         #endregion
 
         /// <summary>
@@ -119,53 +119,43 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 向指令发出者报告API错误
         /// </summary>
-        public static bool ReportApiError { get; set; }
+        private static bool ReportApiError { get; set; }
         /// <summary>
-        /// Http客户端
-        /// </summary>
-        private static HttpClient WebHttpClient { get; set; } = new();
-        /// <summary>
-        /// 发起异步http异步请求
+        /// 集中处理机器人的HTTP请求
         /// </summary>
         /// <param name="url">请求网址</param>
         /// <param name="method">请求类型</param>
         /// <param name="content">请求数据</param>
         /// <returns></returns>
-        private async Task<HttpResponseMessage?> HttpSendAsync(string url, HttpMethod? method = null, HttpContent? content = null)
+        public async Task<HttpResponseMessage?> HttpSendAsync(string url, HttpMethod? method = null, HttpContent? content = null)
         {
+            BotHttpClient.HttpClient.DefaultRequestHeaders.Authorization = new("Bot", $"{BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}");
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = content, Method = method ?? HttpMethod.Get };
-            string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync().ConfigureAwait(false) : "{}";
-            Log.Debug(Regex.Unescape($"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}"));
-
-            HttpResponseMessage response = await WebHttpClient.SendAsync(request);
-            string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : "";
-            if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "{}";
-            Log.Debug(Regex.Unescape($"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}"));
-
-            if (response.IsSuccessStatusCode) return response;
-
-            // 捕获Http通信错误
-            int errCode = (int)response.StatusCode;
-            responseContent = responseContent.TrimStartString("{}");
-            if (responseContent.StartsWith('{') && responseContent.EndsWith('}'))
+            // 捕获Http请求错误
+            return await BotHttpClient.SendAsync(request, async response =>
             {
-                ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
-                if (err?.Code != null) errCode = err.Code.Value;
-            }
-            string errStr = (StatusCodes.OpenapiCode.TryGetValue(errCode, out string? errMsg) ? errMsg : null) ?? "此错误类型未收录!";
-            Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
-            if (ReportApiError)
-            {
-                await Task.Factory.StartNew(async () =>
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                int errCode = (int)response.StatusCode;
+                responseContent = responseContent.TrimStartString("{}");
+                if (responseContent.StartsWith('{') && responseContent.EndsWith('}'))
                 {
-                    if (LastMessage == null) return;
-                    string cid = LastMessage.ChannelId;
-                    string mid = LastMessage.Id;
-                    LastMessage = null;
-                    await SendMessageAsync(cid, new MsgText(mid, $"❌接口访问失败❌\n接口地址：{url.TrimStartString(ApiOrigin)}\n异常代码：{errCode}\n异常原因：{errStr}"));
-                }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
-            }
-            return null;
+                    ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
+                    if (err?.Code != null) errCode = err.Code.Value;
+                }
+                string errStr = (StatusCodes.OpenapiCode.TryGetValue(errCode, out string? errMsg) ? errMsg : null) ?? "此错误类型未收录!";
+                Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
+                if (ReportApiError)
+                {
+                    await Task.Factory.StartNew(async () =>
+                    {
+                        if (LastMessage == null) return;
+                        string cid = LastMessage.ChannelId;
+                        string mid = LastMessage.Id;
+                        LastMessage = null;
+                        await SendMessageAsync(cid, new MsgText(mid, $"❌接口访问失败❌\n接口地址：{url.TrimStartString(ApiOrigin)}\n异常代码：{errCode}\n异常原因：{errStr}"));
+                    }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
+                }
+            });
         }
         /// <summary>
         /// 正式环境
@@ -193,6 +183,7 @@ namespace QQChannelBot.BotApi
         #endregion
 
         #region Socket客户端配置
+        private static bool WssReady = false;
         /// <summary>
         /// Socket客户端
         /// </summary>
@@ -244,7 +235,7 @@ namespace QQChannelBot.BotApi
         /// QQ频道机器人
         /// </summary>
         /// <param name="debugMode">启用调试模式</param>
-        public ChannelBot(Identity identity, bool sandBox = false, bool reportApiError = true)
+        public BotClient(Identity identity, bool sandBox = false, bool reportApiError = true)
         {
             BotAccessInfo = identity;
             SandBox = sandBox;
@@ -255,11 +246,11 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
-        private static readonly Dictionary<string, Action<ChannelBot, Message, string>> Commands = new();
+        private static readonly Dictionary<string, Action<BotClient, Message, string>> Commands = new();
         /// <summary>
         /// 缓存动态注册的管理员指令事件
         /// </summary>
-        private static readonly Dictionary<string, Action<ChannelBot, Message, string>> SuCommands = new();
+        private static readonly Dictionary<string, Action<BotClient, Message, string>> SuCommands = new();
         /// <summary>
         /// 注册消息指令
         /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
@@ -268,7 +259,7 @@ namespace QQChannelBot.BotApi
         /// <param name="commandAction">回调函数</param>
         /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
         /// <returns></returns>
-        public ChannelBot AddCommand(string command, Action<ChannelBot, Message, string> commandAction, bool displace = false)
+        public BotClient AddCommand(string command, Action<BotClient, Message, string> commandAction, bool displace = false)
         {
             if (Commands.ContainsKey(command))
             {
@@ -294,7 +285,7 @@ namespace QQChannelBot.BotApi
         /// <param name="commandAction">回调函数</param>
         /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
         /// <returns></returns>
-        public ChannelBot AddCommandSuper(string command, Action<ChannelBot, Message, string> commandAction, bool displace = false)
+        public BotClient AddCommandSuper(string command, Action<BotClient, Message, string> commandAction, bool displace = false)
         {
             if (SuCommands.ContainsKey(command))
             {
@@ -317,7 +308,7 @@ namespace QQChannelBot.BotApi
         /// </summary>
         /// <param name="command">指令名称</param>
         /// <returns></returns>
-        public ChannelBot DelCommand(string command)
+        public BotClient DelCommand(string command)
         {
             if (Commands.ContainsKey(command))
             {
@@ -332,7 +323,7 @@ namespace QQChannelBot.BotApi
         /// </summary>
         /// <param name="command">指令名称</param>
         /// <returns></returns>
-        public ChannelBot DelCommandSuper(string command)
+        public BotClient DelCommandSuper(string command)
         {
             if (SuCommands.ContainsKey(command))
             {
@@ -342,6 +333,14 @@ namespace QQChannelBot.BotApi
             else Log.Warn($"[RegisterCommand] 指令 {command} 不存在!");
             return this;
         }
+        /// <summary>
+        /// 获取所有已注册的指令
+        /// </summary>
+        public List<string> GetAllCommand => Commands.Keys.ToList();
+        /// <summary>
+        /// 获取所有已注册的管理员指令
+        /// </summary>
+        public List<string> GetAllCommandSuper => SuCommands.Keys.ToList();
         #endregion
 
         #region 频道API
@@ -836,7 +835,6 @@ namespace QQChannelBot.BotApi
         /// <returns></returns>
         public async Task ConnectAsync(int RetryCount)
         {
-            WebHttpClient.DefaultRequestHeaders.Authorization = new("Bot", $"{BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}");
             while (RetryCount-- > 0)
             {
                 try
@@ -1080,12 +1078,13 @@ namespace QQChannelBot.BotApi
                             LastMessage = message;
                             string paramStr = message.Content.TrimStartString(MsgTag.UserTag(UserInfo!.Id)).Trim();
                             // 识别管理员指令
-                            string suCommand = message.Member.Roles.Any(r => "234".Contains(r)) ? SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "") : "";
+                            string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             // 识别普通指令
                             string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             if (suCommand.Length > 0)
                             {
-                                SuCommands[suCommand].Invoke(this, message, paramStr.TrimStartString(suCommand).Trim());
+                                if (message.Member.Roles.Any(r => "234".Contains(r))) SuCommands[suCommand].Invoke(this, message, paramStr.TrimStartString(suCommand).Trim());
+                                else await this.SendMessageAsync(message.ChannelId, new MsgText(message.Id, "你没有使用该命令的权限！"));
                             }
                             else if (command.Length > 0)
                             {
@@ -1174,8 +1173,6 @@ namespace QQChannelBot.BotApi
         {
             WebSocketClient.Abort();
             WebSocketClient.Dispose();
-            WebHttpClient.CancelPendingRequests();
-            WebHttpClient.Dispose();
         }
         /// <summary>
         /// 启动机器人
