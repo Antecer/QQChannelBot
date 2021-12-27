@@ -1,4 +1,4 @@
-﻿namespace QQChannelBot.MsgHelper
+﻿namespace System
 {
     public static class StringTools
     {

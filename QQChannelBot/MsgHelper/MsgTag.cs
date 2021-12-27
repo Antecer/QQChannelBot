@@ -19,7 +19,7 @@ namespace QQChannelBot.MsgHelper
         /// <returns></returns>
         public static string UserTag(string? userId = null)
         {
-            return $"<@!{userId}>";
+            return userId == null ? "" : $"<@!{userId}>";
         }
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace QQChannelBot.MsgHelper
         /// <returns></returns>
         public static string ChannelTag(string? channelId = null)
         {
-            return $"<#{channelId}>";
+            return channelId == null ? "" : $"<#{channelId}>";
         }
     }
 }

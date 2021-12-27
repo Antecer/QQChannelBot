@@ -1,4 +1,4 @@
-﻿namespace QQChannelBot.BotApi
+﻿namespace QQChannelBot.Bot
 {
     /// <summary>
     /// 集中处理日志信息

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using QQChannelBot.Models;
 using QQChannelBot.MsgHelper;
 
-namespace QQChannelBot.BotApi
+namespace QQChannelBot.Bot
 {
     /// <summary>
     /// 频道身份组列表

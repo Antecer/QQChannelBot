@@ -4,12 +4,12 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using QQChannelBot.BotApi.SocketEvent;
-using QQChannelBot.BotApi.StatusCode;
+using QQChannelBot.Bot.SocketEvent;
+using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Models;
 using QQChannelBot.MsgHelper;
 
-namespace QQChannelBot.BotApi
+namespace QQChannelBot.Bot
 {
     public class BotClient
     {
@@ -66,7 +66,7 @@ namespace QQChannelBot.BotApi
         /// 鉴权连接成功后触发
         /// <para>注:此时获取的User对象只有3个属性 {id,username,bot}</para>
         /// </summary>
-        public event Action<BotClient, User?>? OnReady;
+        public event Action<User?>? OnReady;
         /// <summary>
         /// 恢复连接成功后触发
         /// </summary>
@@ -102,7 +102,7 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 收到 @机器人 消息后触发
         /// </summary>
-        public event Action<BotClient, Message, ActionType>? OnAtMessage;
+        public event Action<Message>? OnAtMessage;
         #endregion
 
         /// <summary>
@@ -113,7 +113,11 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 机器人用户信息
         /// </summary>
-        public User? UserInfo { get; set; }
+        public User? Info { get; set; }
+        /// <summary>
+        /// 保存机器人在各个频道内的角色信息
+        /// </summary>
+        public Dictionary<string, Member?> Members { get; set; } = new();
 
         #region Http客户端配置
         /// <summary>
@@ -185,7 +189,6 @@ namespace QQChannelBot.BotApi
         #endregion
 
         #region Socket客户端配置
-        private static bool WssReady = false;
         /// <summary>
         /// Socket客户端
         /// </summary>
@@ -248,11 +251,11 @@ namespace QQChannelBot.BotApi
         /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
-        private static readonly Dictionary<string, Action<BotClient, Message, string>> Commands = new();
+        private static readonly Dictionary<string, Action<Message, string>> Commands = new();
         /// <summary>
         /// 缓存动态注册的管理员指令事件
         /// </summary>
-        private static readonly Dictionary<string, Action<BotClient, Message, string>> SuCommands = new();
+        private static readonly Dictionary<string, Action<Message, string>> SuCommands = new();
         /// <summary>
         /// 注册消息指令
         /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
@@ -261,7 +264,7 @@ namespace QQChannelBot.BotApi
         /// <param name="commandAction">回调函数</param>
         /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
         /// <returns></returns>
-        public BotClient AddCommand(string command, Action<BotClient, Message, string> commandAction, bool displace = false)
+        public BotClient AddCommand(string command, Action<Message, string> commandAction, bool displace = false)
         {
             if (Commands.ContainsKey(command))
             {
@@ -287,7 +290,7 @@ namespace QQChannelBot.BotApi
         /// <param name="commandAction">回调函数</param>
         /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
         /// <returns></returns>
-        public BotClient AddCommandSuper(string command, Action<BotClient, Message, string> commandAction, bool displace = false)
+        public BotClient AddCommandSuper(string command, Action<Message, string> commandAction, bool displace = false)
         {
             if (SuCommands.ContainsKey(command))
             {
@@ -1033,8 +1036,8 @@ namespace QQChannelBot.BotApi
                         case "READY":
                             await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").RootElement).ConfigureAwait(false);
                             WebSoketSessionId = wssJson.GetProperty("d").GetProperty("session_id").GetString();
-                            UserInfo = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user").GetRawText());
-                            OnReady?.Invoke(this, UserInfo);
+                            Info = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user").GetRawText());
+                            OnReady?.Invoke(Info);
                             break;
                         case "RESUMED":
                             await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").RootElement).ConfigureAwait(false);
@@ -1078,23 +1081,25 @@ namespace QQChannelBot.BotApi
                             /*收到 @机器人 消息事件*/
                             Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
                             LastMessage = message;
-                            string paramStr = message.Content.TrimStartString(MsgTag.UserTag(UserInfo!.Id)).Trim();
+                            string paramStr = message.Content.TrimStartString(MsgTag.UserTag(Info?.Id)).Trim();
                             // 识别管理员指令
                             string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             // 识别普通指令
                             string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
+                            // 传递上下文数据
+                            message.Bot = this;
                             if (suCommand.Length > 0)
                             {
-                                if (message.Member.Roles.Any(r => "234".Contains(r))) SuCommands[suCommand].Invoke(this, message, paramStr.TrimStartString(suCommand).Trim());
+                                if (message.Member.Roles.Any(r => "234".Contains(r))) SuCommands[suCommand].Invoke(message, paramStr.TrimStartString(suCommand).Trim());
                                 else await this.SendMessageAsync(message.ChannelId, new MsgText(message.Id, "你没有使用该命令的权限！"));
                             }
                             else if (command.Length > 0)
                             {
-                                Commands[command].Invoke(this, message, paramStr.TrimStartString(command).Trim());
+                                Commands[command].Invoke(message, paramStr.TrimStartString(command).Trim());
                             }
                             else
                             {
-                                OnAtMessage?.Invoke(this, message, (ActionType)Enum.Parse(typeof(ActionType), type));
+                                OnAtMessage?.Invoke(message);
                             }
                             break;
                         default:

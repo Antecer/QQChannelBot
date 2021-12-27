@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using QQChannelBot.Bot;
 
 namespace QQChannelBot.Models
 {
@@ -72,6 +73,34 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("ark")]
         public MessageArk? Ark { get; set; }
+        /// <summary>
+        /// 存储BotClient对象，方便快速回复消息
+        /// </summary>
+        [JsonIgnore]
+        public BotClient? Bot { get; set; }
+        /// <summary>
+        /// 快速回复
+        /// <para>自动设置子频道Id和消息Id<br/>
+        /// <em>使用快速回复会强制覆盖子频道Id和消息Id参数</em>
+        /// </para>
+        /// </summary>
+        /// <param name="message">MessageToCreate消息对象(或其扩展对象)</param>
+        /// <returns></returns>
+        public async Task<Message?> ReplyAsync(MessageToCreate message)
+        {
+            message.MsgId = Id;
+            return Bot != null ? await Bot.SendMessageAsync(ChannelId, message) : null;
+        }
+        /// <summary>
+        /// 快速回复文字消息
+        /// <para>自动添加子频道id参数</para>
+        /// </summary>
+        /// <param name="msg">文字消息内容</param>
+        /// <returns></returns>
+        public async Task<Message?> ReplyAsync(string msg)
+        {
+            return await ReplyAsync(new MessageToCreate() { Content = msg });
+        }
     }
 
     /// <summary>
@@ -79,20 +108,6 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MessageToCreate
     {
-        /// <summary>
-        /// 构建消息体结构
-        /// </summary>
-        public MessageToCreate() { }
-        /// <summary>
-        /// 构建消息体结构
-        /// </summary>
-        /// <param name="content">消息内容</param>
-        /// <param name="msgId">要回复的消息id，不填视为发送主动消息</param>
-        public MessageToCreate(string content, string? msgId = null)
-        {
-            Content = content;
-            MsgId = msgId;
-        }
         /// <summary>
         /// 消息内容，文本内容，支持内嵌格式
         /// </summary>

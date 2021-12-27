@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace QQChannelBot.BotApi.StatusCode
+namespace QQChannelBot.Bot.StatusCode
 {
     public static class StatusCodes
     {
@@ -107,7 +107,6 @@ namespace QQChannelBot.BotApi.StatusCode
 
     public class ApiError
     {
-
         [JsonPropertyName("code")]
         public int? Code { get; set; }
 

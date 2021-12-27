@@ -1,4 +1,4 @@
-﻿namespace QQChannelBot.BotApi.SocketEvent
+﻿namespace QQChannelBot.Bot.SocketEvent
 {
     /// <summary>
     /// 枚举操作码

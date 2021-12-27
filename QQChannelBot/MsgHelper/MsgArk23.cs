@@ -11,14 +11,16 @@ namespace QQChannelBot.MsgHelper
         /// <summary>
         /// 构造模板消息
         /// </summary>
-        /// <param name="replyMsgId">要回复的消息id</param>
         /// <param name="desc">描述</param>
         /// <param name="prompt">提示</param>
         /// <param name="msgLines">多行内容</param>
-        public MsgArk23(string replyMsgId = "",
+        /// <param name="replyMsgId">要回复的消息id</param>
+        public MsgArk23(
             string? desc = null,
             string? prompt = null,
-            List<MessageArkObj>? msgLines = null)
+            List<MessageArkObj>? msgLines = null,
+            string? replyMsgId = null
+            )
         {
             MsgId = replyMsgId;
             Desc = desc;
@@ -43,7 +45,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgArk23 SetReplyMsgId(string msgId) { MsgId = msgId; return this; }
+        public MsgArk23 SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
         /// <summary>
         /// 描述
         /// </summary>
@@ -53,7 +55,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="desc">描述内容</param>
         /// <returns></returns>
-        public MsgArk23 SetDesc(string desc) { Desc = desc; return this; }
+        public MsgArk23 SetDesc(string? desc) { Desc = desc; return this; }
         /// <summary>
         /// 提示消息
         /// </summary>
@@ -63,7 +65,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="prompt">提示内容</param>
         /// <returns></returns>
-        public MsgArk23 SetPrompt(string prompt) { Prompt = prompt; return this; }
+        public MsgArk23 SetPrompt(string? prompt) { Prompt = prompt; return this; }
         /// <summary>
         /// 内容列表
         /// </summary>
@@ -78,11 +80,11 @@ namespace QQChannelBot.MsgHelper
         /// <param name="content">内容描述</param>
         /// <param name="link">内容链接 [可选]</param>
         /// <returns></returns>
-        public MsgArk23 AddLine(string content, string? link = null)
+        public MsgArk23 AddLine(string? content, string? link = null)
         {
             List<MessageArkObjKv> ojbk = new()
             {
-                new(){Key = "desc", Value = content}
+                new() { Key = "desc", Value = content }
             };
             if (link != null) ojbk.Add(new() { Key = "link", Value = link });
 

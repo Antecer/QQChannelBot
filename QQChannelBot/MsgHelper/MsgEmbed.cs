@@ -11,16 +11,18 @@ namespace QQChannelBot.MsgHelper
         /// 构建Embed消息
         /// <para>详情查阅QQ机器人文档 <see href="https://bot.q.qq.com/wiki/develop/api/openapi/message/template/embed_message.html">embed消息</see></para>
         /// </summary>
-        /// <param name="replyMsgId">要回复的消息id</param>
         /// <param name="title">标题</param>
         /// <param name="prompt">提示</param>
         /// <param name="thumbnail">缩略图URL</param>
         /// <param name="embedFields">内容列表</param>
-        public MsgEmbed(string replyMsgId = "",
+        /// <param name="replyMsgId">要回复的消息id</param>
+        public MsgEmbed(
             string? title = null,
             string? prompt = null,
             string? thumbnail = null,
-            List<MessageEmbedField>? embedFields = null)
+            List<MessageEmbedField>? embedFields = null,
+            string? replyMsgId = null
+            )
         {
             MsgId = replyMsgId;
             EmbedFields = embedFields ?? new();
@@ -42,7 +44,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgEmbed SetReplyMsgId(string msgId) { MsgId = msgId; return this; }
+        public MsgEmbed SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
         /// <summary>
         /// 标题
         /// </summary>
@@ -52,7 +54,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="title">标题内容</param>
         /// <returns></returns>
-        public MsgEmbed SetTitle(string title) { Title = title; return this; }
+        public MsgEmbed SetTitle(string? title) { Title = title; return this; }
         /// <summary>
         /// 提示
         /// </summary>
@@ -62,7 +64,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="prompt">提示内容</param>
         /// <returns></returns>
-        public MsgEmbed SetPrompt(string prompt) { Prompt = prompt; return this; }
+        public MsgEmbed SetPrompt(string? prompt) { Prompt = prompt; return this; }
         /// <summary>
         /// 缩略图URL
         /// </summary>
@@ -72,7 +74,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="thumbnail">缩略图URL</param>
         /// <returns></returns>
-        public MsgEmbed SetThumbnail(string thumbnail) { Thumbnail = thumbnail; return this; }
+        public MsgEmbed SetThumbnail(string? thumbnail) { Thumbnail = thumbnail; return this; }
         /// <summary>
         /// 消息列表
         /// </summary>
@@ -82,6 +84,6 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="content">行内容</param>
         /// <returns></returns>
-        public MsgEmbed AddLine(string content) { EmbedFields.Add(new(content)); return this; }
+        public MsgEmbed AddLine(string? content) { EmbedFields.Add(new(content)); return this; }
     }
 }

@@ -2,22 +2,22 @@
 
 namespace QQChannelBot.MsgHelper
 {
-    /// <summary>
-    /// 文字消息
-    /// </summary>
-    public class MsgText : MessageToCreate
+    public class MsgDescImg : MessageToCreate
     {
         /// <summary>
-        /// 构建文字消息
+        /// 构建文字和图片同时存在的消息
         /// </summary>
         /// <param name="content">消息内容</param>
+        /// <param name="image">图片URL</param>
         /// <param name="replyMsgId">要回复的消息id</param>
-        public MsgText(
+        public MsgDescImg(
             string? content = null,
+            string? image = null,
             string? replyMsgId = null
             )
         {
             MsgId = replyMsgId;
+            Image = image;
             Content = content;
         }
         /// <summary>
@@ -25,12 +25,18 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgText SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
+        public MsgDescImg SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
         /// <summary>
         /// 设置消息内容
         /// </summary>
         /// <param name="content">文字内容</param>
         /// <returns></returns>
-        public MsgText SetContent(string? content) { Content = content; return this; }
+        public MsgDescImg SetContent(string? content) { Content = content; return this; }
+        /// <summary>
+        /// 设置图片URL
+        /// </summary>
+        /// <param name="image">图片URL</param>
+        /// <returns></returns>
+        public MsgDescImg SetImage(string? image) { Image = image; return this; }
     }
 }

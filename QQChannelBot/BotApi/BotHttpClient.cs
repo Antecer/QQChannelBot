@@ -1,6 +1,7 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 
-namespace QQChannelBot.BotApi
+namespace QQChannelBot.Bot
 {
     /// <summary>
     /// 经过封装的HttpClient

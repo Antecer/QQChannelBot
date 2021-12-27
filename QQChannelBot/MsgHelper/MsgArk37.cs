@@ -14,18 +14,20 @@ namespace QQChannelBot.MsgHelper
         /// <summary>
         /// 构造模板消息
         /// </summary>
-        /// <param name="replyMsgId">要回复的消息id</param>
         /// <param name="prompt">描述</param>
         /// <param name="metaTitle">标题</param>
         /// <param name="metaSubTitle">子标题</param>
         /// <param name="metaCover">大图URL</param>
         /// <param name="metaUrl">跳转链接</param>
-        public MsgArk37(string replyMsgId = "",
+        /// <param name="replyMsgId">要回复的消息id</param>
+        public MsgArk37(
             string? prompt = null,
             string? metaTitle = null,
             string? metaSubTitle = null,
             string? metaCover = null,
-            string? metaUrl = null)
+            string? metaUrl = null,
+            string? replyMsgId = null
+            )
         {
             MsgId = replyMsgId;
             Prompt = prompt;
@@ -57,7 +59,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgArk37 SetReplyMsgId(string msgId) { MsgId = msgId; return this; }
+        public MsgArk37 SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
         /// <summary>
         /// 提示
         /// </summary>
@@ -67,7 +69,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="prompt">提示内容</param>
         /// <returns></returns>
-        public MsgArk37 SetPrompt(string prompt) { Prompt = prompt; return this; }
+        public MsgArk37 SetPrompt(string? prompt) { Prompt = prompt; return this; }
         /// <summary>
         /// 标题
         /// </summary>
@@ -77,7 +79,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="title">标题内容</param>
         /// <returns></returns>
-        public MsgArk37 SetMetaTitle(string metaTitle) { MetaTitle = metaTitle; return this; }
+        public MsgArk37 SetMetaTitle(string? metaTitle) { MetaTitle = metaTitle; return this; }
         /// <summary>
         /// 子标题
         /// </summary>
@@ -87,7 +89,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="subTitle">子标题内容</param>
         /// <returns></returns>
-        public MsgArk37 SetMetaSubTitle(string subTitle) { MetaSubTitle = subTitle; return this; }
+        public MsgArk37 SetMetaSubTitle(string? subTitle) { MetaSubTitle = subTitle; return this; }
 
         /// <summary>
         /// 大图URL
@@ -98,7 +100,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="cover">大图URL</param>
         /// <returns></returns>
-        public MsgArk37 SetMetaCover(string cover) { MetaCover = cover; return this; }
+        public MsgArk37 SetMetaCover(string? cover) { MetaCover = cover; return this; }
         /// <summary>
         /// 跳转链接
         /// </summary>
@@ -108,6 +110,6 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="metaUrl">跳转链接</param>
         /// <returns></returns>
-        public MsgArk37 SetMetaUrl(string metaUrl) { MetaUrl = metaUrl; return this; }
+        public MsgArk37 SetMetaUrl(string? metaUrl) { MetaUrl = metaUrl; return this; }
     }
 }

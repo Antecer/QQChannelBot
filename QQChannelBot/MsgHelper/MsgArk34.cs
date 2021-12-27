@@ -11,7 +11,6 @@ namespace QQChannelBot.MsgHelper
         /// <summary>
         /// 构造模板消息
         /// </summary>
-        /// <param name="replyMsgId">要回复的消息id</param>
         /// <param name="desc">描述</param>
         /// <param name="prompt">提示</param>
         /// <param name="metaTitle">标题</param>
@@ -19,14 +18,17 @@ namespace QQChannelBot.MsgHelper
         /// <param name="metaIcon">小图标URL</param>
         /// <param name="metaPreview">大图URL</param>
         /// <param name="metaUrl">跳转链接</param>
-        public MsgArk34(string replyMsgId = "",
+        /// <param name="replyMsgId">要回复的消息id</param>
+        public MsgArk34(
             string? desc = null,
             string? prompt = null,
             string? metaTitle = null,
             string? metaDesc = null,
             string? metaIcon = null,
             string? metaPreview = null,
-            string? metaUrl = null)
+            string? metaUrl = null,
+            string? replyMsgId = null
+            )
         {
             MsgId = replyMsgId;
             Desc = desc;
@@ -64,7 +66,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgArk34 SetReplyMsgId(string msgId) { MsgId = msgId; return this; }
+        public MsgArk34 SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
         /// <summary>
         /// 描述
         /// </summary>
@@ -74,7 +76,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="desc">描述内容</param>
         /// <returns></returns>
-        public MsgArk34 SetDesc(string desc) { Desc = desc; return this; }
+        public MsgArk34 SetDesc(string? desc) { Desc = desc; return this; }
         /// <summary>
         /// 提示
         /// </summary>
@@ -84,7 +86,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="prompt">提示内容</param>
         /// <returns></returns>
-        public MsgArk34 SetPrompt(string prompt) { Prompt = prompt; return this; }
+        public MsgArk34 SetPrompt(string? prompt) { Prompt = prompt; return this; }
         /// <summary>
         /// 标题
         /// </summary>
@@ -94,7 +96,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="title">标题内容</param>
         /// <returns></returns>
-        public MsgArk34 SetMetaTitle(string metaTitle) { MetaTitle = metaTitle; return this; }
+        public MsgArk34 SetMetaTitle(string? metaTitle) { MetaTitle = metaTitle; return this; }
         /// <summary>
         /// 详情
         /// </summary>
@@ -104,7 +106,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="metaDesc">详情内容</param>
         /// <returns></returns>
-        public MsgArk34 SetMetaDesc(string metaDesc) { MetaDesc = metaDesc; return this; }
+        public MsgArk34 SetMetaDesc(string? metaDesc) { MetaDesc = metaDesc; return this; }
         /// <summary>
         /// 小图标URL
         /// </summary>
@@ -114,7 +116,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="iconLink">小图标URL</param>
         /// <returns></returns>
-        public MsgArk34 SetMetaIcon(string iconLink) { MetaIcon = iconLink; return this; }
+        public MsgArk34 SetMetaIcon(string? iconLink) { MetaIcon = iconLink; return this; }
         /// <summary>
         /// 大图URL
         /// </summary>
@@ -124,7 +126,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="metaPreview">大图URL</param>
         /// <returns></returns>
-        public MsgArk34 SetMetaPreview(string metaPreview) { MetaPreview = metaPreview; return this; }
+        public MsgArk34 SetMetaPreview(string? metaPreview) { MetaPreview = metaPreview; return this; }
         /// <summary>
         /// 跳转链接
         /// </summary>
@@ -134,6 +136,6 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="metaUrl">跳转链接</param>
         /// <returns></returns>
-        public MsgArk34 SetMetaUrl(string metaUrl) { MetaUrl = metaUrl; return this; }
+        public MsgArk34 SetMetaUrl(string? metaUrl) { MetaUrl = metaUrl; return this; }
     }
 }
