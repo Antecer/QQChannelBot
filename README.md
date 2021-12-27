@@ -2,7 +2,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/QQChannelBot.svg)](https://www.nuget.org/packages/QQChannelBot) [![NuGet downloads](https://img.shields.io/nuget/dt/QQChannelBot)](https://www.nuget.org/packages/QQChannelBot)
 
-使用.NET6技术封装的QQ机器人通信框架，无需任何第三方依赖。
+使用.NET6技术封装的QQ机器人通信框架，无需任何第三方依赖。   
 傻瓜式封装，极简的调用接口，让新手也能快速入门！
 
 ## 使用说明
