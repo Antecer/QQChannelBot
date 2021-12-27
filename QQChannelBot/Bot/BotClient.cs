@@ -201,7 +201,7 @@ namespace QQChannelBot.Bot
         /// 此次连接所需要接收的事件
         /// <para>具体可参考 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">Intents</see></para>
         /// </summary>
-        public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGES;
+        public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGES | Intent.GUILD_MESSAGE_REACTIONS;
         /// <summary>
         /// 会话限制
         /// </summary>
