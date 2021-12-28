@@ -17,13 +17,13 @@ namespace QQChannelBot.Tools
             {
                 _ = isOk.Value ? IncGood() : IncFail();
                 testItem = (isOk.Value ? "【通过】" : "【失败】") + testItem;
-                Log.Info($"[Benchmarks]{testItem}");
+                Log.Info($"[Benchmarks][{Index}]{testItem}");
             }
             else
             {
                 ++Index;
                 testItem = "【跳过】" + testItem;
-                Log.Info($"[Benchmarks]{testItem}");
+                Log.Info($"[Benchmarks][{Index}]{testItem}");
             }
             return testItem;
         }
@@ -32,6 +32,7 @@ namespace QQChannelBot.Tools
             Good = 0;
             Fail = 0;
             Index = 0;
+            bool isOk;
             BotClient bot = sender.Bot!;
             string botId = bot.Info!.Id;
             bot.ReportApiError = false;
@@ -50,9 +51,18 @@ namespace QQChannelBot.Tools
             message = await sender.ReplyAsync(new MsgEmbed("功能测试：Ark消息发送"));
             await sender.ReplyAsync(GetLog("Ark消息发送", message != null));
 
-            message ??= await sender.ReplyAsync($"功能测试：撤回消息");
-            bool isOk = message != null && await bot.DeleteMessageAsync(message.ChannelId, message.Id);
-            await sender.ReplyAsync(GetLog("撤回消息", isOk));
+            if (message == null)
+            {
+                message = await sender.ReplyAsync($"【失败】撤回消息");
+                isOk = message != null && await bot.DeleteMessageAsync(message.ChannelId, message.Id);
+                if (isOk) await sender.ReplyAsync(GetLog("撤回消息", isOk));
+                else IncFail();
+            }
+            else
+            {
+                isOk = await bot.DeleteMessageAsync(message.ChannelId, message.Id);
+                await sender.ReplyAsync(GetLog("撤回消息", isOk));
+            }
 
             var guid = await bot.GetGuildAsync(sender.GuildId);
             await sender.ReplyAsync(GetLog("获取频道详情", guid != null));
@@ -150,7 +160,7 @@ namespace QQChannelBot.Tools
             isOk = await bot.MuteMemberAsync(sender.GuildId, "977671216794244851", new MuteTime(3)); // 禁言"频道管理助手"用于测试
             await sender.ReplyAsync(GetLog("频道指定成员(频道管理助手)禁言", isOk));
 
-            await sender.ReplyAsync($"自检完成，共{Index}项|通过{Good}项|失败{Fail}项|跳过{Index - Good - Fail}。");
+            await sender.ReplyAsync($"自检完成，共{Index}项|通过{Good}项|失败{Fail}项|跳过{Index - Good - Fail}项。");
             bot.ReportApiError = true;
             return Index;
         }
