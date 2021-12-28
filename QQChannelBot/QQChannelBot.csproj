@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Description>QQ机器人框架</Description>
     <Copyright>Copyright © 2021 Antecer. All rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/Antecer/QQChannelBot</PackageProjectUrl>
@@ -14,7 +14,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>里程碑更新，重构整个消息体结构，现在回复无需考虑频道Id和消息Id的传递问题。</PackageReleaseNotes>
+    <PackageReleaseNotes>新增消息撤回API；新增API接口测试功能；</PackageReleaseNotes>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
