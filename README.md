@@ -67,14 +67,14 @@ bot.Start();
 bot.AddCommand("用户信息", async (sender, msg) =>
 {
     string userId = Regex.IsMatch(msg, @"<@!(\d+)>") ? Regex.Match(msg, @"<@!(\d+)>").Groups[1].Value : sender.Author.Id;
-    Member member = await bot.GetGuildMemberAsync(sender.GuildId, userId) ?? new()
+    Member member = await bot.GetMemberAsync(sender.GuildId, userId) ?? new()
     {
         User = sender.Author,
         Roles = sender.Member.Roles,
         JoinedAt = sender.Member.JoinedAt,
     };
-    GuildRoles? grs = await bot.GetGuildRolesAsync(sender.GuildId);
-    var roles = grs?.Roles.Where(gr => member.Roles.Contains(gr.Id)).Select(gr => gr.Name).ToList() ?? new List<string> { "无权获取身份组列表" };
+    List<Role>? roles = await bot.GetRolesAsync(sender.GuildId);
+    List<string> roleNames = roles?.Where(role => member.Roles.Contains(role.Id)).Select(role => role.Name).ToList() ?? new List<string> { "无权获取身份组列表" };
     MsgEmbed ReplyEmbed = new MsgEmbed()
     {
         Title = member.User!.UserName,
@@ -83,7 +83,7 @@ bot.AddCommand("用户信息", async (sender, msg) =>
     }
     .AddLine($"用户昵称：{member.Nick}")
     .AddLine($"账户类别：{(member.User.Bot ? "机器人" : "人类")}")
-    .AddLine($"角色分类：{string.Join("、", roles)}")
+    .AddLine($"角色分类：{string.Join("、", roleNames)}")
     .AddLine($"加入时间：{member.JoinedAt!.Remove(member.JoinedAt.IndexOf('+'))}");
     await sender.ReplyAsync(ReplyEmbed);
 });
@@ -220,3 +220,5 @@ bot.AddCommand("ark测试", async (sender, msg) =>
     await sender.ReplyAsync(new MsgDescImg("文字内容", "http://thirdqq.qlogo.cn/g?b=oidb&k=cSmKqHHUOtQicbia4JGgnkJA&s=0&t=1555550077"));
 });
 ```
+
+### 更多玩法请参考 [Benchmarks](https://github.com/Antecer/QQChannelBot/blob/main/QQChannelBot/Tools/Benchmarks.cs)
