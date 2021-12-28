@@ -1039,7 +1039,8 @@ namespace QQChannelBot.Bot
                 else
                 {
                     byte[] recBytes = ReceiveBuffer.Skip(ReceiveBuffer.Offset).Take(result.Count).ToArray();
-                    string recString = Regex.Unescape(Encoding.UTF8.GetString(recBytes));
+                    string recString = Regex.Unescape(Encoding.UTF8.GetString(recBytes)).Replace("\n", "");
+                    Log.Debug($"[WebSocket][GET] {recString}");
 
                     OnWebSocketReceived?.Invoke(this, recString);
                     await ExcuteCommand(JsonDocument.Parse(recString).RootElement).ConfigureAwait(false);
@@ -1128,7 +1129,7 @@ namespace QQChannelBot.Bot
                             /*收到 @机器人 消息事件*/
                             Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
                             LastMessage = message;
-                            string paramStr = message.Content.TrimStartString(MsgTag.UserTag(Info?.Id)).Trim();
+                            string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).Trim();
                             // 识别管理员指令
                             string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             // 识别普通指令
