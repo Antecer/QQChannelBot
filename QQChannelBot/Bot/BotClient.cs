@@ -123,12 +123,12 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 向指令发出者报告API错误
         /// </summary>
-        private static bool ReportApiError { get; set; }
+        public bool ReportApiError { get; set; }
         /// <summary>
         /// 集中处理机器人的HTTP请求
         /// </summary>
         /// <param name="url">请求网址</param>
-        /// <param name="method">请求类型</param>
+        /// <param name="method">请求类型(默认GET)</param>
         /// <param name="content">请求数据</param>
         /// <returns></returns>
         public async Task<HttpResponseMessage?> HttpSendAsync(string url, HttpMethod? method = null, HttpContent? content = null)
@@ -185,14 +185,14 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 最后一次收到的消息
         /// </summary>
-        private static Message? LastMessage { get; set; }
+        private Message? LastMessage { get; set; }
         #endregion
 
         #region Socket客户端配置
         /// <summary>
         /// Socket客户端
         /// </summary>
-        private static ClientWebSocket WebSocketClient { get; set; } = new();
+        private ClientWebSocket WebSocketClient { get; set; } = new();
         /// <summary>
         /// Socket客户端收到的最新的消息的s，如果是第一次连接，传null
         /// </summary>
@@ -229,7 +229,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 心跳计时
         /// </summary>
-        private static int HeartbeatTick = 0;
+        private int HeartbeatTick = 0;
         /// <summary>
         /// 断线重连状态标志
         /// </summary>
@@ -251,11 +251,11 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
-        private static readonly Dictionary<string, Action<Message, string>> Commands = new();
+        private readonly Dictionary<string, Action<Message, string>> Commands = new();
         /// <summary>
         /// 缓存动态注册的管理员指令事件
         /// </summary>
-        private static readonly Dictionary<string, Action<Message, string>> SuCommands = new();
+        private readonly Dictionary<string, Action<Message, string>> SuCommands = new();
         /// <summary>
         /// 注册消息指令
         /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
@@ -352,7 +352,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 获取频道详情
         /// </summary>
-        /// <param name="guild_Id">频道id</param>
+        /// <param name="guild_Id">频道Id</param>
         /// <returns>Guild?</returns>
         public async Task<Guild?> GetGuildAsync(string guild_id)
         {
@@ -365,21 +365,22 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 获取频道身份组列表
         /// </summary>
-        /// <param name="guild_id">频道id</param>
+        /// <param name="guild_id">频道Id</param>
         /// <returns></returns>
-        public async Task<GuildRoles?> GetGuildRolesAsync(string guild_id)
+        public async Task<List<Role>?> GetRolesAsync(string guild_id)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<GuildRoles?>();
+            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<GuildRoles?>();
+            return result?.Roles;
         }
         /// <summary>
         /// 创建频道身份组
         /// </summary>
-        /// <param name="guild_id">频道id</param>
+        /// <param name="guild_id">频道Id</param>
         /// <param name="info">携带需要设置的字段内容</param>
         /// <param name="filter">标识需要设置哪些字段,若不填则根据Info自动推测</param>
         /// <returns></returns>
-        public async Task<CreateRoleRes?> CreateRoleAsync(string guild_id, Info info, Filter? filter = null)
+        public async Task<Role?> CreateRoleAsync(string guild_id, Info info, Filter? filter = null)
         {
             filter ??= new Filter()
             {
@@ -388,7 +389,8 @@ namespace QQChannelBot.Bot
                 Hoist = info.Hoist == null ? 0 : 1
             };
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", HttpMethod.Post, JsonContent.Create(new { filter, info }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<CreateRoleRes?>();
+            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<CreateRoleRes?>();
+            return result?.Role;
 
         }
         /// <summary>
@@ -399,7 +401,7 @@ namespace QQChannelBot.Bot
         /// <param name="info">携带需要修改的字段内容</param>
         /// <param name="filter">标识需要设置哪些字段,若不填则根据Info自动推测</param>
         /// <returns></returns>
-        public async Task<ModifyRolesRes?> ModifyRolesAsync(string guild_id, string role_id, Info info, Filter? filter = null)
+        public async Task<Role?> EditRoleAsync(string guild_id, string role_id, Info info, Filter? filter = null)
         {
             filter ??= new Filter()
             {
@@ -407,14 +409,15 @@ namespace QQChannelBot.Bot
                 Color = info.HexColor == null ? 0 : 1,
                 Hoist = info.Hoist == null ? 0 : 1
             };
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Post, JsonContent.Create(new { filter, info }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<ModifyRolesRes?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Patch, JsonContent.Create(new { filter, info }));
+            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<ModifyRolesRes?>();
+            return result?.Role;
         }
         /// <summary>
         /// 删除身份组
         /// <para><em>HTTP状态码 204 表示成功</em></para>
         /// </summary>
-        /// <param name="guild_id">频道id</param>
+        /// <param name="guild_id">频道Id</param>
         /// <param name="role_id">身份Id</param>
         /// <returns></returns>
         public async Task<bool> DeleteRoleAsync(string guild_id, string role_id)
@@ -429,12 +432,12 @@ namespace QQChannelBot.Bot
         /// 如果要增加的身份组ID是(5-子频道管理员)，需要增加 channel_id 来指定具体是哪个子频道。
         /// </para>
         /// </summary>
-        /// <param name="guild_id">频道id</param>
-        /// <param name="user_id">用户id</param>
-        /// <param name="role_id">身份组id</param>
-        /// <param name="channel_id">子频道id</param>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="user_id">用户Id</param>
+        /// <param name="role_id">身份组Id</param>
+        /// <param name="channel_id">子频道Id</param>
         /// <returns></returns>
-        public async Task<bool> AddMemberToRoleAsync(string guild_id, string user_id, string role_id, string? channel_id = null)
+        public async Task<bool> AddRoleMemberAsync(string guild_id, string user_id, string role_id, string? channel_id = null)
         {
             HttpResponseMessage? respone = await HttpSendAsync(
                 $"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Put,
@@ -449,12 +452,12 @@ namespace QQChannelBot.Bot
         /// 详情查阅 <see href="https://bot.q.qq.com/wiki/develop/api/openapi/guild/delete_guild_member_role.html">QQ机器人文档</see>
         /// </para>
         /// </summary>
-        /// <param name="guild_id">频道id</param>
-        /// <param name="user_id">用户id</param>
-        /// <param name="role_id">身份组id</param>
-        /// <param name="channel_id">子频道id</param>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="user_id">用户Id</param>
+        /// <param name="role_id">身份组Id</param>
+        /// <param name="channel_id">子频道Id</param>
         /// <returns></returns>
-        public async Task<bool> DeleteMemberToRoleAsync(string guild_id, string user_id, string role_id, string? channel_id = null)
+        public async Task<bool> DeleteRoleMemberAsync(string guild_id, string user_id, string role_id, string? channel_id = null)
         {
             HttpResponseMessage? respone = await HttpSendAsync(
                 $"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Delete,
@@ -467,10 +470,10 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 获取频道成员详情
         /// </summary>
-        /// <param name="guild_id">频道id</param>
-        /// <param name="user_id">用户id</param>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="user_id">用户Id</param>
         /// <returns></returns>
-        public async Task<Member?> GetGuildMemberAsync(string guild_id, string user_id)
+        public async Task<Member?> GetMemberAsync(string guild_id, string user_id)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}");
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Member?>();
@@ -481,9 +484,9 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 创建频道全局公告
         /// </summary>
-        /// <param name="guild_id">频道id</param>
-        /// <param name="channel_id">消息所在子频道id</param>
-        /// <param name="message_id">消息id</param>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="channel_id">消息所在子频道Id</param>
+        /// <param name="message_id">消息Id</param>
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesGlobalAsync(string guild_id, string channel_id, string message_id)
         {
@@ -506,11 +509,12 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 删除频道全局公告
         /// </summary>
-        /// <param name="guild_id">频道id</param>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="message_id">用于创建公告的消息Id</param>
         /// <returns>HTTP 状态码 204</returns>
-        public async Task<bool> DeleteAnnouncesGlobalAsync(string guild_id)
+        public async Task<bool> DeleteAnnouncesGlobalAsync(string guild_id, string message_id = "all")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/announces/all", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/announces/{message_id}", HttpMethod.Delete);
             return respone?.StatusCode == HttpStatusCode.NoContent;
         }
         /// <summary>
@@ -519,8 +523,8 @@ namespace QQChannelBot.Bot
         /// 机器人设置消息为指定子频道公告
         /// </para>
         /// </summary>
-        /// <param name="channel_id">子频道id</param>
-        /// <param name="message_id">消息id</param>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="message_id">消息Id</param>
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesAsync(string channel_id, string message_id)
         {
@@ -549,22 +553,21 @@ namespace QQChannelBot.Bot
         /// 机器人删除指定子频道公告
         /// </para>
         /// </summary>
-        /// <param name="channel_id">子频道id</param>
-        /// <param name="message_id">消息id</param>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="message_id">用于创建公告的消息Id</param>
         /// <returns></returns>
-        public async Task<bool> DeleteAnnouncesAsync(string channel_id)
+        public async Task<bool> DeleteAnnouncesAsync(string channel_id, string message_id = "all")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/announces/all", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/announces/{message_id}", HttpMethod.Delete);
             return respone?.StatusCode == HttpStatusCode.NoContent;
         }
-
         #endregion
 
         #region 子频道API
         /// <summary>
         /// 获取子频道信息
         /// </summary>
-        /// <param name="channel_id">子频道id</param>
+        /// <param name="channel_id">子频道Id</param>
         /// <returns>Channel?</returns>
         public async Task<Channel?> GetChannelAsync(string channel_id)
         {
@@ -574,7 +577,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 获取频道下的子频道列表
         /// </summary>
-        /// <param name="guild_id">频道id</param>
+        /// <param name="guild_id">频道Id</param>
         /// <param name="channelType">筛选子频道类型</param>
         /// <param name="channelSubType">筛选子频道子类型</param>
         /// <returns></returns>
@@ -593,10 +596,10 @@ namespace QQChannelBot.Bot
 
         #region 子频道权限API
         /// <summary>
-        /// 获取指定子频道的权限
+        /// 获取用户在指定子频道的权限
         /// </summary>
-        /// <param name="channel_id">子频道id</param>
-        /// <param name="user_id">用户id</param>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="user_id">用户Id</param>
         /// <returns></returns>
         public async Task<ChannelPermissions?> GetChannelPermissionsAsync(string channel_id, string user_id)
         {
@@ -604,19 +607,41 @@ namespace QQChannelBot.Bot
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<ChannelPermissions?>();
         }
         /// <summary>
-        /// 修改指定子频道的权限
+        /// 修改用户在指定子频道的权限
         /// </summary>
-        /// <param name="channel_id">子频道id</param>
-        /// <param name="user_id">用户id</param>
-        /// <param name="add"></param>
-        /// <param name="remove"></param>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="user_id">用户Id</param>
+        /// <param name="add">添加的权限</param>
+        /// <param name="remove">删除的权限</param>
         /// <returns></returns>
-        public async Task<ChannelPermissions?> ModifyChannelPermissionsAsync(string channel_id, string user_id, string add = "0", string remove = "0")
+        public async Task<bool> EditChannelPermissionsAsync(string channel_id, string user_id, string add = "0", string remove = "0")
         {
-            HttpResponseMessage? respone = await HttpSendAsync(
-                $"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions", HttpMethod.Put,
-                channel_id == null ? null : JsonContent.Create(new { add, remove }));
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions", HttpMethod.Put, JsonContent.Create(new { add, remove }));
+            return respone?.StatusCode == HttpStatusCode.NoContent;
+        }
+        /// <summary>
+        /// 获取指定身份组在指定子频道的权限
+        /// </summary>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="role_id">身份组Id</param>
+        /// <returns></returns>
+        public async Task<ChannelPermissions?> GetMemberChannelPermissionsAsync(string channel_id, string role_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions");
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<ChannelPermissions?>();
+        }
+        /// <summary>
+        /// 修改指定身份组在指定子频道的权限
+        /// </summary>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="role_id">身份组Id</param>
+        /// <param name="add">添加的权限</param>
+        /// <param name="remove">删除的权限</param>
+        /// <returns></returns>
+        public async Task<bool> EditMemberChannelPermissionsAsync(string channel_id, string role_id, string add = "0", string remove = "0")
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions", HttpMethod.Put, JsonContent.Create(new { add, remove }));
+            return respone?.StatusCode == HttpStatusCode.NoContent;
         }
         #endregion
 
@@ -631,7 +656,7 @@ namespace QQChannelBot.Bot
         /// 发送消息接口要求机器人接口需要链接到websocket gateway 上保持在线状态
         /// </para>
         /// </summary>
-        /// <param name="channel_id">子频道 id</param>
+        /// <param name="channel_id">子频道Id</param>
         /// <param name="message">消息对象</param>
         /// <returns></returns>
         public async Task<Message?> SendMessageAsync(string channel_id, MessageToCreate message)
@@ -639,13 +664,35 @@ namespace QQChannelBot.Bot
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages", HttpMethod.Post, JsonContent.Create(message));
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
         }
+        /// <summary>
+        /// 获取指定消息
+        /// </summary>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="message_id">消息Id</param>
+        /// <returns></returns>
+        public async Task<Message?> GetMessageAsync(string channel_id, string message_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}");
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+        }
+        /// <summary>
+        /// 撤回消息
+        /// </summary>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="message_id">消息Id</param>
+        /// <returns></returns>
+        public async Task<bool> DeleteMessageAsync(string channel_id, string message_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}", HttpMethod.Delete);
+            return respone?.StatusCode == HttpStatusCode.OK;
+        }
         #endregion
 
         #region 音频API
         /// <summary>
         /// 音频控制
         /// </summary>
-        /// <param name="channel_id">子频道id</param>
+        /// <param name="channel_id">子频道Id</param>
         /// <param name="audioControl">音频对象</param>
         /// <returns></returns>
         public async Task<Message?> AudioControlAsync(string channel_id, AudioControl audioControl)
@@ -685,7 +732,7 @@ namespace QQChannelBot.Bot
         /// 若未带参数 since，则默认返回当天的日程列表。
         /// </para>
         /// </summary>
-        /// <param name="channel_id">日程子频道id</param>
+        /// <param name="channel_id">日程子频道Id</param>
         /// <param name="since">起始时间戳(ms)</param>
         /// <returns>List&lt;Schedule&gt;?</returns>
         public async Task<List<Schedule>?> GetSchedulesAsync(string channel_id, ulong? since = null)
@@ -697,8 +744,8 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 获取单个日程信息
         /// </summary>
-        /// <param name="channel_id">日程子频道id</param>
-        /// <param name="schedule_id">日程id</param>
+        /// <param name="channel_id">日程子频道Id</param>
+        /// <param name="schedule_id">日程Id</param>
         /// <returns>目标 Schedule 对象</returns>
         public async Task<Schedule?> GetScheduleAsync(string channel_id, string schedule_id)
         {
@@ -712,8 +759,8 @@ namespace QQChannelBot.Bot
         /// 创建成功后，返回创建成功的日程对象。
         /// </para>
         /// </summary>
-        /// <param name="channel_id">日程子频道id</param>
-        /// <param name="schedule">日程对象，不需要带id</param>
+        /// <param name="channel_id">日程子频道Id</param>
+        /// <param name="schedule">日程对象，不需要带Id</param>
         /// <returns>新创建的 Schedule 对象</returns>
         public async Task<Schedule?> CreateScheduleAsync(string channel_id, Schedule schedule)
         {
@@ -727,7 +774,7 @@ namespace QQChannelBot.Bot
         /// 修改成功后，返回修改后的日程对象。
         /// </para>
         /// </summary>
-        /// <param name="channel_id">日程子频道id</param>
+        /// <param name="channel_id">日程子频道Id</param>
         /// <param name="schedule">日程对象</param>
         /// <returns>修改后的 Schedule 对象</returns>
         public async Task<Schedule?> ModifyScheduleAsync(string channel_id, Schedule schedule)
@@ -741,8 +788,8 @@ namespace QQChannelBot.Bot
         /// 要求操作人具有"管理频道"的权限，如果是机器人，则需要将机器人设置为管理员。
         /// </para>
         /// </summary>
-        /// <param name="channel_id">日程子频道id</param>
-        /// <param name="schedule_id">日程id</param>
+        /// <param name="channel_id">日程子频道Id</param>
+        /// <param name="schedule_id">日程Id</param>
         /// <returns>HTTP 状态码 204</returns>
         public async Task<bool> DeleteScheduleAsync(string channel_id, string schedule_id)
         {
@@ -760,8 +807,8 @@ namespace QQChannelBot.Bot
         /// mute_seconds: 禁言多少秒
         /// </para>
         /// </summary>
-        /// <param name="guild_id">频道id</param>
-        /// <param name="user_id">成员id</param>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="user_id">成员Id</param>
         /// <param name="muteMode">禁言模式</param>
         /// <returns></returns>
         public async Task<bool> MuteMemberAsync(string guild_id, string user_id, MuteTime muteMode)
@@ -777,7 +824,7 @@ namespace QQChannelBot.Bot
         /// mute_seconds 禁言多少秒
         /// </para>
         /// </summary>
-        /// <param name="guild_id">频道id</param>
+        /// <param name="guild_id">频道Id</param>
         /// <param name="muteMode">禁言模式</param>
         /// <returns></returns>
         public async Task<bool> MuteGuildAsync(string guild_id, MuteTime muteMode)
@@ -1013,7 +1060,6 @@ namespace QQChannelBot.Bot
             }
             await Task.Factory.StartNew(async () => { await ReceiveAsync(); }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
-
         /// <summary>
         /// 根据收到的数据分析用途
         /// </summary>
@@ -1090,17 +1136,18 @@ namespace QQChannelBot.Bot
                             message.Bot = this;
                             if (suCommand.Length > 0)
                             {
-                                if (message.Member.Roles.Any(r => "234".Contains(r))) SuCommands[suCommand].Invoke(message, paramStr.TrimStartString(suCommand).Trim());
-                                else await this.SendMessageAsync(message.ChannelId, new MsgText(message.Id, "你没有使用该命令的权限！"));
+                                if (message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals("15524401336961673551"))
+                                {
+                                    SuCommands[suCommand].Invoke(message, paramStr.TrimStartString(suCommand).Trim());
+                                    return;
+                                }
                             }
-                            else if (command.Length > 0)
+                            if (command.Length > 0)
                             {
                                 Commands[command].Invoke(message, paramStr.TrimStartString(command).Trim());
+                                return;
                             }
-                            else
-                            {
-                                OnAtMessage?.Invoke(message);
-                            }
+                            OnAtMessage?.Invoke(message);
                             break;
                         default:
                             Log.Debug($"[WebSocket] Unknown message received, Type={type}");
@@ -1176,7 +1223,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 关闭机器人并释放所有占用的资源
         /// </summary>
-        public static void Close()
+        public void Close()
         {
             WebSocketClient.Abort();
             WebSocketClient.Dispose();
