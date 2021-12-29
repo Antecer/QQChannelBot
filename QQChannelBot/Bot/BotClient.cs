@@ -121,7 +121,7 @@ namespace QQChannelBot.Bot
 
         #region Http客户端配置
         /// <summary>
-        /// 向指令发出者报告API错误
+        /// 向前端指令发出者报告API错误
         /// </summary>
         public bool ReportApiError { get; set; }
         /// <summary>
@@ -153,13 +153,15 @@ namespace QQChannelBot.Bot
                 Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
                 if (ReportApiError)
                 {
-                    await Task.Factory.StartNew(async () =>
+                    await Task.Factory.StartNew(() =>
                     {
-                        if (LastMessage == null) return;
-                        string cid = LastMessage.ChannelId;
-                        string mid = LastMessage.Id;
-                        LastMessage = null;
-                        await SendMessageAsync(cid, new MsgText($"❌接口访问失败\n接口地址：{url.TrimStartString(ApiOrigin)}\n请求方式：{method.Method}\n异常代码：{errCode}\n异常原因：{errStr}", mid)).ConfigureAwait(false);
+                        LastGetMessage?.ReplyAsync(string.Join('\n',
+                            "❌接口访问失败",
+                            "接口地址：" + url.TrimStartString(ApiOrigin),
+                            "请求方式：" + method.Method,
+                            "异常代码：" + errCode,
+                            "异常原因：" + errStr
+                            ));
                     }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
                 }
             });
@@ -186,7 +188,40 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 最后一次收到的消息
         /// </summary>
-        private Message? LastMessage { get; set; }
+        private Message? LastGetMessage { get; set; }
+        /// <summary>
+        /// 缓存最后一次发送的消息
+        /// </summary>
+        private List<Message> StackSendMessage { get; set; } = new();
+        /// <summary>
+        /// 读写最后一次发送的消息
+        /// <para>注：目的是为了用于撤回消息，所以自动删除5分钟以上的记录</para>
+        /// </summary>
+        /// <param name="msg">需要存储的msg，或者用于检索同频道的msg</param>
+        /// <param name="set">fase-取值；true-存值</param>
+        private Message? LastSendMessage(Message? msg, bool set = false)
+        {
+            int stackIndex = -1;
+            StackSendMessage.RemoveAll(m => m.Timestamp.AddMinutes(5) < DateTime.Now);
+            if (set)
+            {
+                if (msg != null) StackSendMessage.Add(msg);
+            }
+            else
+            {
+                if (StackSendMessage.Count > 0)
+                {
+                    stackIndex = StackSendMessage.FindLastIndex(m => m.ChannelId == msg?.ChannelId);
+                    if (stackIndex >= 0)
+                    {
+                        msg = StackSendMessage[stackIndex];
+                        StackSendMessage.RemoveAt(stackIndex);
+                    }
+                }
+                else msg = null;
+            }
+            return msg;
+        }
         #endregion
 
         #region Socket客户端配置
@@ -663,7 +698,8 @@ namespace QQChannelBot.Bot
         public async Task<Message?> SendMessageAsync(string channel_id, MessageToCreate message)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages", HttpMethod.Post, JsonContent.Create(message));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+            Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+            return LastSendMessage(result, true);
         }
         /// <summary>
         /// 获取指定消息
@@ -686,6 +722,20 @@ namespace QQChannelBot.Bot
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}", HttpMethod.Delete);
             return respone?.StatusCode == HttpStatusCode.OK;
+        }
+        /// <summary>
+        /// 撤回机器人在当前子频道发出的最后一条消息
+        /// <para>
+        /// 需要传入指令发出者的消息对象<br/>
+        /// 用于检索指令发出者所在频道信息
+        /// </para>
+        /// </summary>
+        /// <param name="msg">消息对象</param>
+        /// <returns></returns>
+        public async Task<bool> DeleteLastMessageAsync(Message? msg)
+        {
+            Message? lastMsg = LastSendMessage(msg);
+            return lastMsg == null ? false : await DeleteMessageAsync(lastMsg.ChannelId, lastMsg.Id);
         }
         #endregion Pass
 
@@ -1039,7 +1089,7 @@ namespace QQChannelBot.Bot
                 else
                 {
                     byte[] recBytes = ReceiveBuffer.Skip(ReceiveBuffer.Offset).Take(result.Count).ToArray();
-                    string recString = Regex.Unescape(Encoding.UTF8.GetString(recBytes)).Replace("\n", "");
+                    string recString = Regex.Unescape(Encoding.UTF8.GetString(recBytes)).Replace("\n", "\\n");
                     Log.Debug($"[WebSocket][GET] {recString}");
 
                     OnWebSocketReceived?.Invoke(this, recString);
@@ -1128,14 +1178,16 @@ namespace QQChannelBot.Bot
                         case "AT_MESSAGE_CREATE":
                             /*收到 @机器人 消息事件*/
                             Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
-                            LastMessage = message;
+                            // 传递上下文数据
+                            message.Bot = this;
+                            // 记录最后收到的一条消息
+                            LastGetMessage = message;
                             string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).Trim();
+                            if(paramStr.StartsWith('/')) paramStr.TrimStart('/').TrimEndString(MsgTag.UserTag(Info?.Id)).Trim();
                             // 识别管理员指令
                             string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             // 识别普通指令
                             string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
-                            // 传递上下文数据
-                            message.Bot = this;
                             if (suCommand.Length > 0)
                             {
                                 if (message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals("15524401336961673551"))
