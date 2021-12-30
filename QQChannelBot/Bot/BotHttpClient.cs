@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.RegularExpressions;
+﻿using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
 {
@@ -12,8 +11,9 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// Http客户端
         /// <para>这里设置禁止重定向：AllowAutoRedirect = false</para>
+        /// <para>这里设置超时时间为15s</para>
         /// </summary>
-        public static HttpClient HttpClient { get; } = new(new HttpLoggingHandler(new HttpClientHandler() { AllowAutoRedirect = false }));
+        public static HttpClient HttpClient { get; } = new(new HttpLoggingHandler(new HttpClientHandler() { AllowAutoRedirect = false })) { Timeout = TimeSpan.FromSeconds(15) };
 
         /// <summary>
         /// 发起HTTP异步请求
@@ -81,19 +81,28 @@ namespace QQChannelBot.Bot
     /// </summary>
     public class HttpLoggingHandler : DelegatingHandler
     {
+        const int printLength = 5120;
         public HttpLoggingHandler(HttpMessageHandler innerHandler) : base(innerHandler) { }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
-            if (requestContent.Length > 10240) requestContent = requestContent[..10240];
-            Log.Debug(Regex.Unescape($"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}"));
+            if (Log.LogLevel == LogLevel.Debug)
+            {
+                string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+                if (requestContent.Length > printLength) requestContent = $"内容长度超过{printLength}，不适合显示";
+                requestContent = Unicoder.Decode(requestContent);
+                Log.Debug($"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}");
+            }
 
             HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
-            string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "";
-            if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "{}";
-            if (responseContent.Length > 10240) responseContent = responseContent[..10240];
-            Log.Debug(Regex.Unescape($"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}"));
+            if (Log.LogLevel == LogLevel.Debug)
+            {
+                string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "";
+                if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "{}";
+                if (responseContent.Length > printLength) responseContent = $"内容长度超过{printLength}，不适合显示";
+                responseContent = Unicoder.Decode(responseContent);
+                Log.Debug($"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}");
+            }
             return response;
         }
     }
