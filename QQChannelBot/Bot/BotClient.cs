@@ -147,15 +147,13 @@ namespace QQChannelBot.Bot
             method ??= HttpMethod.Get;
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = content, Method = method };
             // 捕获Http请求错误
-            return await BotHttpClient.SendAsync(request, async response =>
+            return await BotHttpClient.SendAsync(request, async (response, freezeTime) =>
             {
-                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 int errCode = (int)response.StatusCode;
                 string? errStr = "此错误类型未收录!";
-                responseContent = responseContent.TrimStartString("{}");
-                if (responseContent.StartsWith('{') && responseContent.EndsWith('}'))
+                if (response.Content.Headers.ContentType?.MediaType == "application/json")
                 {
-                    ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
+                    ApiError? err = await response.Content.ReadFromJsonAsync<ApiError>();
                     if (err?.Code != null) errCode = err.Code.Value;
                     if (err?.Message != null) errStr = err.Message;
                 }
@@ -170,7 +168,8 @@ namespace QQChannelBot.Bot
                             "接口地址：" + url.TrimStartString(ApiOrigin),
                             "请求方式：" + method.Method,
                             "异常代码：" + errCode,
-                            "异常原因：" + errStr
+                            "异常原因：" + errStr,
+                            "接口冻结：暂停使用此接口到" + freezeTime.Item1.ToLongTimeString()
                             ));
                     }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
                 }
@@ -1107,7 +1106,7 @@ namespace QQChannelBot.Bot
                     Log.Debug($"[WebSocket][GET] {recString}");
 
                     OnWebSocketReceived?.Invoke(this, recString);
-                    await ExcuteCommand(JsonDocument.Parse(recString).RootElement).ConfigureAwait(false);
+                    await Task.Run(async () => await ExcuteCommand(recString)).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -1131,8 +1130,9 @@ namespace QQChannelBot.Bot
         /// </summary>
         /// <param name="wssJson">Wss接收的数据</param>
         /// <returns></returns>
-        private async Task ExcuteCommand(JsonElement wssJson)
+        private async Task ExcuteCommand(string recString)
         {
+            JsonElement wssJson = JsonDocument.Parse(recString).RootElement;
             int opcode = wssJson.GetProperty("op").GetInt32();
             switch (opcode)
             {
@@ -1146,13 +1146,13 @@ namespace QQChannelBot.Bot
                     switch (type)
                     {
                         case "READY":
-                            await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").RootElement).ConfigureAwait(false);
+                            await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
                             WebSoketSessionId = wssJson.GetProperty("d").GetProperty("session_id").GetString();
                             Info = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user").GetRawText());
                             OnReady?.Invoke(Info);
                             break;
                         case "RESUMED":
-                            await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").RootElement).ConfigureAwait(false);
+                            await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
                             OnResumed?.Invoke(this, wssJson);
                             break;
                         case "GUILD_CREATE":
@@ -1192,7 +1192,6 @@ namespace QQChannelBot.Bot
                         case "AT_MESSAGE_CREATE":
                             /*收到 @机器人 消息事件*/
                             Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
-                            Log.Debug($"[WebSocket][AT_MESSAGE_CREATE] {message.Content}");
                             // 如果启用了机器人Debug模式，将仅响应沙箱频道
                             if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
                             // 传递上下文数据
@@ -1200,9 +1199,8 @@ namespace QQChannelBot.Bot
                             // 记录最后收到的一条消息
                             LastGetMessage = message;
                             // 处理收到的数据
-                            string paramStr = message.Content.Trim();
-                            if (paramStr.StartsWith('/')) paramStr = paramStr.TrimStart('/').TrimStart();
-                            paramStr = paramStr.TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
+                            string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
+                            paramStr = paramStr.TrimStart('/').TrimStart();
                             // 识别管理员指令
                             string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             // 识别普通指令
@@ -1262,7 +1260,7 @@ namespace QQChannelBot.Bot
                     Log.Info($"[WebSocket][Op10] Successfully connected to the gateway!");
                     OnHello?.Invoke(this, wssJson);
                     HeartbeatInterval = wssJson.GetProperty("d").GetProperty("heartbeat_interval").GetInt32();
-                    await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)(IsResume ? Opcode.Resume : Opcode.Identify)}}}").RootElement).ConfigureAwait(false);
+                    await ExcuteCommand($"{{\"op\": {(int)(IsResume ? Opcode.Resume : Opcode.Identify)}}}").ConfigureAwait(false);
                     IsResume = false;
                     break;
                 // Receive 当发送心跳成功之后，就会收到该消息
@@ -1280,7 +1278,7 @@ namespace QQChannelBot.Bot
                                 HeartbeatTick += 1000;
                             }
                             HeartbeatTick = 0;
-                            await ExcuteCommand(JsonDocument.Parse($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").RootElement).ConfigureAwait(false);
+                            await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
                         }, TaskCreationOptions.LongRunning);
                     }
                     else HeartbeatTick = 1;

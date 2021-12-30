@@ -9,6 +9,22 @@ namespace QQChannelBot.Bot
     public static class BotHttpClient
     {
         /// <summary>
+        /// URL访问失败的默认冻结时间
+        /// </summary>
+        public static TimeSpan FreezeAddTime { get; set; } = TimeSpan.FromSeconds(30);
+        /// <summary>
+        /// URL访问失败的最高冻结时间
+        /// </summary>
+        public static TimeSpan FreezeMaxTime { get; set; } = TimeSpan.FromHours(1);
+        /// <summary>
+        /// 临时冻结无权限访问的URL
+        /// <para>
+        /// value.Item1 - 解封时间(DateTime)
+        /// value.Item2 - 再次封禁增加的时间(TimeSpan)
+        /// </para>
+        /// </summary>
+        private static readonly Dictionary<string, (DateTime, TimeSpan)> FreezeUrl = new();
+        /// <summary>
         /// Http客户端
         /// <para>这里设置禁止重定向：AllowAutoRedirect = false</para>
         /// <para>这里设置超时时间为15s</para>
@@ -21,11 +37,28 @@ namespace QQChannelBot.Bot
         /// <param name="request">请求消息</param>
         /// <param name="action">请求失败的回调函数</param>
         /// <returns></returns>
-        public static async Task<HttpResponseMessage?> SendAsync(HttpRequestMessage request, Action<HttpResponseMessage>? action = null)
+        public static async Task<HttpResponseMessage?> SendAsync(HttpRequestMessage request, Action<HttpResponseMessage, (DateTime, TimeSpan)>? action = null)
         {
+            string reqUrl = request.RequestUri!.ToString();
+            if (FreezeUrl.TryGetValue(reqUrl, out var freezeTime) && freezeTime.Item1 > DateTime.Now) return null;
             HttpResponseMessage response = await HttpClient.SendAsync(request);
-            if (response.IsSuccessStatusCode) return response;
-            action?.Invoke(response);
+            if (response.IsSuccessStatusCode)
+            {
+                if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
+                return response;
+            }
+            if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
+            {
+                TimeSpan freezeNext = freezeTime.Item2 * 2;
+                freezeTime.Item1 = DateTime.Now + (freezeNext > FreezeMaxTime ? FreezeMaxTime : freezeNext);
+                FreezeUrl[reqUrl] = freezeTime;
+            }
+            else
+            {
+                freezeTime = (DateTime.Now + FreezeAddTime, FreezeAddTime);
+                FreezeUrl[reqUrl] = freezeTime;
+            }
+            action?.Invoke(response, freezeTime);
             return null;
         }
 
