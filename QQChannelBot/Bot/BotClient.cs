@@ -3,11 +3,11 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using QQChannelBot.Bot.SocketEvent;
 using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Models;
 using QQChannelBot.MsgHelper;
+using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
 {
@@ -110,6 +110,16 @@ namespace QQChannelBot.Bot
         /// <para>可在这里查询 <see href="https://bot.q.qq.com/#/developer/developer-setting">QQ机器人开发设置</see></para>
         /// </summary>
         public Identity BotAccessInfo { get; set; }
+        /// <summary>
+        /// 沙箱频道ID
+        /// <para>用于测试机器人时不干扰正式频道</para>
+        /// </summary>
+        public string SadboxGuildId { get; set; } = "10751199145840861703";
+        /// <summary>
+        /// 机器人进入测试模式
+        /// <para>将仅响应沙箱频道事件</para>
+        /// </summary>
+        public bool DebugBot { get; set; } = false;
         /// <summary>
         /// 机器人用户信息
         /// </summary>
@@ -275,7 +285,9 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// QQ频道机器人
         /// </summary>
-        /// <param name="debugMode">启用调试模式</param>
+        /// <param name="identity">机器人鉴权信息</param>
+        /// <param name="sandBox">使用沙箱API</param>
+        /// <param name="reportApiError">向前端用户反馈API错误</param>
         public BotClient(Identity identity, bool sandBox = false, bool reportApiError = true)
         {
             BotAccessInfo = identity;
@@ -1089,7 +1101,9 @@ namespace QQChannelBot.Bot
                 else
                 {
                     byte[] recBytes = ReceiveBuffer.Skip(ReceiveBuffer.Offset).Take(result.Count).ToArray();
-                    string recString = Regex.Unescape(Encoding.UTF8.GetString(recBytes)).Replace("\n", "\\n");
+                    string recString = Encoding.UTF8.GetString(recBytes);
+                    // 反转义Unicode编码串
+                    recString = Unicoder.Decode(recString);
                     Log.Debug($"[WebSocket][GET] {recString}");
 
                     OnWebSocketReceived?.Invoke(this, recString);
@@ -1102,8 +1116,8 @@ namespace QQChannelBot.Bot
                 CloseWebSocket("ReceiveError");
                 if (HeartbeatInterval > 0)
                 {
-                    Log.Info($"[WebSocket] Try to reconnect after 10s...");
-                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    Log.Info($"[WebSocket] Try to reconnect after 5s...");
+                    await Task.Delay(TimeSpan.FromSeconds(5));
                     IsResume = true;
                     WebSocketClient = new();
                     await ConnectAsync(3).ConfigureAwait(false);
@@ -1178,12 +1192,19 @@ namespace QQChannelBot.Bot
                         case "AT_MESSAGE_CREATE":
                             /*收到 @机器人 消息事件*/
                             Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
+                            Log.Debug($"[WebSocket][AT_MESSAGE_CREATE] {message.Content}");
+                            // 如果启用了机器人Debug模式，将仅响应沙箱频道
+                            if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
+                            // 如果未启用机器人Debug模式，将不响应沙箱频道
+                            if (!DebugBot && message.GuildId.Equals(SadboxGuildId)) return;
                             // 传递上下文数据
                             message.Bot = this;
                             // 记录最后收到的一条消息
                             LastGetMessage = message;
-                            string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).Trim();
-                            if(paramStr.StartsWith('/')) paramStr.TrimStart('/').TrimEndString(MsgTag.UserTag(Info?.Id)).Trim();
+                            // 处理收到的数据
+                            string paramStr = message.Content.Trim();
+                            if (paramStr.StartsWith('/')) paramStr = paramStr.TrimStart('/').TrimStart();
+                            paramStr = paramStr.TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
                             // 识别管理员指令
                             string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
                             // 识别普通指令
