@@ -21,7 +21,7 @@ namespace QQChannelBot.Models
         /// 用户在频道内的身份组ID, 默认值可参考DefaultRoles
         /// </summary>
         [JsonPropertyName("roles")]
-        public string[] Roles { get; set; } = new string[] { "1" };
+        public List<string> Roles { get; set; } = new List<string>() { "1" };
         /// <summary>
         /// 用户加入频道的时间 ISO8601 timestamp
         /// </summary>
