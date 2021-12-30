@@ -1,4 +1,7 @@
-﻿using QQChannelBot.Tools;
+﻿using System.Net.Http.Json;
+using System.Text.Json;
+using QQChannelBot.Bot.StatusCode;
+using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
 {
@@ -47,18 +50,24 @@ namespace QQChannelBot.Bot
                 if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
                 return response;
             }
-            if ((int)response.StatusCode >= 400)
+            if (response.Content.Headers.ContentType?.MediaType == "application/json")
             {
-                if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
+                string responseContent = await response.Content.ReadAsStringAsync();
+                ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
+                // 打击11264和11265错误，无接口访问权限
+                if (err?.Code == 11264 || err?.Code == 11265)
                 {
-                    TimeSpan freezeNext = freezeTime.Item2 * 2;
-                    freezeTime.Item1 = DateTime.Now + (freezeNext > FreezeMaxTime ? FreezeMaxTime : freezeNext);
-                    FreezeUrl[reqUrl] = freezeTime;
-                }
-                else
-                {
-                    freezeTime = (DateTime.Now + FreezeAddTime, FreezeAddTime);
-                    FreezeUrl[reqUrl] = freezeTime;
+                    if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
+                    {
+                        TimeSpan freezeNext = freezeTime.Item2 * 2;
+                        freezeTime.Item1 = DateTime.Now + (freezeNext > FreezeMaxTime ? FreezeMaxTime : freezeNext);
+                        FreezeUrl[reqUrl] = freezeTime;
+                    }
+                    else
+                    {
+                        freezeTime = (DateTime.Now + FreezeAddTime, FreezeAddTime);
+                        FreezeUrl[reqUrl] = freezeTime;
+                    }
                 }
             }
             action?.Invoke(response, freezeTime);

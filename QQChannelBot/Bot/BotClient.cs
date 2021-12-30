@@ -153,6 +153,7 @@ namespace QQChannelBot.Bot
                 string? errStr = "此错误类型未收录!";
                 if (response.Content.Headers.ContentType?.MediaType == "application/json")
                 {
+                    // 注意：使用ReadFromJsonAsync<>()过后，HttpContent会被释放，无法进行重复读取！
                     ApiError? err = await response.Content.ReadFromJsonAsync<ApiError>();
                     if (err?.Code != null) errCode = err.Code.Value;
                     if (err?.Message != null) errStr = err.Message;
