@@ -47,16 +47,19 @@ namespace QQChannelBot.Bot
                 if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
                 return response;
             }
-            if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
+            if ((int)response.StatusCode >= 400)
             {
-                TimeSpan freezeNext = freezeTime.Item2 * 2;
-                freezeTime.Item1 = DateTime.Now + (freezeNext > FreezeMaxTime ? FreezeMaxTime : freezeNext);
-                FreezeUrl[reqUrl] = freezeTime;
-            }
-            else
-            {
-                freezeTime = (DateTime.Now + FreezeAddTime, FreezeAddTime);
-                FreezeUrl[reqUrl] = freezeTime;
+                if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
+                {
+                    TimeSpan freezeNext = freezeTime.Item2 * 2;
+                    freezeTime.Item1 = DateTime.Now + (freezeNext > FreezeMaxTime ? FreezeMaxTime : freezeNext);
+                    FreezeUrl[reqUrl] = freezeTime;
+                }
+                else
+                {
+                    freezeTime = (DateTime.Now + FreezeAddTime, FreezeAddTime);
+                    FreezeUrl[reqUrl] = freezeTime;
+                }
             }
             action?.Invoke(response, freezeTime);
             return null;
