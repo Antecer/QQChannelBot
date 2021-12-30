@@ -120,9 +120,9 @@ namespace QQChannelBot.Tools
             if (announces != null)
             {
                 isOk = await bot.DeleteAnnouncesAsync(sender.ChannelId);
-                await sender.ReplyAsync(GetLog("创建子频道公告", isOk));
+                await sender.ReplyAsync(GetLog("删除子频道公告", isOk));
             }
-            else await sender.ReplyAsync(GetLog("创建子频道公告"));
+            else await sender.ReplyAsync(GetLog("删除子频道公告"));
 
             Channel? channel = await bot.GetChannelAsync(sender.ChannelId);
             await sender.ReplyAsync(GetLog("获取子频道信息", channel != null));
@@ -130,16 +130,16 @@ namespace QQChannelBot.Tools
             List<Channel>? channels = await bot.GetChannelsAsync(sender.GuildId);
             await sender.ReplyAsync(GetLog("获取频道下的子频道列表", channels != null));
 
-            ChannelPermissions? permissions = await bot.GetChannelPermissionsAsync(sender.ChannelId, botId);
+            ChannelPermissions? permissions = await bot.GetChannelPermissionsAsync(sender.ChannelId, "977671216794244851"); // 获取"频道管理助手"的权限
             await sender.ReplyAsync(GetLog("获取用户在指定(当前)子频道的权限", permissions != null));
 
-            isOk = await bot.EditChannelPermissionsAsync(sender.ChannelId, botId, "1");
+            isOk = await bot.EditChannelPermissionsAsync(sender.ChannelId, "977671216794244851", "1"); // 修改"频道管理助手"的权限
             await sender.ReplyAsync(GetLog("修改用户在指定(当前)子频道的权限", isOk));
 
-            permissions = await bot.GetMemberChannelPermissionsAsync(sender.ChannelId, "1");
+            permissions = await bot.GetMemberChannelPermissionsAsync(sender.ChannelId, "1");    // 获取"1"普通成员的权限
             await sender.ReplyAsync(GetLog("获取指定身份组在指定(当前)子频道的权限", permissions != null));
 
-            isOk = await bot.EditMemberChannelPermissionsAsync(sender.ChannelId, botId, "1");
+            isOk = await bot.EditMemberChannelPermissionsAsync(sender.ChannelId, "1", "1");     // 修改"1"普通成员的权限
             await sender.ReplyAsync(GetLog("修改指定身份组在指定(当前)子频道的权限", isOk));
 
             /*这里需要添加音频API测试代码*/
