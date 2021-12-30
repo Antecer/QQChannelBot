@@ -1195,8 +1195,6 @@ namespace QQChannelBot.Bot
                             Log.Debug($"[WebSocket][AT_MESSAGE_CREATE] {message.Content}");
                             // 如果启用了机器人Debug模式，将仅响应沙箱频道
                             if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
-                            // 如果未启用机器人Debug模式，将不响应沙箱频道
-                            if (!DebugBot && message.GuildId.Equals(SadboxGuildId)) return;
                             // 传递上下文数据
                             message.Bot = this;
                             // 记录最后收到的一条消息
