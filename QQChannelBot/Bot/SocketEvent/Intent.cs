@@ -3,7 +3,8 @@
     /// <summary>
     /// 事件订阅权限
     /// <para>
-    /// 基础事件(默认有订阅权限)：GUILDS, GUILD_MEMBERS, AT_MESSAGES
+    /// 基础事件(默认有订阅权限)：GUILDS, GUILD_MEMBERS, AT_MESSAGES, GUILD_MESSAGE_REACTIONS<br/>
+    /// 详见：<see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">官方文档</see>
     /// </para>
     /// </summary>
     public enum Intent
@@ -28,9 +29,9 @@
         /// </summary>
         GUILD_MEMBERS = 1 << 1,
         /// <summary>
-        /// 暂未用
+        /// MESSAGE_CREATE - 普通消息事件(仅私域可用)
         /// </summary>
-        NORMAL_MESSAGES = 1 << 9,
+        MESSAGE_CREATE = 1 << 9,
         /// <summary>
         /// <para>
         /// MESSAGE_REACTION_ADD - 为消息添加表情表态 <br/>

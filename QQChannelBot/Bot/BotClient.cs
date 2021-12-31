@@ -23,7 +23,7 @@ namespace QQChannelBot.Bot
     /// ReportApiError - 向前端消息发出者报告API错误[true:报告;false:静默]；默认值=true<br/>
     /// SandBox - 机器人调用API的模式[true:沙箱;false:正式]；默认值=false<br/>
     /// ApiOrigin - (只读) 获取机器人当前使用的ApiUrl<br/>
-    /// Intents - 订阅频道事件,<see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">官方文档</see>；默认值=(GUILDS|GUILD_MEMBERS|AT_MESSAGES|GUILD_MESSAGE_REACTIONS)<br/>
+    /// Intents - 订阅频道事件,详见:<see cref="Intent"/>；默认值=(GUILDS|GUILD_MEMBERS|AT_MESSAGES|GUILD_MESSAGE_REACTIONS)<br/>
     /// </para>
     /// </summary>
     public class BotClient
@@ -90,34 +90,42 @@ namespace QQChannelBot.Bot
         /// 频道信息变更后触发
         /// <para>加入频道, 资料变更, 退出频道</para>
         /// </summary>
-        public event Action<BotClient, JsonElement?, ActionType>? OnGuildMsg;
+        public event Action<BotClient, JsonElement?>? OnGuildMsg;
         /// <summary>
         /// 子频道被修改后触发
         /// <para>创建子频道, 更新子频道, 删除子频道</para>
         /// </summary>
-        public event Action<BotClient, JsonElement?, ActionType>? OnChannelMsg;
+        public event Action<BotClient, JsonElement?>? OnChannelMsg;
         /// <summary>
         /// 成员信息变更后触发
         /// <para>成员加入, 资料变更, 移除成员</para>
         /// </summary>
-        public event Action<BotClient, JsonElement?, ActionType>? OnGuildMemberMsg;
+        public event Action<BotClient, JsonElement?>? OnGuildMemberMsg;
         /// <summary>
         /// 修改表情表态后触发
         /// <para>添加表情表态, 删除表情表态</para>
         /// </summary>
-        public event Action<BotClient, JsonElement?, ActionType>? OnMessageReaction;
-        /// <summary>
-        /// 机器人收到私信后触发
-        /// </summary>
-        public event Action<BotClient, JsonElement?, ActionType>? OnDirectMessage;
+        public event Action<BotClient, JsonElement?>? OnMessageReaction;
         /// <summary>
         /// 音频状态变更后触发
         /// </summary>
-        public event Action<BotClient, JsonElement?, ActionType>? OnAudioMsg;
+        public event Action<BotClient, JsonElement?>? OnAudioMsg;
+        /// <summary>
+        /// 机器人收到私信后触发
+        /// </summary>
+        public event Action<Message>? OnDirectMessage;
         /// <summary>
         /// 收到 @机器人 消息后触发
         /// </summary>
         public event Action<Message>? OnAtMessage;
+        /// <summary>
+        /// 频道内有人发消息就触发 (包含 @机器人 消息)
+        /// <para>
+        /// Message - 消息对象<br/>
+        /// bool - 是否为AT消息
+        /// </para>
+        /// </summary>
+        public event Action<Message, bool>? OnMsgCreate;
         #endregion
 
         /// <summary>
@@ -1154,20 +1162,25 @@ namespace QQChannelBot.Bot
             {
                 // Receive 服务端进行消息推送
                 case (int)Opcode.Dispatch:
-                    Log.Info($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
                     OnDispatch?.Invoke(this, wssJson);
                     WssMsgLastS = wssJson.GetProperty("s").GetInt32();
-                    if (!wssJson.TryGetProperty("t", out JsonElement t)) break;
+                    if (!wssJson.TryGetProperty("t", out JsonElement t))
+                    {
+                        Log.Info($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
+                        break;
+                    }
                     string? type = t.GetString();
                     switch (type)
                     {
                         case "READY":
+                            Log.Debug($"[WebSocket][Op00] READY: {wssJson.GetRawText()}");
                             await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
                             WebSoketSessionId = wssJson.GetProperty("d").GetProperty("session_id").GetString();
                             Info = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user").GetRawText());
                             OnReady?.Invoke(Info);
                             break;
                         case "RESUMED":
+                            Log.Debug($"[WebSocket][Op00] RESUMED: {wssJson.GetRawText()}");
                             await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
                             OnResumed?.Invoke(this, wssJson);
                             break;
@@ -1175,76 +1188,50 @@ namespace QQChannelBot.Bot
                         case "GUILD_UPDATE":
                         case "GUILD_DELETE":
                             /*频道事件*/
-                            OnGuildMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            Log.Debug($"[WebSocket][Op00] GUILD: {wssJson.GetRawText()}");
+                            OnGuildMsg?.Invoke(this, wssJson);
                             break;
                         case "CHANNEL_CREATE":
                         case "CHANNEL_UPDATE":
                         case "CHANNEL_DELETE":
                             /*子频道事件*/
-                            OnChannelMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            Log.Debug($"[WebSocket][Op00] CHANNEL: {wssJson.GetRawText()}");
+                            OnChannelMsg?.Invoke(this, wssJson);
                             break;
                         case "GUILD_MEMBER_ADD":
                         case "GUILD_MEMBER_UPDATE":
                         case "GUILD_MEMBER_REMOVE":
                             /*频道成员事件*/
-                            OnGuildMemberMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            Log.Debug($"[WebSocket][Op00] GUILD_MEMBER: {wssJson.GetRawText()}");
+                            OnGuildMemberMsg?.Invoke(this, wssJson);
                             break;
                         case "MESSAGE_REACTION_ADD":
                         case "MESSAGE_REACTION_REMOVE":
                             /*表情表态事件*/
-                            OnMessageReaction?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
-                            break;
-                        case "DIRECT_MESSAGE_CREATE":
-                            /*机器人收到私信事件*/
-                            OnDirectMessage?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            Log.Debug($"[WebSocket][Op00] MESSAGE_REACTION: {wssJson.GetRawText()}");
+                            OnMessageReaction?.Invoke(this, wssJson);
                             break;
                         case "AUDIO_START":
                         case "AUDIO_FINISH":
                         case "AUDIO_ON_MIC":
                         case "AUDIO_OFF_MIC":
                             /*音频事件*/
-                            OnAudioMsg?.Invoke(this, wssJson, (ActionType)Enum.Parse(typeof(ActionType), type));
+                            Log.Debug($"[WebSocket][Op00] AUDIO: {wssJson.GetRawText()}");
+                            OnAudioMsg?.Invoke(this, wssJson);
                             break;
-                        case "AT_MESSAGE_CREATE":
-                            /*收到 @机器人 消息事件*/
-                            Message message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText()) ?? new();
-                            // 如果启用了机器人Debug模式，将仅响应沙箱频道
-                            if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
-                            // 传递上下文数据
-                            message.Bot = this;
-                            // 记录机器人在当前频道下的身份组信息
-                            if (!Members.ContainsKey(message.GuildId))
+                        case "DIRECT_MESSAGE_CREATE":   // 机器人收到私信事件
+                        case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
+                        case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
+                            Message? atMessage = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText());
+                            // 私域消息太多，不打印消息(如需打印请自行订阅OnDispatch事件)
+                            if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || (atMessage?.GuildId == SadboxGuildId))
                             {
-                                ReportApiError = false;
-                                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!);
-                                ReportApiError = true;
+                                Log.Info($"[WebSocket][Op00] MESSAGE: {wssJson.GetRawText()}");
                             }
-                            // 记录最后收到的一条消息
-                            LastGetMessage = message;
-                            // 处理收到的数据
-                            string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
-                            paramStr = paramStr.TrimStart('/').TrimStart();
-                            // 识别管理员指令
-                            string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
-                            // 识别普通指令
-                            string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
-                            if (suCommand.Length > 0)
-                            {
-                                if (message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals("15524401336961673551"))
-                                {
-                                    SuCommands[suCommand].Invoke(message, paramStr.TrimStartString(suCommand).Trim());
-                                    return;
-                                }
-                            }
-                            if (command.Length > 0)
-                            {
-                                Commands[command].Invoke(message, paramStr.TrimStartString(command).Trim());
-                                return;
-                            }
-                            OnAtMessage?.Invoke(message);
+                            await MessageCenter(atMessage, type).ConfigureAwait(false);
                             break;
                         default:
-                            Log.Debug($"[WebSocket] Unknown message received, Type={type}");
+                            Log.Warn($"[WebSocket] Unknown message received, Type={type}");
                             break;
                     }
                     break;
@@ -1330,6 +1317,76 @@ namespace QQChannelBot.Bot
         public async void Start(int RetryCount = 3)
         {
             await ConnectAsync(RetryCount).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 上帝ID
+        /// <para>仅用于测试,方便验证权限功能</para>
+        /// </summary>
+        public string GodId { get; set; } = "15524401336961673551";
+        /// <summary>
+        /// 集中处理聊天消息
+        /// </summary>
+        /// <param name="message">消息对象</param>
+        /// <param name="type">消息类型
+        /// <para>
+        /// DIRECT_MESSAGE_CREATE - 私信<br/>
+        /// AT_MESSAGE_CREATE - 频道内 @机器人<br/>
+        /// MESSAGE_CREATE - 频道内任意消息(仅私域支持)<br/>
+        /// </para></param>
+        /// <returns></returns>
+        private async Task MessageCenter(Message? message, string type)
+        {
+            if (message == null) return;
+            // 如果启用了机器人Debug模式，将仅响应沙箱频道
+            if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
+            // 传递上下文数据
+            message.Bot = this;
+            // 记录机器人在当前频道下的身份组信息
+            if (!Members.ContainsKey(message.GuildId))
+            {
+                ReportApiError = false;
+                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!);
+                ReportApiError = true;
+            }
+            // 记录最后收到的一条消息
+            LastGetMessage = message;
+            // 如果是收到私信，立即处理并不向后传递
+            if (type == "DIRECT_MESSAGE_CREATE")
+            {
+                OnDirectMessage?.Invoke(message);
+                return;
+            }
+            // 处理收到的数据
+            string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
+            paramStr = paramStr.TrimStart('/', ' ');
+            // 识别管理员指令
+            string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
+            if (suCommand.Length > 0)
+            {
+                if (message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals(GodId))
+                {
+                    SuCommands[suCommand].Invoke(message, paramStr.TrimStartString(suCommand).Trim());
+                    return;
+                }
+            }
+            // 识别普通指令
+            string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
+            if (command.Length > 0)
+            {
+                Commands[command].Invoke(message, paramStr.TrimStartString(command).Trim());
+                return;
+            }
+            // 触发Message到达事件
+            if (type == "AT_MESSAGE_CREATE")
+            {
+                OnAtMessage?.Invoke(message);
+                OnMsgCreate?.Invoke(message, true);
+            }
+            else
+            {
+                OnMsgCreate?.Invoke(message, false);
+            }
         }
     }
 
