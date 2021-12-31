@@ -1006,7 +1006,7 @@ namespace QQChannelBot.Bot
                             properties = new { }
                         }
                     };
-                    Log.Info($"[WebSocket] Identify Sending...");
+                    Log.Debug($"[WebSocket] Identify Sending...");
                     await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
                 }
                 else throw new Exception("WebSocket Connection Broken!");
@@ -1027,7 +1027,7 @@ namespace QQChannelBot.Bot
                 if (WebSocketClient.State == WebSocketState.Open)
                 {
                     var data = new { op = Opcode.Heartbeat, s = WssMsgLastS };
-                    Log.Info($"[WebSocket] Heartbeat Sending...");
+                    Log.Debug($"[WebSocket] Heartbeat Sending...");
                     await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true).ConfigureAwait(false);
                 }
                 else throw new Exception("WebSocket Connection Broken!");
@@ -1055,7 +1055,7 @@ namespace QQChannelBot.Bot
                         seq = WssMsgLastS
                     }
                 };
-                Log.Info($"[WebSocket] Resume Sending...");
+                Log.Debug($"[WebSocket] Resume Sending...");
                 await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -1116,7 +1116,7 @@ namespace QQChannelBot.Bot
                 CloseWebSocket("ReceiveError");
                 if (HeartbeatInterval > 0)
                 {
-                    Log.Info($"[WebSocket] Try to reconnect after 5s...");
+                    Log.Warn($"[WebSocket] Try to reconnect after 5s...");
                     await Task.Delay(TimeSpan.FromSeconds(5));
                     IsResume = true;
                     WebSocketClient = new();
@@ -1139,7 +1139,7 @@ namespace QQChannelBot.Bot
             {
                 // Receive 服务端进行消息推送
                 case (int)Opcode.Dispatch:
-                    Log.Debug($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
+                    Log.Info($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
                     OnDispatch?.Invoke(this, wssJson);
                     WssMsgLastS = wssJson.GetProperty("s").GetInt32();
                     if (!wssJson.TryGetProperty("t", out JsonElement t)) break;
@@ -1228,19 +1228,19 @@ namespace QQChannelBot.Bot
                     break;
                 // Send&Receive 客户端或服务端发送心跳
                 case (int)Opcode.Heartbeat:
-                    Log.Debug($"[WebSocket][Op01] {(wssJson.GetProperty("d").GetString() == null ? "Client" : "Server")} sends a heartbeat!");
+                    Log.Info($"[WebSocket][Op01] {(wssJson.GetProperty("d").GetString() == null ? "Client" : "Server")} sends a heartbeat!");
                     OnHeartbeat?.Invoke(this, wssJson);
                     await SendHeartBeatAsync();
                     break;
                 // Send 客户端发送鉴权
                 case (int)Opcode.Identify:
-                    Log.Debug($"[WebSocket][Op02] Client send authentication!");
+                    Log.Info($"[WebSocket][Op02] Client send authentication!");
                     OnIdentify?.Invoke(this, wssJson);
                     await SendIdentifyAsync();
                     break;
                 // Send 客户端恢复连接
                 case (int)Opcode.Resume:
-                    Log.Debug($"[WebSocket][Op06] Client resumes connecting!");
+                    Log.Info($"[WebSocket][Op06] Client resumes connecting!");
                     OnResume?.Invoke(this, wssJson);
                     await SendResumeAsync();
                     break;

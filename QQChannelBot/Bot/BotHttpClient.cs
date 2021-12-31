@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Tools;
@@ -126,7 +127,7 @@ namespace QQChannelBot.Bot
     /// </summary>
     public class HttpLoggingHandler : DelegatingHandler
     {
-        const int printLength = 5120;
+        const int printLength = 2048;
         public HttpLoggingHandler(HttpMessageHandler innerHandler) : base(innerHandler) { }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -134,19 +135,22 @@ namespace QQChannelBot.Bot
             if (Log.LogLevel == LogLevel.Debug)
             {
                 string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
-                if (requestContent.Length > printLength) requestContent = $"内容长度超过{printLength}，不适合显示";
-                requestContent = Unicoder.Decode(requestContent);
-                Log.Debug($"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}");
+                if (requestContent.Length > printLength) requestContent = Unicoder.Decode(requestContent[..printLength]);
+                requestContent = $"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}";
+                Log.Debug(requestContent);
             }
 
             HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
-            if (Log.LogLevel == LogLevel.Debug)
+            if ((Log.LogLevel == LogLevel.Debug) && (response.StatusCode >= HttpStatusCode.BadRequest))
             {
-                string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "";
-                if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "{}";
-                if (responseContent.Length > printLength) responseContent = $"内容长度超过{printLength}，不适合显示";
-                responseContent = Unicoder.Decode(responseContent);
-                Log.Debug($"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}");
+                string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+                if ((response.Content?.Headers.ContentType?.CharSet != null) || (response.Content?.Headers.ContentType?.MediaType == "application/json"))
+                {
+                    responseContent = Unicoder.Decode(responseContent[..printLength]);
+                }
+                responseContent = $"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}";
+                if (response.StatusCode < HttpStatusCode.BadRequest) Log.Debug(responseContent);
+                else Log.Error(responseContent);
             }
             return response;
         }
