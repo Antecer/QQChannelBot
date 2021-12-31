@@ -11,6 +11,21 @@ using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
 {
+    /// <summary>
+    /// 机器人对象
+    /// <para>
+    /// 可选属性配置表：<br/>
+    /// BotAccessInfo - 机器人鉴权登陆信息,见<see cref="Identity"/><br/>
+    /// SadboxGuildId - 指定用于调试机器人的沙箱频道(DebugBot=true时有效)<br/>
+    /// DebugBot - 指定机器人运行的模式[true:测试; false:正式]；默认值=false<br/>
+    /// Info - 机器人的 <see cref="User"/> 信息(在机器人鉴权通过后更新)；默认值=null<br/>
+    /// Members - 自动记录机器人在各频道内的身份组信息<br/>
+    /// ReportApiError - 向前端消息发出者报告API错误[true:报告;false:静默]；默认值=true<br/>
+    /// SandBox - 机器人调用API的模式[true:沙箱;false:正式]；默认值=false<br/>
+    /// ApiOrigin - (只读) 获取机器人当前使用的ApiUrl<br/>
+    /// Intents - 订阅频道事件,<see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">官方文档</see>；默认值=(GUILDS|GUILD_MEMBERS|AT_MESSAGES|GUILD_MESSAGE_REACTIONS)<br/>
+    /// </para>
+    /// </summary>
     public class BotClient
     {
         #region 可以监听的固定事件列表
@@ -125,7 +140,7 @@ namespace QQChannelBot.Bot
         /// </summary>
         public User? Info { get; set; }
         /// <summary>
-        /// 保存机器人在各个频道内的角色信息
+        /// 保存机器人在各频道内的角色信息
         /// </summary>
         public Dictionary<string, Member?> Members { get; set; } = new();
 
@@ -1197,6 +1212,13 @@ namespace QQChannelBot.Bot
                             if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
                             // 传递上下文数据
                             message.Bot = this;
+                            // 记录机器人在当前频道下的身份组信息
+                            if (!Members.ContainsKey(message.GuildId))
+                            {
+                                ReportApiError = false;
+                                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!);
+                                ReportApiError = true;
+                            }
                             // 记录最后收到的一条消息
                             LastGetMessage = message;
                             // 处理收到的数据
