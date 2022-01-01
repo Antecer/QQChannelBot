@@ -166,9 +166,9 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<HttpResponseMessage?> HttpSendAsync(string url, HttpMethod? method = null, HttpContent? content = null)
         {
-            BotHttpClient.HttpClient.DefaultRequestHeaders.Authorization = new("Bot", $"{BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}");
             method ??= HttpMethod.Get;
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = content, Method = method };
+            request.Headers.Authorization = new("Bot", $"{BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}");
             // 捕获Http请求错误
             return await BotHttpClient.SendAsync(request, async (response, freezeTime) =>
             {
@@ -193,7 +193,7 @@ namespace QQChannelBot.Bot
                             "请求方式：" + method.Method,
                             "异常代码：" + errCode,
                             "异常原因：" + errStr,
-                            "接口冻结：暂停使用此接口到" + freezeTime.Item1.ToLongTimeString()
+                            freezeTime != null ? "接口冻结：暂停使用此接口到" + freezeTime.EndTime.ToLongTimeString() : null
                             ));
                     }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
                 }
@@ -1359,7 +1359,7 @@ namespace QQChannelBot.Bot
             }
             // 处理收到的数据
             string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
-            paramStr = paramStr.TrimStart('/', ' ');
+            paramStr = paramStr.TrimStart('/').TrimStart();
             // 识别管理员指令
             string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
             if (suCommand.Length > 0)
