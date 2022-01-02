@@ -141,8 +141,17 @@ namespace QQChannelBot.Bot
     public class HttpLoggingHandler : DelegatingHandler
     {
         const int printLength = 2048;
+        /// <summary>
+        /// HttpClient请求拦截器构造函数
+        /// </summary>
+        /// <param name="innerHandler"></param>
         public HttpLoggingHandler(HttpMessageHandler innerHandler) : base(innerHandler) { }
-
+        /// <summary>
+        /// 发起异步Http请求
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (Log.LogLevel == LogLevel.Debug)
@@ -155,7 +164,7 @@ namespace QQChannelBot.Bot
 
             HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
 
-            if ((Log.LogLevel == LogLevel.Debug) && (response.StatusCode >= HttpStatusCode.BadRequest))
+            if ((Log.LogLevel == LogLevel.Debug) || (response.StatusCode >= HttpStatusCode.BadRequest))
             {
                 string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
                 if ((response.Content?.Headers.ContentType?.CharSet != null) || (response.Content?.Headers.ContentType?.MediaType == "application/json"))
