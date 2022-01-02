@@ -29,7 +29,7 @@
         /// </summary>
         GUILD_MEMBERS = 1 << 1,
         /// <summary>
-        /// MESSAGE_CREATE - 普通消息事件(仅私域可用)
+        /// MESSAGE_CREATE - 频道内发送的所有消息的事件（仅私域可用）
         /// </summary>
         MESSAGE_CREATE = 1 << 9,
         /// <summary>
