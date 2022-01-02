@@ -1132,7 +1132,8 @@ namespace QQChannelBot.Bot
                     string recString = Encoding.UTF8.GetString(recBytes);
                     // 反转义Unicode编码串
                     recString = Unicoder.Decode(recString);
-                    Log.Debug($"[WebSocket][GET] {recString}");
+                    // 私域消息太多，默认不打印消息(如需打印请自行订阅 OnWebSocketReceived 事件)
+                    if (!Intents.HasFlag(Intent.MESSAGE_CREATE)) Log.Debug($"[WebSocket][GET] {recString}");
 
                     OnWebSocketReceived?.Invoke(this, recString);
                     await Task.Run(async () => await ExcuteCommand(recString)).ConfigureAwait(false);
@@ -1228,7 +1229,7 @@ namespace QQChannelBot.Bot
                         case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
                         case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
                             Message? atMessage = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText());
-                            // 私域消息太多，不打印消息(如需打印请自行订阅OnDispatch事件)
+                            // 私域消息太多，默认不打印消息(如需打印请自行订阅OnDispatch事件)
                             if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || (atMessage?.GuildId == SadboxGuildId))
                             {
                                 Log.Info($"[WebSocket][Op00] MESSAGE: {wssJson.GetRawText()}");
