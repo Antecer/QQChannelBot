@@ -185,6 +185,11 @@ namespace QQChannelBot.Bot
                 Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
                 if (ReportApiError)
                 {
+                    if (LastGetMessage?.Timestamp.AddMinutes(5) < DateTime.Now)
+                    {
+                        Log.Error($"[接口访问失败] 被动消息可回复时间已超时！");
+                        return;
+                    }
                     await Task.Factory.StartNew(() =>
                     {
                         LastGetMessage?.ReplyAsync(string.Join('\n',
