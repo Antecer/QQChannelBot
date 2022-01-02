@@ -198,7 +198,7 @@ namespace QQChannelBot.Bot
                             "请求方式：" + method.Method,
                             "异常代码：" + errCode,
                             "异常原因：" + errStr,
-                            freezeTime != null ? "接口冻结：暂停使用此接口到" + freezeTime.EndTime.ToLongTimeString() : null
+                            $"接口冻结：暂停使用此接口 {freezeTime.AddTime.Minutes}分{freezeTime.AddTime.Seconds}秒，解除时间：{freezeTime.EndTime:yyyy-MM-dd HH:mm:ss}"
                             ));
                     }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
                 }
@@ -428,7 +428,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 获取频道详情
         /// </summary>
-        /// <param name="guild_Id">频道Id</param>
+        /// <param name="guild_id">频道Id</param>
         /// <returns>Guild?</returns>
         public async Task<Guild?> GetGuildAsync(string guild_id)
         {
@@ -554,6 +554,29 @@ namespace QQChannelBot.Bot
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}");
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Member?>();
         }
+        /// <summary>
+        /// 获取频道成员列表（仅私域可用）
+        /// </summary>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="limit">分页大小1-1000（默认值10）</param>
+        /// <param name="after">上次回包中最后一个Member的用户ID，如果是第一次请求填0</param>
+        /// <returns></returns>
+        public async Task<List<Member>?> GetGuildMembersAsync(string guild_id, int limit = 10, string after = "0")
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members?limit={limit}&after={after}");
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Member>?>();
+        }
+        /// <summary>
+        /// 删除指定频道成员（仅私域可用）
+        /// </summary>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="user_id">用户Id</param>
+        /// <returns></returns>
+        public async Task<bool> DeleteGuildMemberAsync(string guild_id, string user_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}", HttpMethod.Delete);
+            return respone?.StatusCode == HttpStatusCode.NoContent;
+        }
         #endregion Pass
 
         #region 公告API
@@ -667,6 +690,56 @@ namespace QQChannelBot.Bot
                 if (channelSubType != null) channels = channels.Where(channel => channel.SubType == channelSubType).ToList();
             }
             return channels;
+        }
+        /// <summary>
+        /// 创建子频道（仅私域可用）
+        /// </summary>
+        /// <param name="guild_id">频道Id</param>
+        /// <param name="name">子频道名称</param>
+        /// <param name="type">子频道类型</param>
+        /// <param name="position">子频道排序</param>
+        /// <param name="parent_id">子频道所属分组Id</param>
+        /// <returns></returns>
+        public async Task<Channel?> CreateChannelAsync(string guild_id, string name, ChannelType type, int position, string parent_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/channels", HttpMethod.Post, JsonContent.Create(new
+            {
+                name,
+                type = type.GetHashCode(),
+                position,
+                parent_id
+            }));
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
+        }
+        /// <summary>
+        /// 修改子频道信息（仅私域可用）
+        /// </summary>
+        /// <param name="channel_id">子频道Id</param>
+        /// <param name="name">子频道名称</param>
+        /// <param name="type"></param>
+        /// <param name="position">子频道排序</param>
+        /// <param name="parent_id">子频道所属分组Id</param>
+        /// <returns></returns>
+        public async Task<Channel?> EditChannelAsync(string channel_id, string name, ChannelType type, int position, string parent_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Patch, JsonContent.Create(new
+            {
+                name,
+                type = type.GetHashCode(),
+                position,
+                parent_id
+            }));
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
+        }
+        /// <summary>
+        /// 删除指定子频道（仅私域可用）
+        /// </summary>
+        /// <param name="channel_id"></param>
+        /// <returns></returns>
+        public async Task<bool> DeleteChannelAsync(string channel_id)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Delete);
+            return respone?.StatusCode == HttpStatusCode.NoContent;
         }
         #endregion Pass
 
@@ -1158,7 +1231,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 根据收到的数据分析用途
         /// </summary>
-        /// <param name="wssJson">Wss接收的数据</param>
+        /// <param name="recString">Wss接收的数据</param>
         /// <returns></returns>
         private async Task ExcuteCommand(string recString)
         {
