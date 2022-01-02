@@ -54,7 +54,7 @@ namespace QQChannelBot.Bot
         /// <param name="request">请求消息</param>
         /// <param name="action">请求失败的回调函数</param>
         /// <returns></returns>
-        public static async Task<HttpResponseMessage?> SendAsync(HttpRequestMessage request, Action<HttpResponseMessage, FreezeTime?>? action = null)
+        public static async Task<HttpResponseMessage?> SendAsync(HttpRequestMessage request, Action<HttpResponseMessage, FreezeTime>? action = null)
         {
             string reqUrl = request.RequestUri!.ToString();
             if (FreezeUrl.TryGetValue(reqUrl, out var freezeTime) && freezeTime.EndTime > DateTime.Now) return null;
@@ -64,6 +64,7 @@ namespace QQChannelBot.Bot
                 if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
                 return response;
             }
+            freezeTime = new FreezeTime() { EndTime = DateTime.Now + TimeSpan.FromSeconds(5), AddTime = TimeSpan.FromSeconds(5) };
             if (response.Content.Headers.ContentType?.MediaType == "application/json")
             {
                 string responseContent = await response.Content.ReadAsStringAsync();
@@ -157,7 +158,11 @@ namespace QQChannelBot.Bot
             if (Log.LogLevel == LogLevel.Debug)
             {
                 string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
-                if (requestContent.Length > printLength) requestContent = Unicoder.Decode(requestContent[..printLength]);
+                if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
+                if ((request.Content?.Headers.ContentType?.CharSet != null) || (request.Content?.Headers.ContentType?.MediaType == "application/json"))
+                {
+                    requestContent = Unicoder.Decode(requestContent);
+                }
                 requestContent = $"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}";
                 Log.Debug(requestContent);
             }
@@ -167,9 +172,10 @@ namespace QQChannelBot.Bot
             if ((Log.LogLevel == LogLevel.Debug) || (response.StatusCode >= HttpStatusCode.BadRequest))
             {
                 string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+                if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
                 if ((response.Content?.Headers.ContentType?.CharSet != null) || (response.Content?.Headers.ContentType?.MediaType == "application/json"))
                 {
-                    if (responseContent.Length > printLength) responseContent = Unicoder.Decode(responseContent[..printLength]);
+                    responseContent = Unicoder.Decode(responseContent);
                 }
                 responseContent = $"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}";
                 if (response.StatusCode < HttpStatusCode.BadRequest) Log.Debug(responseContent);
