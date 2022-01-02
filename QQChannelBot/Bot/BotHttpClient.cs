@@ -57,14 +57,13 @@ namespace QQChannelBot.Bot
         public static async Task<HttpResponseMessage?> SendAsync(HttpRequestMessage request, Action<HttpResponseMessage, FreezeTime>? action = null)
         {
             string reqUrl = request.RequestUri!.ToString();
-            if (FreezeUrl.TryGetValue(reqUrl, out var freezeTime) && freezeTime.EndTime > DateTime.Now) return null;
+            if (FreezeUrl.TryGetValue(reqUrl, out FreezeTime? freezeTime) && freezeTime.EndTime > DateTime.Now) return null;
             HttpResponseMessage response = await HttpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
                 return response;
             }
-            freezeTime = new FreezeTime() { EndTime = DateTime.Now + TimeSpan.FromSeconds(5), AddTime = TimeSpan.FromSeconds(5) };
             if (response.Content.Headers.ContentType?.MediaType == "application/json")
             {
                 string responseContent = await response.Content.ReadAsStringAsync();
@@ -74,17 +73,18 @@ namespace QQChannelBot.Bot
                 {
                     if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
                     {
-                        TimeSpan freezeNext = freezeTime.AddTime * 2;
-                        freezeTime.EndTime = DateTime.Now + (freezeNext > FreezeMaxTime ? FreezeMaxTime : freezeNext);
-                        FreezeUrl[reqUrl] = freezeTime;
+                        freezeTime.AddTime *= 2;
+                        if (freezeTime.AddTime > FreezeMaxTime) FreezeAddTime = FreezeMaxTime;
+                        freezeTime.EndTime = DateTime.Now + FreezeAddTime;
                     }
                     else
                     {
                         freezeTime = new FreezeTime() { EndTime = DateTime.Now + FreezeAddTime, AddTime = FreezeAddTime };
-                        FreezeUrl[reqUrl] = freezeTime;
                     }
                 }
             }
+            freezeTime ??= new FreezeTime() { EndTime = DateTime.Now + TimeSpan.FromSeconds(5), AddTime = TimeSpan.FromSeconds(5) };
+            FreezeUrl[reqUrl] = freezeTime;
             action?.Invoke(response, freezeTime);
             return null;
         }
