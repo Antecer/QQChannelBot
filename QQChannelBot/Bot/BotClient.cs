@@ -500,7 +500,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteRoleAsync(string guild_id, string role_id)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Delete);
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
         /// 增加频道身份组成员
@@ -519,7 +519,7 @@ namespace QQChannelBot.Bot
             HttpResponseMessage? respone = await HttpSendAsync(
                 $"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Put,
                 channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } }));
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
         /// 删除频道身份组成员
@@ -539,7 +539,7 @@ namespace QQChannelBot.Bot
             HttpResponseMessage? respone = await HttpSendAsync(
                 $"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Delete,
                 channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } }));
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
 
@@ -576,7 +576,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteGuildMemberAsync(string guild_id, string user_id)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}", HttpMethod.Delete);
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
 
@@ -615,7 +615,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteAnnouncesGlobalAsync(string guild_id, string message_id = "all")
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/announces/{message_id}", HttpMethod.Delete);
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
         /// 创建子频道公告
@@ -659,7 +659,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteAnnouncesAsync(string channel_id, string message_id = "all")
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/announces/{message_id}", HttpMethod.Delete);
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
 
@@ -740,7 +740,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteChannelAsync(string channel_id)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Delete);
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
 
@@ -767,7 +767,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> EditChannelPermissionsAsync(string channel_id, string user_id, string add = "0", string remove = "0")
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions", HttpMethod.Put, JsonContent.Create(new { add, remove }));
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
         /// 获取指定身份组在指定子频道的权限
@@ -791,7 +791,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> EditMemberChannelPermissionsAsync(string channel_id, string role_id, string add = "0", string remove = "0")
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions", HttpMethod.Put, JsonContent.Create(new { add, remove }));
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
 
@@ -979,7 +979,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> MuteMemberAsync(string guild_id, string user_id, MuteTime muteMode)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/mute", HttpMethod.Patch, JsonContent.Create(muteMode));
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
         /// 频道全局禁言
@@ -995,7 +995,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> MuteGuildAsync(string guild_id, MuteTime muteMode)
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/mute", HttpMethod.Patch, JsonContent.Create(muteMode));
-            return respone?.StatusCode == HttpStatusCode.NoContent;
+            return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
 
