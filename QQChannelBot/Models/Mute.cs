@@ -8,6 +8,9 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MuteTime
     {
+        /// <summary>
+        /// 禁言时间（默认1分钟）
+        /// </summary>
         public MuteTime()
         {
             MuteSeconds = "60";
