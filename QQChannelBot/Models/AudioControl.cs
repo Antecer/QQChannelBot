@@ -7,7 +7,6 @@ namespace QQChannelBot.Models
     /// </summary>
     public class AudioControl
     {
-        public AudioControl() { }
         /// <summary>
         /// 构建音频消息
         /// </summary>

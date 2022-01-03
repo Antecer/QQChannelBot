@@ -44,9 +44,16 @@ namespace QQChannelBot.Models
         [JsonPropertyName("member_limit")]
         public uint MemberLimit { get; set; }
     }
-
+    /// <summary>
+    /// 系统默认身份组
+    /// </summary>
     public class DefaultRoles
     {
+        /// <summary>
+        /// 获取系统默认身份组名称
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
         public static string GetName(string roleId)
         {
             return roleId switch
