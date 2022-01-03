@@ -198,7 +198,8 @@ namespace QQChannelBot.Bot
                             "请求方式：" + method.Method,
                             "异常代码：" + errCode,
                             "异常原因：" + errStr,
-                            $"接口冻结：暂停使用此接口 {freezeTime.AddTime.Minutes}分{freezeTime.AddTime.Seconds}秒，解除时间：{freezeTime.EndTime:yyyy-MM-dd HH:mm:ss}"
+                            $"接口冻结：暂停使用此接口 {freezeTime.AddTime.Minutes}分{freezeTime.AddTime.Seconds}秒",
+                            $"解冻时间：{freezeTime.EndTime:yyyy-MM-dd HH:mm:ss}"
                             ));
                     }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
                 }
