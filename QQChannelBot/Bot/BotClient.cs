@@ -921,7 +921,8 @@ namespace QQChannelBot.Bot
         /// 创建日程
         /// <para>
         /// 要求操作人具有"管理频道"的权限，如果是机器人，则需要将机器人设置为管理员。<br/>
-        /// 创建成功后，返回创建成功的日程对象。
+        /// 创建成功后，返回创建成功的日程对象。<br/>
+        /// 日程开始时间必须大于当前时间。
         /// </para>
         /// </summary>
         /// <param name="channel_id">日程子频道Id</param>
@@ -944,7 +945,7 @@ namespace QQChannelBot.Bot
         /// <returns>修改后的 Schedule 对象</returns>
         public async Task<Schedule?> EditScheduleAsync(string channel_id, Schedule schedule)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Patch, JsonContent.Create(schedule));
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Patch, JsonContent.Create(new { schedule }));
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
         }
         /// <summary>
@@ -1471,6 +1472,9 @@ namespace QQChannelBot.Bot
         }
     }
 
+    /// <summary>
+    /// 鉴权信息
+    /// </summary>
     public struct Identity
     {
         /// <summary>
