@@ -193,12 +193,12 @@ namespace QQChannelBot.Tools
             List<Guild>? guilds = await bot.GetMeGuildsAsync();
             await sender.ReplyAsync(GetLog("获取当前用户(机器人)所在频道列表", guilds != null));
 
-            Channel? schChannel = channels == null ? null : schChannel = channels.Find(c => c.Type == ChannelType.AppChannel); // 暂定10006为活动日程频道(拉取频道列表得到的信息)
+            Channel? schChannel = channels == null ? null : schChannel = channels.Find(c => c.Name!.Contains("活动日程"));
             if (schChannel != null)
             {
                 Schedule? schedule = await bot.CreateScheduleAsync(schChannel.Id!, new Schedule("测试创建日程"));
                 await sender.ReplyAsync(GetLog("创建日程", schedule != null));
-                await sender.ReplyAsync(GetLog("获取日程列表", await bot.GetSchedulesAsync(schChannel.Id!) != null));
+                await sender.ReplyAsync(GetLog("获取日程列表", await bot.GetSchedulesAsync(schChannel.Id!, DateTimeOffset.Now) != null));
                 if (schedule != null)
                 {
                     await sender.ReplyAsync(GetLog("获取单个日程", (await bot.GetScheduleAsync(schChannel.Id!, schedule.Id!)) != null));
