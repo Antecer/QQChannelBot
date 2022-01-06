@@ -833,7 +833,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteLastMessageAsync(Message? msg)
         {
             Message? lastMsg = LastSendMessage(msg);
-            return lastMsg == null ? false : await DeleteMessageAsync(lastMsg.ChannelId, lastMsg.Id);
+            return lastMsg != null && await DeleteMessageAsync(lastMsg.ChannelId, lastMsg.Id);
         }
         #endregion Pass
 
