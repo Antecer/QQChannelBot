@@ -71,13 +71,14 @@ namespace QQChannelBot.Tools
             bool isOk;
             BotClient bot = sender.Bot!;
             string botId = bot.Info!.Id;
+            bool tmpReportApiError = bot.ReportApiError;
             bot.ReportApiError = false;
 
             Message? message = await sender.ReplyAsync("自检开始...\n01｜通过｜消息发送");
             GetLog("消息发送", message != null);
             if (message == null)
             {
-                bot.ReportApiError = true;
+                bot.ReportApiError = tmpReportApiError;
                 return Index;
             }
 
@@ -196,15 +197,15 @@ namespace QQChannelBot.Tools
             Channel? schChannel = channels == null ? null : schChannel = channels.Find(c => c.Name!.Contains("活动日程"));
             if (schChannel != null)
             {
-                Schedule? schedule = await bot.CreateScheduleAsync(schChannel.Id!, new Schedule("测试创建日程"));
+                Schedule? schedule = await bot.CreateScheduleAsync(schChannel.Id, new Schedule("测试创建日程"));
                 await sender.ReplyAsync(GetLog("创建日程", schedule != null));
-                await sender.ReplyAsync(GetLog("获取日程列表", await bot.GetSchedulesAsync(schChannel.Id!, DateTimeOffset.Now) != null));
+                await sender.ReplyAsync(GetLog("获取日程列表", await bot.GetSchedulesAsync(schChannel.Id) != null));
                 if (schedule != null)
                 {
-                    await sender.ReplyAsync(GetLog("获取单个日程", (await bot.GetScheduleAsync(schChannel.Id!, schedule.Id!)) != null));
+                    await sender.ReplyAsync(GetLog("获取单个日程", (await bot.GetScheduleAsync(schChannel.Id, schedule.Id!)) != null));
                     schedule.Name = "测试修改日程";
-                    await sender.ReplyAsync(GetLog("修改日程", await bot.EditScheduleAsync(schChannel.Id!, schedule) != null));
-                    await sender.ReplyAsync(GetLog("删除日程", await bot.DeleteScheduleAsync(schChannel.Id!, schedule)));
+                    await sender.ReplyAsync(GetLog("修改日程", await bot.EditScheduleAsync(schChannel.Id, schedule) != null));
+                    await sender.ReplyAsync(GetLog("删除日程", await bot.DeleteScheduleAsync(schChannel.Id, schedule)));
                 }
                 else
                 {
@@ -229,7 +230,7 @@ namespace QQChannelBot.Tools
             await sender.ReplyAsync(GetLog("频道指定成员(频道管理助手)禁言", isOk));
 
             await sender.ReplyAsync($"自检完成，共{Index}项｜通过{Good}项｜失败{Fail}项｜跳过{Index - Good - Fail}项。");
-            bot.ReportApiError = true;
+            bot.ReportApiError = tmpReportApiError;
             return Index;
         }
     }
