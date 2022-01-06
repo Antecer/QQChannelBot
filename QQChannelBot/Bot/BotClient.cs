@@ -947,7 +947,7 @@ namespace QQChannelBot.Bot
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Delete);
             return respone?.IsSuccessStatusCode ?? false;
         }
-        #endregion
+        #endregion Pass
 
         #region 禁言API
         /// <summary>
