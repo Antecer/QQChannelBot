@@ -184,6 +184,10 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MessageEmbedField
     {
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="name"></param>
         public MessageEmbedField(string? name = null) { Name = name; }
         /// <summary>
         /// 字段名
@@ -226,8 +230,14 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MessageArkKv
     {
+        /// <summary>
+        /// 键
+        /// </summary>
         [JsonPropertyName("key")]
         public string Key { get; set; } = "";
+        /// <summary>
+        /// 值
+        /// </summary>
         [JsonPropertyName("value")]
         public string? Value { get; set; }
         /// <summary>
@@ -254,15 +264,28 @@ namespace QQChannelBot.Models
     /// </summary>
     public class MessageArkObjKv
     {
+        /// <summary>
+        /// 构造函数
+        /// </summary>
         public MessageArkObjKv() { }
+        /// <summary>
+        /// ark obj键值对构造函数
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
         public MessageArkObjKv(string key, string value)
         {
             Key = key;
             Value = value;
         }
-
+        /// <summary>
+        /// 键
+        /// </summary>
         [JsonPropertyName("key")]
         public string Key { get; set; } = "";
+        /// <summary>
+        /// 值
+        /// </summary>
         [JsonPropertyName("value")]
         public string? Value { get; set; }
     }
