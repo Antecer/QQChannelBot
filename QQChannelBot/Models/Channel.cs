@@ -11,7 +11,7 @@ namespace QQChannelBot.Models
         /// 子频道id
         /// </summary>
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         /// <summary>
         /// 频道id
         /// </summary>

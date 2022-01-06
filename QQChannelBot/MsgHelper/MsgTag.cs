@@ -17,16 +17,36 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="userId">用户id</param>
         /// <returns></returns>
-        public static string UserTag(string? userId = null)
+        public static string User(string userId)
         {
-            return userId == null ? "" : $"<@!{userId}>";
+            return $"<@!{userId}>";
         }
-
         /// <summary>
         /// 创建 #子频道 标签
         /// </summary>
         /// <param name="channelId">子频道id</param>
         /// <returns></returns>
+        public static string Channel(string channelId)
+        {
+            return $"<#{channelId}>";
+        }
+
+        /// <summary>
+        /// 创建 @用户 标签
+        /// </summary>
+        /// <param name="userId">用户id</param>
+        /// <returns></returns>
+        [Obsolete("请使用 MsgTag.User(string userId)")]
+        public static string UserTag(string? userId = null)
+        {
+            return userId == null ? "" : $"<@!{userId}>";
+        }
+        /// <summary>
+        /// 创建 #子频道 标签
+        /// </summary>
+        /// <param name="channelId">子频道id</param>
+        /// <returns></returns>
+        [Obsolete("请使用 MsgTag.Channel(string channelId)")]
         public static string ChannelTag(string? channelId = null)
         {
             return channelId == null ? "" : $"<#{channelId}>";

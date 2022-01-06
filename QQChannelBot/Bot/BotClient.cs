@@ -1,8 +1,10 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using QQChannelBot.Bot.SocketEvent;
 using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Models;
@@ -117,6 +119,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 收到 @机器人 消息后触发
         /// </summary>
+        [Obsolete("使用 OnMsgCreate 事件处理所有聊天消息")]
         public event Action<Message>? OnAtMessage;
         /// <summary>
         /// 频道内有人发消息就触发 (包含 @机器人 消息)
@@ -176,8 +179,7 @@ namespace QQChannelBot.Bot
                 string? errStr = "此错误类型未收录!";
                 if (response.Content.Headers.ContentType?.MediaType == "application/json")
                 {
-                    // 注意：使用ReadFromJsonAsync<>()过后，HttpContent会被释放，无法进行重复读取！
-                    ApiError? err = await response.Content.ReadFromJsonAsync<ApiError>();
+                    ApiError? err = await response.Content.ReadFromJsonAsync<ApiError>(); // 注意：使用ReadFromJsonAsync<>()过后，HttpContent会被释放，无法进行重复读取！
                     if (err?.Code != null) errCode = err.Code.Value;
                     if (err?.Message != null) errStr = err.Message;
                 }
@@ -328,35 +330,67 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
-        private readonly Dictionary<string, Action<Message, string>> Commands = new();
+        private readonly Dictionary<string, Command> Commands = new();
         /// <summary>
-        /// 缓存动态注册的管理员指令事件
+        /// 添加消息指令
+        /// <para>
+        /// 注1：指令匹配忽略消息前的 @机器人 标签，并移除所有前导和尾随空白字符。<br/>
+        /// 注2：被指令命中的消息不会再触发 OnAtMessage 和 OnMsgCreate 事件
+        /// </para>
         /// </summary>
-        private readonly Dictionary<string, Action<Message, string>> SuCommands = new();
+        /// <param name="command">指令对象</param>
+        /// <param name="overwrite">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
+        /// <returns></returns>
+        public BotClient AddCommand(Command command, bool overwrite = false)
+        {
+            string cmdName = command.Name;
+            if (Commands.ContainsKey(cmdName))
+            {
+                if (overwrite)
+                {
+                    Log.Warn($"[CommandManager] 指令 {cmdName} 已存在,已替换新注册的功能!");
+                    Commands[cmdName] = command;
+                }
+                else Log.Warn($"[CommandManager] 指令 {cmdName} 已存在,已忽略新功能的注册!");
+            }
+            else
+            {
+                Log.Info($"[CommandManager] 指令 {cmdName} 已注册.");
+                Commands[cmdName] = command;
+            }
+            return this;
+        }
+        /// <summary>
+        /// 删除消息指令
+        /// </summary>
+        /// <param name="cmdName">指令名称</param>
+        /// <returns></returns>
+        public BotClient DelCommand(string cmdName)
+        {
+            if (Commands.ContainsKey(cmdName))
+            {
+                Commands.Remove(cmdName);
+                Log.Info($"[CommandManager] 指令 {cmdName} 已删除.");
+            }
+            else Log.Warn($"[CommandManager] 指令 {cmdName} 不存在!");
+            return this;
+        }
+        /// <summary>
+        /// 获取所有已注册的指令
+        /// </summary>
+        public List<Command> GetCommands => Commands.Values.ToList();
         /// <summary>
         /// 注册消息指令
         /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
         /// </summary>
         /// <param name="command">指令名称</param>
-        /// <param name="commandAction">回调函数</param>
-        /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
+        /// <param name="callBack">回调函数</param>
+        /// <param name="overwrite">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
         /// <returns></returns>
-        public BotClient AddCommand(string command, Action<Message, string> commandAction, bool displace = false)
+        [Obsolete("\n建议使用 BotClient.AddCommand(Command command, [bool overwrite = false])", false)]
+        public BotClient AddCommand(string command, Action<Message, string> callBack, bool overwrite = false)
         {
-            if (Commands.ContainsKey(command))
-            {
-                if (displace)
-                {
-                    Log.Warn($"[RegisterCommand] 指令 {command} 已存在,已替换新注册的功能!");
-                    Commands[command] = commandAction;
-                }
-                else Log.Warn($"[RegisterCommand] 指令 {command} 已存在,已忽略新功能的注册!");
-            }
-            else
-            {
-                Log.Info($"[RegisterCommand] 指令 {command} 已注册.");
-                Commands[command] = commandAction;
-            }
+            AddCommand(new Command(command, callBack), overwrite);
             return this;
         }
         /// <summary>
@@ -364,65 +398,15 @@ namespace QQChannelBot.Bot
         /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
         /// </summary>
         /// <param name="command">指令名称</param>
-        /// <param name="commandAction">回调函数</param>
-        /// <param name="displace">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
+        /// <param name="callBack">回调函数</param>
+        /// <param name="overwrite">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
         /// <returns></returns>
-        public BotClient AddCommandSuper(string command, Action<Message, string> commandAction, bool displace = false)
+        [Obsolete("\n建议使用 BotClient.AddCommand(Command command, [bool overwrite = false])", false)]
+        public BotClient AddCommandSuper(string command, Action<Message, string> callBack, bool overwrite = false)
         {
-            if (SuCommands.ContainsKey(command))
-            {
-                if (displace)
-                {
-                    Log.Warn($"[RegisterCommand][SU] 指令 {command} 已存在,已替换新注册的功能!");
-                    SuCommands[command] = commandAction;
-                }
-                else Log.Warn($"[RegisterCommand][SU] 指令 {command} 已存在,已忽略新功能的注册!");
-            }
-            else
-            {
-                Log.Info($"[RegisterCommand][SU] 指令 {command} 已注册.");
-                SuCommands[command] = commandAction;
-            }
+            AddCommand(new Command(command, callBack, null, true), overwrite);
             return this;
         }
-        /// <summary>
-        /// 删除消息指令
-        /// </summary>
-        /// <param name="command">指令名称</param>
-        /// <returns></returns>
-        public BotClient DelCommand(string command)
-        {
-            if (Commands.ContainsKey(command))
-            {
-                Log.Info($"[RegisterCommand][SU] 指令 {command} 已删除.");
-                Commands.Remove(command);
-            }
-            else Log.Warn($"[RegisterCommand][SU] 指令 {command} 不存在!");
-            return this;
-        }
-        /// <summary>
-        /// 删除管理员消息指令
-        /// </summary>
-        /// <param name="command">指令名称</param>
-        /// <returns></returns>
-        public BotClient DelCommandSuper(string command)
-        {
-            if (SuCommands.ContainsKey(command))
-            {
-                Log.Info($"[RegisterCommand] 指令 {command} 已删除.");
-                SuCommands.Remove(command);
-            }
-            else Log.Warn($"[RegisterCommand] 指令 {command} 不存在!");
-            return this;
-        }
-        /// <summary>
-        /// 获取所有已注册的指令
-        /// </summary>
-        public List<string> GetAllCommand => Commands.Keys.ToList();
-        /// <summary>
-        /// 获取所有已注册的管理员指令
-        /// </summary>
-        public List<string> GetAllCommandSuper => SuCommands.Keys.ToList();
         #endregion
 
         #region 频道API
@@ -1427,9 +1411,10 @@ namespace QQChannelBot.Bot
             // 记录机器人在当前频道下的身份组信息
             if (!Members.ContainsKey(message.GuildId))
             {
+                bool tmpReportApiError = ReportApiError;
                 ReportApiError = false;
                 Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!);
-                ReportApiError = true;
+                ReportApiError = tmpReportApiError;
             }
             // 记录最后收到的一条消息
             LastGetMessage = message;
@@ -1440,24 +1425,27 @@ namespace QQChannelBot.Bot
                 return;
             }
             // 处理收到的数据
-            string paramStr = message.Content.Trim().TrimStartString(MsgTag.UserTag(Info?.Id)).TrimStart();
+            string paramStr = message.Content.Trim().TrimStartString(MsgTag.User(Info!.Id)).TrimStart();
             paramStr = paramStr.TrimStart('/').TrimStart();
-            // 识别管理员指令
-            string suCommand = SuCommands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
-            if (suCommand.Length > 0)
+            // 识别指令
+            if (paramStr.Length > 0)
             {
-                if (message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals(GodId))
+                Command? command = Commands.Values.FirstOrDefault(cmd =>
                 {
-                    SuCommands[suCommand].Invoke(message, paramStr.TrimStartString(suCommand).Trim());
-                    return;
-                }
-            }
-            // 识别普通指令
-            string command = Commands.Keys.FirstOrDefault(cmd => paramStr.StartsWith(cmd), "");
-            if (command.Length > 0)
-            {
-                Commands[command].Invoke(message, paramStr.TrimStartString(command).Trim());
-                return;
+                    Match cmdMatch = cmd.Rule.Match(paramStr);
+                    if (!cmdMatch.Success) return false;
+                    paramStr = paramStr.TrimStartString(cmdMatch.Groups[0].Value);
+                    if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals(GodId)))
+                    {
+                        message.ReplyAsync($"{MsgTag.User(message.Author.Id)} 你无权使用该命令！").ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        cmd.CallBack?.Invoke(message, paramStr);
+                    }
+                    return true;
+                });
+                if (command != null) return;
             }
             // 触发Message到达事件
             if (type == "AT_MESSAGE_CREATE")
@@ -1468,6 +1456,24 @@ namespace QQChannelBot.Bot
             else
             {
                 OnMsgCreate?.Invoke(message, false);
+            }
+        }
+
+        /// <summary>
+        /// 返回SDK相关信息
+        /// <para>
+        /// 框架名称_版本号
+        /// 代码仓库地址
+        /// 版权信息
+        /// </para>
+        /// <para><em>作者夹带的一点私货</em></para>
+        /// </summary>
+        public static string SDK
+        {
+            get
+            {
+                AssemblyName sdk = typeof(BotClient).Assembly.GetName();
+                return $"{sdk.Name}_{sdk.Version}\nhttps://github.com/Antecer/QQChannelBot\nCopyright © 2021 Antecer. All rights reserved.";
             }
         }
     }
