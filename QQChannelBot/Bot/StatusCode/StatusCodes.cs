@@ -2,8 +2,14 @@
 
 namespace QQChannelBot.Bot.StatusCode
 {
+    /// <summary>
+    /// 状态码对照表
+    /// </summary>
     public static class StatusCodes
     {
+        /// <summary>
+        /// API请求状态码对照表
+        /// </summary>
         public static readonly Dictionary<int, string> OpenapiCode = new()
         {
             //{ 100, "Continue 指示客户端可能继续其请求" },
@@ -129,11 +135,19 @@ namespace QQChannelBot.Bot.StatusCode
         };
     }
 
+    /// <summary>
+    /// API请求失败消息对象
+    /// </summary>
     public class ApiError
     {
+        /// <summary>
+        /// 代码
+        /// </summary>
         [JsonPropertyName("code")]
         public int? Code { get; set; }
-
+        /// <summary>
+        /// 原因
+        /// </summary>
         [JsonPropertyName("message")]
         public string? Message { get; set; }
     }

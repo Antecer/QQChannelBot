@@ -20,7 +20,7 @@ namespace QQChannelBot.Bot
     /// DebugBot - 指定机器人运行的模式[true:测试; false:正式]；默认值=false<br/>
     /// Info - 机器人的 <see cref="User"/> 信息(在机器人鉴权通过后更新)；默认值=null<br/>
     /// Members - 自动记录机器人在各频道内的身份组信息<br/>
-    /// ReportApiError - 向前端消息发出者报告API错误[true:报告;false:静默]；默认值=true<br/>
+    /// ReportApiError - 向前端消息发出者报告API错误[true:报告;false:静默]；默认值=false<br/>
     /// SandBox - 机器人调用API的模式[true:沙箱;false:正式]；默认值=false<br/>
     /// ApiOrigin - (只读) 获取机器人当前使用的ApiUrl<br/>
     /// Intents - 订阅频道事件,详见:<see cref="Intent"/>；默认值=(GUILDS|GUILD_MEMBERS|AT_MESSAGES|GUILD_MESSAGE_REACTIONS)<br/>
@@ -317,7 +317,7 @@ namespace QQChannelBot.Bot
         /// <param name="identity">机器人鉴权信息</param>
         /// <param name="sandBox">使用沙箱API</param>
         /// <param name="reportApiError">向前端用户反馈API错误</param>
-        public BotClient(Identity identity, bool sandBox = false, bool reportApiError = true)
+        public BotClient(Identity identity, bool sandBox = false, bool reportApiError = false)
         {
             BotAccessInfo = identity;
             SandBox = sandBox;

@@ -94,7 +94,7 @@ namespace QQChannelBot.MsgHelper
         /// <summary>
         /// 设置标题
         /// </summary>
-        /// <param name="title">标题内容</param>
+        /// <param name="metaTitle">标题内容</param>
         /// <returns></returns>
         public MsgArk34 SetMetaTitle(string? metaTitle) { MetaTitle = metaTitle; return this; }
         /// <summary>

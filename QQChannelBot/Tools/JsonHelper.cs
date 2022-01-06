@@ -1,16 +1,14 @@
 ﻿namespace System.Text.Json
 {
+    /// <summary>
+    /// Json访问帮助类
+    /// </summary>
     public static class JsonHelper
     {
         /// <summary>
         /// 查找JSON对象
         /// </summary>
-        /// <param name="name">json的key</param>
-        /// <returns></returns>
-        //public static JsonElement? Get(this JsonElement? element, string name) => element?.Get(name);
-        /// <summary>
-        /// 查找JSON对象
-        /// </summary>
+        /// <param name="element"></param>
         /// <param name="name">json的key</param>
         /// <returns></returns>
         public static JsonElement? Get(this JsonElement element, string name)
@@ -21,12 +19,7 @@
         /// <summary>
         /// 索引JSON数组
         /// </summary>
-        /// <param name="index">json的index</param>
-        /// <returns></returns>
-        //public static JsonElement? Get(this JsonElement? element, int index) => element?.Get(index);
-        /// <summary>
-        /// 索引JSON数组
-        /// </summary>
+        /// <param name="element"></param>
         /// <param name="index">json的index</param>
         /// <returns></returns>
         public static JsonElement? Get(this JsonElement element, int index)

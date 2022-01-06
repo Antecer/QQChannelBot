@@ -1,5 +1,8 @@
 ﻿namespace System
 {
+    /// <summary>
+    /// 字符串处理工具类
+    /// </summary>
     public static class StringTools
     {
         /// <summary>
@@ -7,7 +10,7 @@
         /// </summary>
         /// <param name="input">源字符串</param>
         /// <param name="query">查找的串</param>
-        /// <param name="replaceStr">替换的目标串</param>
+        /// <param name="newStr">替换的目标串</param>
         /// <param name="ignoreCase">查找字符串时忽略大小写</param>
         /// <returns></returns>
         public static string TrimStartString(this string input, string query, string newStr = "", bool ignoreCase = false)

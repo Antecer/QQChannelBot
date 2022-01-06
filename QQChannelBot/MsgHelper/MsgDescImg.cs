@@ -2,6 +2,9 @@
 
 namespace QQChannelBot.MsgHelper
 {
+    /// <summary>
+    /// 图片消息对象
+    /// </summary>
     public class MsgDescImg : MessageToCreate
     {
         /// <summary>
