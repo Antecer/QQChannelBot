@@ -29,10 +29,25 @@ namespace QQChannelBot.Models
         [JsonPropertyName("color")]
         public uint Color { get; set; }
         /// <summary>
+        /// ARGB的HTML十六进制颜色值
+        /// </summary>
+        [JsonIgnore]
+        public string? ColorHex { get => $"#{Color:X8}"; }
+        /// <summary>
         /// 该身分组是否在成员列表中单独展示: 0-否, 1-是
         /// </summary>
         [JsonPropertyName("hoist")]
         public uint Hoist { get; set; }
+        /// <summary>
+        /// 该身分组是否在成员列表中单独展示: False, True
+        /// </summary>
+        [JsonIgnore]
+        public bool HoistBoolen { get => Hoist == 1; }
+        /// <summary>
+        /// 该身分组是否在成员列表中单独展示: 否, 是
+        /// </summary>
+        [JsonIgnore]
+        public string HoistString { get => Hoist == 1 ? "是" : "否"; }
         /// <summary>
         /// 该身分组的人数
         /// </summary>

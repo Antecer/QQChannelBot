@@ -446,7 +446,7 @@ namespace QQChannelBot.Bot
             filter ??= new Filter()
             {
                 Name = info.Name == null ? 0 : 1,
-                Color = info.HexColor == null ? 0 : 1,
+                Color = info.ColorHex == null ? 0 : 1,
                 Hoist = info.Hoist == null ? 0 : 1
             };
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", HttpMethod.Post, JsonContent.Create(new { filter, info }));
@@ -467,7 +467,7 @@ namespace QQChannelBot.Bot
             filter ??= new Filter()
             {
                 Name = info.Name == null ? 0 : 1,
-                Color = info.HexColor == null ? 0 : 1,
+                Color = info.ColorHex == null ? 0 : 1,
                 Hoist = info.Hoist == null ? 0 : 1
             };
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Patch, JsonContent.Create(new { filter, info }));
@@ -1435,7 +1435,7 @@ namespace QQChannelBot.Bot
                     Match cmdMatch = cmd.Rule.Match(paramStr);
                     if (!cmdMatch.Success) return false;
                     paramStr = paramStr.TrimStartString(cmdMatch.Groups[0].Value);
-                    if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "234".Contains(r)) || message.Author.Id.Equals(GodId)))
+                    if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
                         message.ReplyAsync($"{MsgTag.User(message.Author.Id)} 你无权使用该命令！").ConfigureAwait(false);
                     }

@@ -118,11 +118,11 @@ namespace QQChannelBot.Bot
         /// <param name="name">身份组名称</param>
         /// <param name="colorHex">ARGB的HTML十六进制颜色值</param>
         /// <param name="hoist">在成员列表中单独展示: 0-否, 1-是</param>
-        public Info(string? name = null, string? colorHex = null, int? hoist = null)
+        public Info(string? name = null, string? colorHex = null, bool? hoist = null)
         {
             Name = name;
-            HexColor = colorHex;
-            Hoist = hoist;
+            ColorHex = colorHex;
+            HoistBoolen = hoist;
         }
         /// <summary>
         /// 名称
@@ -150,7 +150,7 @@ namespace QQChannelBot.Bot
         /// <para><em>注: 因官方API有BUG，框架暂时强制Alpha通道固定为1.0，对功能无影响。 [2021-12-21]</em></para>
         /// </summary>
         [JsonIgnore]
-        public string? HexColor
+        public string? ColorHex
         {
             get
             {
@@ -174,5 +174,23 @@ namespace QQChannelBot.Bot
         /// </summary>
         [JsonPropertyName("hoist")]
         public int? Hoist { get; set; }
+        /// <summary>
+        /// 在成员列表中单独展示: false-否, true-是
+        /// </summary>
+        [JsonIgnore]
+        public bool? HoistBoolen
+        {
+            get => Hoist == null ? null : Hoist != 0;
+            set => Hoist = value == null ? null : (value.Value ? 1 : 0);
+        }
+        /// <summary>
+        /// 在成员列表中单独展示: 否, 是
+        /// </summary>
+        [JsonIgnore]
+        public string? HoistString
+        {
+            get => Hoist == null ? null : (Hoist == 0 ? "否" : "是");
+            set => Hoist = value == null ? null : (value == "是" ? 1 : 0);
+        }
     }
 }
