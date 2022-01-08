@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Tools;
@@ -58,7 +59,7 @@ namespace QQChannelBot.Bot
         {
             string reqUrl = request.RequestUri!.ToString();
             if (FreezeUrl.TryGetValue(reqUrl, out FreezeTime? freezeTime) && freezeTime.EndTime > DateTime.Now) return null;
-            HttpResponseMessage response = await HttpClient.SendAsync(request);
+            HttpResponseMessage response = await HttpClient.SendAsync(request).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
                 if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
@@ -66,7 +67,7 @@ namespace QQChannelBot.Bot
             }
             if (response.Content.Headers.ContentType?.MediaType == "application/json")
             {
-                string responseContent = await response.Content.ReadAsStringAsync();
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
                 // 打击11264和11265错误，无接口访问权限
                 if (err?.Code == 11264 || err?.Code == 11265)
@@ -97,7 +98,7 @@ namespace QQChannelBot.Bot
         public static async Task<HttpResponseMessage?> GetAsync(string url)
         {
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = null, Method = HttpMethod.Get };
-            return await HttpClient.SendAsync(request);
+            return await HttpClient.SendAsync(request).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -109,7 +110,7 @@ namespace QQChannelBot.Bot
         public static async Task<HttpResponseMessage?> PostAsync(string url, HttpContent content)
         {
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = content, Method = HttpMethod.Post };
-            return await HttpClient.SendAsync(request);
+            return await HttpClient.SendAsync(request).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -121,7 +122,7 @@ namespace QQChannelBot.Bot
         public static async Task<HttpResponseMessage?> PutAsync(string url, HttpContent content)
         {
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = content, Method = HttpMethod.Put };
-            return await HttpClient.SendAsync(request);
+            return await HttpClient.SendAsync(request).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -133,7 +134,7 @@ namespace QQChannelBot.Bot
         public static async Task<HttpResponseMessage?> DeleteAsync(string url, HttpContent content)
         {
             HttpRequestMessage request = new() { RequestUri = new Uri(url), Content = content, Method = HttpMethod.Delete };
-            return await HttpClient.SendAsync(request);
+            return await HttpClient.SendAsync(request).ConfigureAwait(false);
         }
     }
     /// <summary>
@@ -155,32 +156,38 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (Log.LogLevel == LogLevel.Debug)
-            {
-                string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
-                if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
-                if ((request.Content?.Headers.ContentType?.CharSet != null) || (request.Content?.Headers.ContentType?.MediaType == "application/json"))
-                {
-                    requestContent = Unicoder.Decode(requestContent);
-                }
-                requestContent = $"[HttpHandler] Request:{Environment.NewLine}{request}{Environment.NewLine}{requestContent}";
-                Log.Debug(requestContent);
-            }
+            string requestString = request.ToString();
+            string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+            MediaTypeHeaderValue? requestContentType = request.Content?.Headers.ContentType;
 
-            HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
+            HttpResponseMessage response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            string responseString = response.ToString();
+            string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+            HttpStatusCode responseStatusCode = response.StatusCode;
+            MediaTypeHeaderValue? responseContentType = response.Content?.Headers.ContentType;
 
-            if ((Log.LogLevel == LogLevel.Debug) || (response.StatusCode >= HttpStatusCode.BadRequest))
+            _ = Task.Run(delegate
             {
-                string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
-                if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
-                if ((response.Content?.Headers.ContentType?.CharSet != null) || (response.Content?.Headers.ContentType?.MediaType == "application/json"))
+                if ((Log.LogLevel == LogLevel.Debug) || (responseStatusCode >= HttpStatusCode.BadRequest))
                 {
-                    responseContent = Unicoder.Decode(responseContent);
+                    if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
+                    if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json"))
+                    {
+                        requestContent = Unicoder.Decode(requestContent);
+                    }
+                    requestContent = $"[HttpHandler] Request:{Environment.NewLine}{requestString}{Environment.NewLine}{requestContent}";
+                    Log.Debug(requestContent);
+
+                    if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
+                    if ((responseContentType?.CharSet != null) || (responseContentType?.MediaType == "application/json"))
+                    {
+                        responseContent = Unicoder.Decode(responseContent);
+                    }
+                    responseContent = $"[HttpHandler] Response:{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
+                    if (responseStatusCode < HttpStatusCode.BadRequest) Log.Debug(responseContent);
+                    else Log.Error(responseContent);
                 }
-                responseContent = $"[HttpHandler] Response:{Environment.NewLine}{response}{Environment.NewLine}{responseContent}{Environment.NewLine}";
-                if (response.StatusCode < HttpStatusCode.BadRequest) Log.Debug(responseContent);
-                else Log.Error(responseContent);
-            }
+            }, CancellationToken.None);
             return response;
         }
     }

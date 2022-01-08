@@ -230,7 +230,10 @@ namespace QQChannelBot.Tools
             isOk = await bot.MuteMemberAsync(sender.GuildId, TestUserId, new MuteTime(3)); // 禁言"频道管理助手"用于测试
             await sender.ReplyAsync(GetLog("频道指定成员(频道管理助手)禁言", isOk));
 
-            await sender.ReplyAsync($"自检完成，共{Index}项｜通过{Good}项｜失败{Fail}项｜跳过{Index - Good - Fail}项。");
+            string completedMsg = $"自检完成：共{Index}项｜通过{Good}项｜失败{Fail}项｜跳过{Index - Good - Fail}项";
+            await sender.ReplyAsync(completedMsg);
+            Log.Info($"[Benchmarks]{completedMsg}");
+
             bot.ReportApiError = tmpReportApiError;
             return Index;
         }

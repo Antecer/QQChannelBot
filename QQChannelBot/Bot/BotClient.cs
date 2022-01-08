@@ -33,6 +33,7 @@ namespace QQChannelBot.Bot
         #region 可以监听的固定事件列表
         /// <summary>
         /// WebSocketClient连接后触发
+        /// <para>等同于 WebSocket.OnOpen 事件</para>
         /// </summary>
         public event Action<BotClient>? OnWebSocketConnected;
         /// <summary>
@@ -179,7 +180,7 @@ namespace QQChannelBot.Bot
                 string? errStr = "此错误类型未收录!";
                 if (response.Content.Headers.ContentType?.MediaType == "application/json")
                 {
-                    ApiError? err = await response.Content.ReadFromJsonAsync<ApiError>(); // 注意：使用ReadFromJsonAsync<>()过后，HttpContent会被释放，无法进行重复读取！
+                    ApiError? err = await response.Content.ReadFromJsonAsync<ApiError>().ConfigureAwait(false); // 注意：使用ReadFromJsonAsync<>()过后，HttpContent会被释放，无法进行重复读取！
                     if (err?.Code != null) errCode = err.Code.Value;
                     if (err?.Message != null) errStr = err.Message;
                 }
@@ -192,7 +193,7 @@ namespace QQChannelBot.Bot
                         Log.Error($"[接口访问失败] 被动消息可回复时间已超时！");
                         return;
                     }
-                    await Task.Factory.StartNew(() =>
+                    _ = Task.Run(delegate
                     {
                         LastGetMessage?.ReplyAsync(string.Join('\n',
                             "❌接口访问失败",
@@ -203,9 +204,9 @@ namespace QQChannelBot.Bot
                             $"接口冻结：暂停使用此接口 {freezeTime.AddTime.Minutes}分{freezeTime.AddTime.Seconds}秒",
                             $"解冻时间：{freezeTime.EndTime:yyyy-MM-dd HH:mm:ss}"
                             ));
-                    }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
+                    });
                 }
-            });
+            }).ConfigureAwait(false);
         }
         /// <summary>
         /// 正式环境
@@ -417,8 +418,8 @@ namespace QQChannelBot.Bot
         /// <returns>Guild?</returns>
         public async Task<Guild?> GetGuildAsync(string guild_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Guild?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Guild?>().ConfigureAwait(false);
         }
         #endregion Pass
 
@@ -430,8 +431,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<List<Role>?> GetRolesAsync(string guild_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles");
-            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<GuildRoles?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles").ConfigureAwait(false);
+            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<GuildRoles?>().ConfigureAwait(false);
             return result?.Roles;
         }
         /// <summary>
@@ -444,8 +445,8 @@ namespace QQChannelBot.Bot
         public async Task<Role?> CreateRoleAsync(string guild_id, Info info, Filter? filter = null)
         {
             filter ??= new Filter(!string.IsNullOrWhiteSpace(info.Name), info.Color != null, info.Hoist ?? false);
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", HttpMethod.Post, JsonContent.Create(new { filter, info }));
-            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<CreateRoleRes?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", HttpMethod.Post, JsonContent.Create(new { filter, info })).ConfigureAwait(false);
+            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<CreateRoleRes?>().ConfigureAwait(false);
             return result?.Role;
 
         }
@@ -460,8 +461,8 @@ namespace QQChannelBot.Bot
         public async Task<Role?> EditRoleAsync(string guild_id, string role_id, Info info, Filter? filter = null)
         {
             filter ??= new Filter(!string.IsNullOrWhiteSpace(info.Name), info.Color != null, info.Hoist ?? false);
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Patch, JsonContent.Create(new { filter, info }));
-            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<ModifyRolesRes?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Patch, JsonContent.Create(new { filter, info })).ConfigureAwait(false);
+            var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<ModifyRolesRes?>().ConfigureAwait(false);
             return result?.Role;
         }
         /// <summary>
@@ -473,7 +474,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteRoleAsync(string guild_id, string role_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -492,7 +493,7 @@ namespace QQChannelBot.Bot
         {
             HttpResponseMessage? respone = await HttpSendAsync(
                 $"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Put,
-                channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } }));
+                channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } })).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -512,7 +513,7 @@ namespace QQChannelBot.Bot
         {
             HttpResponseMessage? respone = await HttpSendAsync(
                 $"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Delete,
-                channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } }));
+                channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } })).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -526,8 +527,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Member?> GetMemberAsync(string guild_id, string user_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Member?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Member?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 获取频道成员列表（仅私域可用）
@@ -538,8 +539,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<List<Member>?> GetGuildMembersAsync(string guild_id, int limit = 10, string after = "0")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members?limit={limit}&after={after}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Member>?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members?limit={limit}&after={after}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Member>?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 删除指定频道成员（仅私域可用）
@@ -549,7 +550,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteGuildMemberAsync(string guild_id, string user_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -564,10 +565,12 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesGlobalAsync(string guild_id, string channel_id, string message_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync(
-                $"{ApiOrigin}/guilds/{guild_id}/announces", HttpMethod.Post,
-                channel_id == null ? null : JsonContent.Create(new { channel_id, message_id }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Announces?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/announces", HttpMethod.Post, channel_id == null ? null : JsonContent.Create(new
+            {
+                channel_id,
+                message_id
+            })).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Announces?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 创建频道全局公告
@@ -578,7 +581,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesGlobalAsync(Message msg)
         {
-            return await CreateAnnouncesGlobalAsync(msg.GuildId, msg.ChannelId, msg.Id);
+            return await CreateAnnouncesGlobalAsync(msg.GuildId, msg.ChannelId, msg.Id).ConfigureAwait(false);
         }
         /// <summary>
         /// 删除频道全局公告
@@ -588,7 +591,7 @@ namespace QQChannelBot.Bot
         /// <returns>HTTP 状态码 204</returns>
         public async Task<bool> DeleteAnnouncesGlobalAsync(string guild_id, string message_id = "all")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/announces/{message_id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/announces/{message_id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -602,10 +605,11 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesAsync(string channel_id, string message_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync(
-                $"{ApiOrigin}/channels/{channel_id}/announces", HttpMethod.Post,
-                channel_id == null ? null : JsonContent.Create(new { message_id }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Announces?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/announces", HttpMethod.Post, channel_id == null ? null : JsonContent.Create(new
+            {
+                message_id
+            })).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Announces?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 创建子频道公告
@@ -619,7 +623,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Announces?> CreateAnnouncesAsync(Message msg)
         {
-            return await CreateAnnouncesAsync(msg.ChannelId, msg.Id);
+            return await CreateAnnouncesAsync(msg.ChannelId, msg.Id).ConfigureAwait(false);
         }
         /// <summary>
         /// 删除子频道公告
@@ -632,7 +636,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteAnnouncesAsync(string channel_id, string message_id = "all")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/announces/{message_id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/announces/{message_id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -645,8 +649,8 @@ namespace QQChannelBot.Bot
         /// <returns>Channel?</returns>
         public async Task<Channel?> GetChannelAsync(string channel_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 获取频道下的子频道列表
@@ -657,8 +661,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<List<Channel>?> GetChannelsAsync(string guild_id, ChannelType? channelType = null, ChannelSubType? channelSubType = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/channels");
-            List<Channel>? channels = respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Channel>?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/channels").ConfigureAwait(false);
+            List<Channel>? channels = respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Channel>?>().ConfigureAwait(false);
             if (channels != null)
             {
                 if (channelType != null) channels = channels.Where(channel => channel.Type == channelType).ToList();
@@ -683,8 +687,8 @@ namespace QQChannelBot.Bot
                 type = type.GetHashCode(),
                 position,
                 parent_id
-            }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
+            })).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 修改子频道信息（仅私域可用）
@@ -703,8 +707,8 @@ namespace QQChannelBot.Bot
                 type = type.GetHashCode(),
                 position,
                 parent_id
-            }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
+            })).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 删除指定子频道（仅私域可用）
@@ -713,7 +717,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteChannelAsync(string channel_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -727,8 +731,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<ChannelPermissions?> GetChannelPermissionsAsync(string channel_id, string user_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<ChannelPermissions?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<ChannelPermissions?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 修改用户在指定子频道的权限
@@ -740,7 +744,11 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> EditChannelPermissionsAsync(string channel_id, string user_id, string add = "0", string remove = "0")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions", HttpMethod.Put, JsonContent.Create(new { add, remove }));
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/members/{user_id}/permissions", HttpMethod.Put, JsonContent.Create(new
+            {
+                add,
+                remove
+            })).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -751,8 +759,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<ChannelPermissions?> GetMemberChannelPermissionsAsync(string channel_id, string role_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<ChannelPermissions?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<ChannelPermissions?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 修改指定身份组在指定子频道的权限
@@ -764,7 +772,11 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> EditMemberChannelPermissionsAsync(string channel_id, string role_id, string add = "0", string remove = "0")
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions", HttpMethod.Put, JsonContent.Create(new { add, remove }));
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/roles/{role_id}/permissions", HttpMethod.Put, JsonContent.Create(new
+            {
+                add,
+                remove
+            })).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -785,8 +797,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> SendMessageAsync(string channel_id, MessageToCreate message)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages", HttpMethod.Post, JsonContent.Create(message));
-            Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages", HttpMethod.Post, JsonContent.Create(message)).ConfigureAwait(false);
+            Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>().ConfigureAwait(false);
             return LastSendMessage(result, true);
         }
         /// <summary>
@@ -797,8 +809,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> GetMessageAsync(string channel_id, string message_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 撤回消息
@@ -808,7 +820,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteMessageAsync(string channel_id, string message_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.StatusCode == HttpStatusCode.OK;
         }
         /// <summary>
@@ -823,7 +835,7 @@ namespace QQChannelBot.Bot
         public async Task<bool> DeleteLastMessageAsync(Message? msg)
         {
             Message? lastMsg = LastSendMessage(msg);
-            return lastMsg != null && await DeleteMessageAsync(lastMsg.ChannelId, lastMsg.Id);
+            return lastMsg != null && await DeleteMessageAsync(lastMsg.ChannelId, lastMsg.Id).ConfigureAwait(false);
         }
         #endregion Pass
 
@@ -836,8 +848,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> AudioControlAsync(string channel_id, AudioControl audioControl)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/audio", HttpMethod.Post, JsonContent.Create(audioControl));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/audio", HttpMethod.Post, JsonContent.Create(audioControl)).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>().ConfigureAwait(false);
         }
         #endregion
 
@@ -848,8 +860,8 @@ namespace QQChannelBot.Bot
         /// <returns>当前用户对象</returns>
         public async Task<User?> GetMeAsync()
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<User?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<User?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 获取当前用户(机器人)所在频道列表 // 还有其他参数
@@ -857,8 +869,8 @@ namespace QQChannelBot.Bot
         /// <returns>频道列表</returns>
         public async Task<List<Guild>?> GetMeGuildsAsync()
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me/guilds");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Guild>?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me/guilds").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Guild>?>().ConfigureAwait(false);
         }
         #endregion Pass
 
@@ -877,8 +889,8 @@ namespace QQChannelBot.Bot
         public async Task<List<Schedule>?> GetSchedulesAsync(string channel_id, DateTimeOffset? since = null)
         {
             string param = since == null ? "" : $"?since={since.Value.ToUnixTimeMilliseconds()}";
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules{param}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Schedule>?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules{param}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Schedule>?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 获取单个日程信息
@@ -888,8 +900,8 @@ namespace QQChannelBot.Bot
         /// <returns>目标 Schedule 对象</returns>
         public async Task<Schedule?> GetScheduleAsync(string channel_id, string schedule_id)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule_id}");
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule_id}").ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 创建日程
@@ -904,8 +916,11 @@ namespace QQChannelBot.Bot
         /// <returns>新创建的 Schedule 对象</returns>
         public async Task<Schedule?> CreateScheduleAsync(string channel_id, Schedule schedule)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules", HttpMethod.Post, JsonContent.Create(new { schedule }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules", HttpMethod.Post, JsonContent.Create(new
+            {
+                schedule
+            })).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 修改日程
@@ -919,8 +934,11 @@ namespace QQChannelBot.Bot
         /// <returns>修改后的 Schedule 对象</returns>
         public async Task<Schedule?> EditScheduleAsync(string channel_id, Schedule schedule)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Patch, JsonContent.Create(new { schedule }));
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Patch, JsonContent.Create(new
+            {
+                schedule
+            })).ConfigureAwait(false);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>().ConfigureAwait(false);
         }
         /// <summary>
         /// 删除日程
@@ -934,7 +952,7 @@ namespace QQChannelBot.Bot
         /// <returns>HTTP 状态码 204</returns>
         public async Task<bool> DeleteScheduleAsync(string channel_id, Schedule schedule)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Delete);
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Delete).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -954,7 +972,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> MuteMemberAsync(string guild_id, string user_id, MuteTime muteMode)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/mute", HttpMethod.Patch, JsonContent.Create(muteMode));
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/mute", HttpMethod.Patch, JsonContent.Create(muteMode)).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -970,7 +988,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> MuteGuildAsync(string guild_id, MuteTime muteMode)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/mute", HttpMethod.Patch, JsonContent.Create(muteMode));
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/mute", HttpMethod.Patch, JsonContent.Create(muteMode)).ConfigureAwait(false);
             return respone?.IsSuccessStatusCode ?? false;
         }
         #endregion Pass
@@ -982,8 +1000,8 @@ namespace QQChannelBot.Bot
         /// <returns>一个用于连接 websocket 的地址</returns>
         public async Task<string?> GetWssUrl()
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/gateway");
-            JsonElement? res = respone == null ? null : await respone.Content.ReadFromJsonAsync<JsonElement?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/gateway").ConfigureAwait(false);
+            JsonElement? res = respone == null ? null : await respone.Content.ReadFromJsonAsync<JsonElement?>().ConfigureAwait(false);
             return res?.GetProperty("url").GetString();
         }
         /// <summary>
@@ -995,8 +1013,8 @@ namespace QQChannelBot.Bot
         /// <returns>一个用于连接 websocket 的地址。<br/>同时返回建议的分片数，以及目前连接数使用情况。</returns>
         public async Task<string?> GetWssUrlWithShared()
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/gateway/bot");
-            WebSocketLimit? GateLimit = respone == null ? null : await respone.Content.ReadFromJsonAsync<WebSocketLimit?>();
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/gateway/bot").ConfigureAwait(false);
+            WebSocketLimit? GateLimit = respone == null ? null : await respone.Content.ReadFromJsonAsync<WebSocketLimit?>().ConfigureAwait(false);
             return GateLimit?.Url;
         }
         #endregion
@@ -1032,10 +1050,10 @@ namespace QQChannelBot.Bot
             {
                 try
                 {
-                    string? GatewayUrl = await GetWssUrlWithShared();
+                    string? GatewayUrl = await GetWssUrlWithShared().ConfigureAwait(false);
                     if (Uri.TryCreate(GatewayUrl, UriKind.Absolute, out Uri? webSocketUri))
                     {
-                        if (WebSocketClient.State != WebSocketState.Open)
+                        if (WebSocketClient.State != WebSocketState.Open && WebSocketClient.State != WebSocketState.Connecting)
                         {
                             await WebSocketClient.ConnectAsync(webSocketUri, CancellationToken.None).ConfigureAwait(false);
                             OnWebSocketConnected?.Invoke(this);
@@ -1054,7 +1072,7 @@ namespace QQChannelBot.Bot
                     if (RetryCount > 0)
                     {
                         Log.Info($"[WebSocket] Try again in 10 seconds...");
-                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        await Task.Delay(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                     }
                     else
                     {
@@ -1085,7 +1103,7 @@ namespace QQChannelBot.Bot
                         }
                     };
                     Log.Debug($"[WebSocket] Identify Sending...");
-                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
+                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true).ConfigureAwait(false);
                 }
                 else throw new Exception("WebSocket Connection Broken!");
             }
@@ -1153,7 +1171,10 @@ namespace QQChannelBot.Bot
         {
             Log.Debug($"[WebSocket][Send] {data}");
             OnWebSoketSending?.Invoke(this, data);
-            await WebSocketClient.SendAsync(Encoding.UTF8.GetBytes(data), msgType, endOfMsg, cancelToken ?? CancellationToken.None);
+            await Task.Run(delegate
+            {
+                _ = WebSocketClient.SendAsync(Encoding.UTF8.GetBytes(data), msgType, endOfMsg, cancelToken ?? CancellationToken.None);
+            });
         }
         /// <summary>
         /// WebSocket接收服务端数据
@@ -1163,30 +1184,33 @@ namespace QQChannelBot.Bot
         {
             try
             {
-                WebSocketReceiveResult result = await WebSocketClient.ReceiveAsync(ReceiveBuffer, CancellationToken.None).ConfigureAwait(false);
-                if (result == null)
+                while (true)
                 {
-                    Log.Warn($"[WebSocket] Received Warn: No Data Received!");
-                }
-                else if (result?.MessageType == WebSocketMessageType.Close)
-                {
-                    throw new WebSocketException("The server sends a Close message.");
-                }
-                else if (result?.MessageType != WebSocketMessageType.Text)
-                {
-                    Log.Info($"[WebSocket] Received MessageType: {result?.MessageType}");
-                }
-                else
-                {
-                    byte[] recBytes = ReceiveBuffer.Skip(ReceiveBuffer.Offset).Take(result.Count).ToArray();
-                    string recString = Encoding.UTF8.GetString(recBytes);
-                    // 反转义Unicode编码串
-                    recString = Unicoder.Decode(recString);
-                    // 私域消息太多，默认不打印消息(如需打印请自行订阅 OnWebSocketReceived 事件)
-                    if (!Intents.HasFlag(Intent.MESSAGE_CREATE)) Log.Debug($"[WebSocket][GET] {recString}");
+                    WebSocketReceiveResult result = await WebSocketClient.ReceiveAsync(ReceiveBuffer, CancellationToken.None).ConfigureAwait(false);
+                    if (result == null)
+                    {
+                        Log.Warn($"[WebSocket] Received Warn: No Data Received!");
+                    }
+                    else if (result?.MessageType == WebSocketMessageType.Close)
+                    {
+                        throw new WebSocketException("The server sends a Close message.");
+                    }
+                    else if (result?.MessageType != WebSocketMessageType.Text)
+                    {
+                        Log.Info($"[WebSocket] Received MessageType: {result?.MessageType}");
+                    }
+                    else
+                    {
+                        byte[] recBytes = ReceiveBuffer.Skip(ReceiveBuffer.Offset).Take(result.Count).ToArray();
+                        string recString = Encoding.UTF8.GetString(recBytes);
+                        // 反转义Unicode编码串
+                        recString = Unicoder.Decode(recString);
+                        // 私域消息太多，默认不打印消息(如需打印请自行订阅 OnWebSocketReceived 事件)
+                        if (!Intents.HasFlag(Intent.MESSAGE_CREATE)) Log.Debug($"[WebSocket][GET] {recString}");
 
-                    OnWebSocketReceived?.Invoke(this, recString);
-                    await Task.Run(async () => await ExcuteCommand(recString)).ConfigureAwait(false);
+                        OnWebSocketReceived?.Invoke(this, recString);
+                        _ = Task.Run(async delegate { await ExcuteCommand(recString).ConfigureAwait(false); });
+                    }
                 }
             }
             catch (Exception e)
@@ -1196,14 +1220,12 @@ namespace QQChannelBot.Bot
                 if (HeartbeatInterval > 0)
                 {
                     Log.Warn($"[WebSocket] Try to reconnect after 5s...");
-                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                     IsResume = true;
                     WebSocketClient = new();
                     await ConnectAsync(3).ConfigureAwait(false);
                 }
-                return;
             }
-            await Task.Factory.StartNew(async () => { await ReceiveAsync(); }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
         /// <summary>
         /// 根据收到的数据分析用途
@@ -1295,26 +1317,41 @@ namespace QQChannelBot.Bot
                 case (int)Opcode.Heartbeat:
                     Log.Info($"[WebSocket][Op01] {(wssJson.GetProperty("d").GetString() == null ? "Client" : "Server")} sends a heartbeat!");
                     OnHeartbeat?.Invoke(this, wssJson);
-                    await SendHeartBeatAsync();
+                    await SendHeartBeatAsync().ConfigureAwait(false);
+                    // 准备下一次心跳
+                    if (HeartbeatTick == 0)
+                    {
+                        _ = Task.Run(async delegate
+                        {
+                            while (HeartbeatTick < HeartbeatInterval)
+                            {
+                                await Task.Delay(1000);
+                                HeartbeatTick += 1000;
+                            }
+                            HeartbeatTick = 0;
+                            await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
+                        });
+                    }
+                    else HeartbeatTick = 1;
                     break;
                 // Send 客户端发送鉴权
                 case (int)Opcode.Identify:
                     Log.Info($"[WebSocket][Op02] Client send authentication!");
                     OnIdentify?.Invoke(this, wssJson);
-                    await SendIdentifyAsync();
+                    await SendIdentifyAsync().ConfigureAwait(false);
                     break;
                 // Send 客户端恢复连接
                 case (int)Opcode.Resume:
                     Log.Info($"[WebSocket][Op06] Client resumes connecting!");
                     OnResume?.Invoke(this, wssJson);
-                    await SendResumeAsync();
+                    await SendResumeAsync().ConfigureAwait(false);
                     break;
                 // Receive 服务端通知客户端重新连接
                 case (int)Opcode.Reconnect:
                     Log.Info($"[WebSocket][Op07] Server asks the client to reconnect!");
                     OnReconnect?.Invoke(this, wssJson);
                     IsResume = true;
-                    await ConnectAsync(3);
+                    await ConnectAsync(3).ConfigureAwait(false);
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case (int)Opcode.InvalidSession:
@@ -1333,21 +1370,6 @@ namespace QQChannelBot.Bot
                 case (int)Opcode.HeartbeatACK:
                     Log.Info($"[WebSocket][Op11] HeartbeatACK Received!");
                     OnHeartbeatACK?.Invoke(this, wssJson);
-                    // 准备下一次心跳
-                    if (HeartbeatTick == 0)
-                    {
-                        await Task.Factory.StartNew(async () =>
-                        {
-                            while (HeartbeatTick < HeartbeatInterval)
-                            {
-                                await Task.Delay(1000);
-                                HeartbeatTick += 1000;
-                            }
-                            HeartbeatTick = 0;
-                            await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
-                        }, TaskCreationOptions.LongRunning);
-                    }
-                    else HeartbeatTick = 1;
                     break;
                 // 未知操作码
                 default:
@@ -1403,7 +1425,7 @@ namespace QQChannelBot.Bot
             {
                 bool tmpReportApiError = ReportApiError;
                 ReportApiError = false;
-                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!);
+                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!).ConfigureAwait(false);
                 ReportApiError = tmpReportApiError;
             }
             // 记录最后收到的一条消息
