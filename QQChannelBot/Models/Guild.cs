@@ -51,6 +51,6 @@ namespace QQChannelBot.Models
         /// 加入时间
         /// </summary>
         [JsonPropertyName("joined_at")]
-        public string? JoinedAt { get; set; }
+        public DateTime? JoinedAt { get; set; }
     }
 }
