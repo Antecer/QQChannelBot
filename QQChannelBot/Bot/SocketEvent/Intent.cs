@@ -7,6 +7,7 @@
     /// 详见：<see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">官方文档</see>
     /// </para>
     /// </summary>
+    [Flags]
     public enum Intent
     {
         /// <summary>

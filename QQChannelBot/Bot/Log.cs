@@ -8,7 +8,7 @@
         /// <summary>
         /// 日志记录级别
         /// </summary>
-        public static LogLevel LogLevel { get; set; } = LogLevel.Info;
+        public static LogLevel LogLevel { get; set; } = LogLevel.INFO;
         /// <summary>
         /// 时间格式化器
         /// <para>定义日志输出的时间戳格式 (默认值 HH:mm:ss.fff)</para>
@@ -26,7 +26,7 @@
         /// <param name="message"></param>
         public static void Debug(object message)
         {
-            if (LogLevel == LogLevel.Debug) Console.WriteLine($"[{TimeStamp}][D] {message}");
+            if (LogLevel == LogLevel.DEBUG) Console.WriteLine($"[{TimeStamp}][D] {message}");
         }
 
         /// <summary>
@@ -35,7 +35,7 @@
         /// <param name="message"></param>
         public static void Info(object message)
         {
-            if (LogLevel <= LogLevel.Info) Console.WriteLine($"[{TimeStamp}][I] {message}");
+            if (LogLevel <= LogLevel.INFO) Console.WriteLine($"[{TimeStamp}][I] {message}");
         }
 
         /// <summary>
@@ -44,7 +44,7 @@
         /// <param name="message"></param>
         public static void Warn(object message)
         {
-            if (LogLevel <= LogLevel.Warning) Console.WriteLine($"[{TimeStamp}][W] {message}");
+            if (LogLevel <= LogLevel.WARRNING) Console.WriteLine($"[{TimeStamp}][W] {message}");
         }
 
         /// <summary>
@@ -53,7 +53,7 @@
         /// <param name="message"></param>
         public static void Error(object message)
         {
-            if (LogLevel <= LogLevel.Error) Console.WriteLine($"[{TimeStamp}][E] {message}");
+            if (LogLevel <= LogLevel.ERROR) Console.WriteLine($"[{TimeStamp}][E] {message}");
         }
     }
 
@@ -65,18 +65,18 @@
         /// <summary>
         /// 调试
         /// </summary>
-        Debug,
+        DEBUG,
         /// <summary>
         /// 消息
         /// </summary>
-        Info,
+        INFO,
         /// <summary>
         /// 警告
         /// </summary>
-        Warning,
+        WARRNING,
         /// <summary>
         /// 错误
         /// </summary>
-        Error
+        ERROR
     }
 }

@@ -168,7 +168,7 @@ namespace QQChannelBot.Bot
 
             _ = Task.Run(delegate
             {
-                if ((Log.LogLevel == LogLevel.Debug) || (responseStatusCode >= HttpStatusCode.BadRequest))
+                if ((Log.LogLevel == LogLevel.DEBUG) || (responseStatusCode >= HttpStatusCode.BadRequest))
                 {
                     if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
                     if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json"))
