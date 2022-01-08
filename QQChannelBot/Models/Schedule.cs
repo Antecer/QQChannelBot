@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace QQChannelBot.Models
 {
@@ -31,7 +32,7 @@ namespace QQChannelBot.Models
             DateTime? startTime = null,
             DateTime? endTime = null,
             Channel? jumpChannel = null,
-            ScheduleRemindType remindType = ScheduleRemindType.Never)
+            RemindType remindType = RemindType.Never)
         {
             Name = name;
             Description = desc;
@@ -81,23 +82,14 @@ namespace QQChannelBot.Models
         /// 日程提醒类型
         /// <para>请勿直接读写此属性，而是应该通过RemindType属性读写</para>
         /// </summary>
-        [JsonPropertyName("remind_type")]
-        public string Remind { get; set; } = "0";
-        /// <summary>
-        /// 日程提醒类型
-        /// </summary>
-        [JsonIgnore]
-        public ScheduleRemindType? RemindType
-        {
-            get => (ScheduleRemindType)int.Parse(Remind);
-            set => Remind = value?.ToString("D") ?? "0";
-        }
+        [JsonPropertyName("remind_type"), JsonConverter(typeof(RemindTypeToStringNumberConverter))]
+        public RemindType RemindType { get; set; }
     }
 
     /// <summary>
     /// 日程提醒方式
     /// </summary>
-    public enum ScheduleRemindType
+    public enum RemindType
     {
         /// <summary>
         /// 不提醒

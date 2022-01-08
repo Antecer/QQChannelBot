@@ -3,46 +3,6 @@
 namespace QQChannelBot.Models
 {
     /// <summary>
-    /// 表态对象类型
-    /// </summary>
-    public enum ReactionTargetType
-    {
-        /// <summary>
-        /// 消息
-        /// </summary>
-        Message,
-        /// <summary>
-        /// 帖子
-        /// </summary>
-        Topic,
-        /// <summary>
-        /// 评论
-        /// </summary>
-        Review,
-        /// <summary>
-        /// 回复
-        /// </summary>
-        Reply,
-    }
-
-    /// <summary>
-    /// 表态对象
-    /// </summary>
-    public class ReactionTarget
-    {
-        /// <summary>
-        /// 表态对象ID
-        /// </summary>
-        [JsonPropertyName("id")]
-        public string? Id { get; set; }
-        /// <summary>
-        /// 表态对象类型
-        /// </summary>
-        [JsonPropertyName("type")]
-        public ReactionTargetType Type { get; set; }
-    }
-
-    /// <summary>
     /// 表情表态
     /// </summary>
     public class MessageReaction
@@ -72,5 +32,43 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("emoji")]
         public Emoji? Emoji { get; set; }
+    }
+    /// <summary>
+    /// 表态对象
+    /// </summary>
+    public class ReactionTarget
+    {
+        /// <summary>
+        /// 表态对象ID
+        /// </summary>
+        [JsonPropertyName("id")]
+        public string? Id { get; set; }
+        /// <summary>
+        /// 表态对象类型
+        /// </summary>
+        [JsonPropertyName("type")]
+        public ReactionTargetType Type { get; set; }
+    }
+    /// <summary>
+    /// 表态对象类型
+    /// </summary>
+    public enum ReactionTargetType
+    {
+        /// <summary>
+        /// 消息
+        /// </summary>
+        Message,
+        /// <summary>
+        /// 帖子
+        /// </summary>
+        Topic,
+        /// <summary>
+        /// 评论
+        /// </summary>
+        Review,
+        /// <summary>
+        /// 回复
+        /// </summary>
+        Reply,
     }
 }

@@ -443,12 +443,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Role?> CreateRoleAsync(string guild_id, Info info, Filter? filter = null)
         {
-            filter ??= new Filter()
-            {
-                Name = info.Name == null ? 0 : 1,
-                Color = info.ColorHex == null ? 0 : 1,
-                Hoist = info.Hoist == null ? 0 : 1
-            };
+            filter ??= new Filter(!string.IsNullOrWhiteSpace(info.Name), info.Color != null, info.Hoist ?? false);
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", HttpMethod.Post, JsonContent.Create(new { filter, info }));
             var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<CreateRoleRes?>();
             return result?.Role;
@@ -464,12 +459,7 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Role?> EditRoleAsync(string guild_id, string role_id, Info info, Filter? filter = null)
         {
-            filter ??= new Filter()
-            {
-                Name = info.Name == null ? 0 : 1,
-                Color = info.ColorHex == null ? 0 : 1,
-                Hoist = info.Hoist == null ? 0 : 1
-            };
+            filter ??= new Filter(!string.IsNullOrWhiteSpace(info.Name), info.Color != null, info.Hoist ?? false);
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Patch, JsonContent.Create(new { filter, info }));
             var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<ModifyRolesRes?>();
             return result?.Role;

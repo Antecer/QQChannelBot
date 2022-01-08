@@ -1,4 +1,5 @@
-﻿using QQChannelBot.Bot;
+﻿using System.Drawing;
+using QQChannelBot.Bot;
 using QQChannelBot.Models;
 using QQChannelBot.MsgHelper;
 
@@ -107,14 +108,14 @@ namespace QQChannelBot.Tools
             List<Role>? roles = await bot.GetRolesAsync(sender.GuildId);
             await sender.ReplyAsync(GetLog("获取频道身份组列表", roles != null));
 
-            Role? role = await bot.CreateRoleAsync(sender.GuildId, new Info("创建频道身份组", "#F00"));
+            Role? role = await bot.CreateRoleAsync(sender.GuildId, new Info("创建频道身份组", Color.Red));
             await sender.ReplyAsync(GetLog("创建频道身份组", role != null));
 
             if (role != null)
             {
                 await sender.ReplyAsync(GetLog("增加频道身份组成员", await bot.AddRoleMemberAsync(sender.GuildId, botId, role.Id)));
                 await sender.ReplyAsync(GetLog("删除频道身份组成员", await bot.DeleteRoleMemberAsync(sender.GuildId, botId, role.Id)));
-                await sender.ReplyAsync(GetLog("修改频道身份组", await bot.EditRoleAsync(sender.GuildId, role.Id, new Info("修改频道身份组", "#FF0")) != null));
+                await sender.ReplyAsync(GetLog("修改频道身份组", await bot.EditRoleAsync(sender.GuildId, role.Id, new Info("修改频道身份组", Color.Orange)) != null));
                 await sender.ReplyAsync(GetLog("删除频道身份组", await bot.DeleteRoleAsync(sender.GuildId, role.Id)));
             }
             else

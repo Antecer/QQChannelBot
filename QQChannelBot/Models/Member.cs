@@ -26,7 +26,7 @@ namespace QQChannelBot.Models
         /// 用户加入频道的时间 ISO8601 timestamp
         /// </summary>
         [JsonPropertyName("joined_at")]
-        public string? JoinedAt { get; set; }
+        public DateTime? JoinedAt { get; set; }
         /// <summary>
         /// 该字段作用未知，等待官方文档更新
         /// </summary>
