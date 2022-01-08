@@ -34,11 +34,6 @@ namespace QQChannelBot.Models
         [JsonPropertyName("hoist"), JsonConverter(typeof(BoolToInt32Converter))]
         public bool Hoist { get; set; }
         /// <summary>
-        /// 该身分组是否在成员列表中单独展示: 否, 是
-        /// </summary>
-        [JsonIgnore]
-        public string HoistString { get => Hoist ? "是" : "否"; }
-        /// <summary>
         /// 该身分组的人数
         /// </summary>
         [JsonPropertyName("number")]
