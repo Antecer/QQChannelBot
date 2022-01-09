@@ -13,7 +13,7 @@
         /// 时间格式化器
         /// <para>定义日志输出的时间戳格式 (默认值 HH:mm:ss.fff)</para>
         /// </summary>
-        public static string TimeFormatter { get; set; } = "HH:mm:ss.fff";
+        public static string TimeFormatter { get; set; } = "HH:mm:ss.f";
 
         /// <summary>
         /// 获取格式化的日期标签
@@ -26,7 +26,7 @@
         /// <param name="message"></param>
         public static void Debug(object message)
         {
-            if (LogLevel == LogLevel.DEBUG) Console.WriteLine($"[{TimeStamp}][D] {message}");
+            if (LogLevel == LogLevel.DEBUG) Console.WriteLine($"[{TimeStamp}][D]{message}");
         }
 
         /// <summary>
@@ -35,7 +35,7 @@
         /// <param name="message"></param>
         public static void Info(object message)
         {
-            if (LogLevel <= LogLevel.INFO) Console.WriteLine($"[{TimeStamp}][I] {message}");
+            if (LogLevel <= LogLevel.INFO) Console.WriteLine($"[{TimeStamp}][I]{message}");
         }
 
         /// <summary>
@@ -44,7 +44,7 @@
         /// <param name="message"></param>
         public static void Warn(object message)
         {
-            if (LogLevel <= LogLevel.WARRNING) Console.WriteLine($"[{TimeStamp}][W] {message}");
+            if (LogLevel <= LogLevel.WARRNING) Console.WriteLine($"[{TimeStamp}][W]{message}");
         }
 
         /// <summary>
@@ -53,7 +53,7 @@
         /// <param name="message"></param>
         public static void Error(object message)
         {
-            if (LogLevel <= LogLevel.ERROR) Console.WriteLine($"[{TimeStamp}][E] {message}");
+            if (LogLevel <= LogLevel.ERROR) Console.WriteLine($"[{TimeStamp}][E]{message}");
         }
     }
 
