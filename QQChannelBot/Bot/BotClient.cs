@@ -1295,13 +1295,13 @@ namespace QQChannelBot.Bot
                         case "DIRECT_MESSAGE_CREATE":   // 机器人收到私信事件
                         case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
                         case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
-                            Message? atMessage = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText());
+                            Message? message = JsonSerializer.Deserialize<Message>(wssJson.GetProperty("d").GetRawText());
                             // 私域消息太多，默认不打印消息(如需打印请自行订阅OnDispatch事件)
-                            if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || (atMessage?.GuildId == SadboxGuildId))
+                            if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || ((message?.GuildId == SadboxGuildId) && (type != "AT_MESSAGE_CREATE")))
                             {
                                 Log.Info($"[WebSocket][Op00] MESSAGE: {wssJson.GetRawText()}");
                             }
-                            await MessageCenter(atMessage, type).ConfigureAwait(false);
+                            await MessageCenter(message, type).ConfigureAwait(false);
                             break;
                         default:
                             Log.Warn($"[WebSocket] Unknown message received, Type={type}");
@@ -1434,32 +1434,31 @@ namespace QQChannelBot.Bot
             // 若已经启用全局消息接收，将不单独响应 AT_MESSAGES 事件，否则会造成重复响应。
             if (Intents.HasFlag(Intent.MESSAGE_CREATE) && (type == "AT_MESSAGE_CREATE")) return;
             // 从全局消息事件中识别 AT_MESSAGES 消息。
-            if (message.Mentions?.Any(user => user.Id == Info!.Id) == true) type = "AT_MESSAGE_CREATE";
+            bool isAtMessage = message.Mentions?.Any(user => user.Id == Info!.Id) == true;
             // 处理收到的数据
             string paramStr = message.Content.Trim().TrimStartString(MsgTag.User(Info!.Id)).TrimStart();
-            paramStr = paramStr.TrimStart('/').TrimStart();
             // 识别指令
-            if (paramStr.Length > 0)
+            bool hasCommand = paramStr.StartsWith('/');
+            paramStr = paramStr.TrimStart('/').TrimStart();
+            if ((hasCommand | isAtMessage) && (paramStr.Length > 0))
             {
-                Command? command = Commands.Values.FirstOrDefault(cmd =>
+                bool isCommand = Commands.Values.Any(cmd =>
                 {
                     Match cmdMatch = cmd.Rule.Match(paramStr);
                     if (!cmdMatch.Success) return false;
                     paramStr = paramStr.TrimStartString(cmdMatch.Groups[0].Value);
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
-                        message.ReplyAsync($"{MsgTag.User(message.Author.Id)} 你无权使用该命令！").ConfigureAwait(false);
+                        if (isAtMessage) message.ReplyAsync($"{MsgTag.User(message.Author.Id)} 你无权使用该命令！").ConfigureAwait(false);
+                        else return false;
                     }
-                    else
-                    {
-                        cmd.CallBack?.Invoke(message, paramStr);
-                    }
+                    else cmd.CallBack?.Invoke(message, paramStr);
                     return true;
                 });
-                if (command != null) return;
+                if (isCommand) return;
             }
             // 触发Message到达事件
-            OnMsgCreate?.Invoke(message, type == "AT_MESSAGE_CREATE");
+            OnMsgCreate?.Invoke(message, isAtMessage);
         }
 
         /// <summary>
