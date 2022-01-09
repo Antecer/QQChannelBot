@@ -159,13 +159,13 @@ namespace QQChannelBot.Tools
 
             if (channel != null)
             {
-                channel = await bot.CreateChannelAsync(sender.GuildId, "Benchmaarks测试创建频道", ChannelType.TextChannel, 1, channel.ParentId!);
+                channel = await bot.CreateChannelAsync(sender.GuildId, "Benchmaarks测试创建频道", ChannelType.文字, 1, channel.ParentId!);
                 await sender.ReplyAsync(GetLog("创建子频道（私域）", channel != null));
             }
             else await sender.ReplyAsync(GetLog("创建子频道（私域｜获取频道分组失败）"));
             if (channel?.Name == "Benchmaarks测试创建频道")
             {
-                await sender.ReplyAsync(GetLog("修改子频道（私域）", await bot.EditChannelAsync(channel.Id!, "Benchmaarks测试修改频道", ChannelType.TextChannel, 1, channel.ParentId!) != null));
+                await sender.ReplyAsync(GetLog("修改子频道（私域）", await bot.EditChannelAsync(channel.Id!, "Benchmaarks测试修改频道", ChannelType.文字, 1, channel.ParentId!) != null));
                 await sender.ReplyAsync(GetLog("删除子频道（私域）", await bot.DeleteChannelAsync(channel.Id!)));
             }
             else
@@ -195,7 +195,7 @@ namespace QQChannelBot.Tools
             List<Guild>? guilds = await bot.GetMeGuildsAsync();
             await sender.ReplyAsync(GetLog("获取当前用户(机器人)所在频道列表", guilds != null));
 
-            Channel? schChannel = channels == null ? null : schChannel = channels.Find(c => c.Name!.Contains("活动日程"));
+            Channel? schChannel = channels == null ? null : schChannel = channels.Find(c => c.Name!.Contains("日程"));
             if (schChannel != null)
             {
                 Schedule? schedule = await bot.CreateScheduleAsync(schChannel.Id, new Schedule("测试创建日程"));

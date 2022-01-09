@@ -62,7 +62,7 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 文字子频道
         /// </summary>
-        TextChannel = 0,
+        文字 = 0,
         /// <summary>
         /// 保留，不可用
         /// </summary>
@@ -70,7 +70,7 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 语音子频道
         /// </summary>
-        VoiceChannel = 2,
+        语音 = 2,
         /// <summary>
         /// 保留，不可用
         /// </summary>
@@ -78,19 +78,19 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 子频道分组
         /// </summary>
-        ChannelSubGroup = 4,
+        分组 = 4,
         /// <summary>
         /// 直播子频道
         /// </summary>
-        LiveChannel = 10005,
+        直播 = 10005,
         /// <summary>
         /// 应用子频道
         /// </summary>
-        AppChannel = 10006,
+        应用 = 10006,
         /// <summary>
         /// 论坛子频道
         /// </summary>
-        ForumChannel = 10007
+        论坛 = 10007
     }
     /// <summary>
     /// 子频道子类型(目前只有文字子频道有)
@@ -100,19 +100,19 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 闲聊
         /// </summary>
-        General,
+        闲聊,
         /// <summary>
         /// 公告
         /// </summary>
-        Declared,
+        公告,
         /// <summary>
         /// 攻略
         /// </summary>
-        Raiders,
+        攻略,
         /// <summary>
         /// 开黑
         /// </summary>
-        GangUp,
+        开黑
     }
     /// <summary>
     /// 子频道私密类型
