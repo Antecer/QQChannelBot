@@ -176,17 +176,24 @@ namespace QQChannelBot.Bot
                     {
                         requestContent = Unicoder.Decode(requestContent);
                     }
+                    else requestContent = "(内容无法解码)";
                     requestContent = $"[HttpHandler] Request:{Environment.NewLine}{requestString}{Environment.NewLine}{requestContent}";
-                    Log.Debug(requestContent);
 
                     if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
                     if ((responseContentType?.CharSet != null) || (responseContentType?.MediaType == "application/json"))
                     {
                         responseContent = Unicoder.Decode(responseContent);
                     }
+                    else responseContent = "(内容无法解码)";
                     responseContent = $"[HttpHandler] Response:{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
-                    if (responseStatusCode < HttpStatusCode.BadRequest) Log.Debug(responseContent);
-                    else Log.Error(responseContent);
+                    if (responseStatusCode < HttpStatusCode.BadRequest)
+                    {
+                        Log.Debug(requestContent + '\n' + responseContent);
+                    }
+                    else
+                    {
+                        Log.Error(requestContent + '\n' + responseContent);
+                    }
 
                 }, CancellationToken.None);
             }
