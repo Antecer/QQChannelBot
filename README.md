@@ -42,7 +42,7 @@ bot.OnMsgCreate += async (sender, isAt) =>
 {
     if (isAt)
     {
-        string replyMsg = sender.Content.Replace(MsgTag.User(bot.Info!.Id), MsgTag.User(sender.Author.Id));
+        string replyMsg = sender.Content.Replace(MsgTag.User(bot.Info.Id), MsgTag.User(sender.Author.Id));
         await sender.ReplyAsync(replyMsg);
     }
 };

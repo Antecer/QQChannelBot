@@ -71,7 +71,7 @@ namespace QQChannelBot.Tools
             Index = 0;
             bool isOk;
             BotClient bot = sender.Bot!;
-            string botId = bot.Info!.Id;
+            string botId = bot.Info.Id;
             bool tmpReportApiError = bot.ReportApiError;
             bot.ReportApiError = false;
 

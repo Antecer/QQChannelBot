@@ -84,7 +84,7 @@ namespace QQChannelBot.Bot
         /// 鉴权连接成功后触发
         /// <para>注:此时获取的User对象只有3个属性 {id,username,bot}</para>
         /// </summary>
-        public event Action<User?>? OnReady;
+        public event Action<User>? OnReady;
         /// <summary>
         /// 恢复连接成功后触发
         /// </summary>
@@ -145,9 +145,13 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 机器人用户信息
         /// </summary>
-        public User? Info { get; set; }
+        public User Info { get; set; } = new User();
         /// <summary>
         /// 保存机器人在各频道内的角色信息
+        /// <para>
+        /// string - GUILD_ID<br/>
+        /// Member - 角色信息
+        /// </para>
         /// </summary>
         public Dictionary<string, Member?> Members { get; set; } = new();
 
@@ -201,7 +205,7 @@ namespace QQChannelBot.Bot
                             ));
                     });
                 }
-            }).ConfigureAwait(false);
+            });
         }
         /// <summary>
         /// 正式环境
@@ -1045,12 +1049,12 @@ namespace QQChannelBot.Bot
             {
                 try
                 {
-                    string? GatewayUrl = await GetWssUrlWithShared().ConfigureAwait(false);
+                    string? GatewayUrl = await GetWssUrlWithShared();
                     if (Uri.TryCreate(GatewayUrl, UriKind.Absolute, out Uri? webSocketUri))
                     {
                         if (WebSocketClient.State != WebSocketState.Open && WebSocketClient.State != WebSocketState.Connecting)
                         {
-                            await WebSocketClient.ConnectAsync(webSocketUri, CancellationToken.None).ConfigureAwait(false);
+                            await WebSocketClient.ConnectAsync(webSocketUri, CancellationToken.None);
                             OnWebSocketConnected?.Invoke(this);
                             _ = ReceiveAsync();
                         }
@@ -1098,7 +1102,7 @@ namespace QQChannelBot.Bot
                         }
                     };
                     Log.Debug($"[WebSocket] Identify Sending...");
-                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true).ConfigureAwait(false);
+                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
                 }
                 else throw new Exception("WebSocket Connection Broken!");
             }
@@ -1119,7 +1123,7 @@ namespace QQChannelBot.Bot
                 {
                     var data = new { op = Opcode.Heartbeat, s = WssMsgLastS };
                     Log.Debug($"[WebSocket] Heartbeat Sending...");
-                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true).ConfigureAwait(false);
+                    await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
                 }
                 else throw new Exception("WebSocket Connection Broken!");
             }
@@ -1147,7 +1151,7 @@ namespace QQChannelBot.Bot
                     }
                 };
                 Log.Debug($"[WebSocket] Resume Sending...");
-                await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true).ConfigureAwait(false);
+                await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
             }
             catch (Exception e)
             {
@@ -1218,7 +1222,7 @@ namespace QQChannelBot.Bot
                     await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                     IsResume = true;
                     WebSocketClient = new();
-                    await ConnectAsync(3).ConfigureAwait(false);
+                    await ConnectAsync(3);
                 }
             }
         }
@@ -1249,7 +1253,7 @@ namespace QQChannelBot.Bot
                             Log.Debug($"[WebSocket][Op00] READY: {wssJson.GetRawText()}");
                             await ExcuteCommand($"{{\"op\": {(int)Opcode.Heartbeat}, \"d\": null}}").ConfigureAwait(false);
                             WebSoketSessionId = wssJson.GetProperty("d").GetProperty("session_id").GetString();
-                            Info = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user").GetRawText());
+                            Info = JsonSerializer.Deserialize<User>(wssJson.GetProperty("d").GetProperty("user"))!;
                             OnReady?.Invoke(Info);
                             break;
                         case "RESUMED":
@@ -1312,7 +1316,7 @@ namespace QQChannelBot.Bot
                 case (int)Opcode.Heartbeat:
                     Log.Info($"[WebSocket][Op01] {(wssJson.GetProperty("d").GetString() == null ? "Client" : "Server")} sends a heartbeat!");
                     OnHeartbeat?.Invoke(this, wssJson);
-                    await SendHeartBeatAsync().ConfigureAwait(false);
+                    await SendHeartBeatAsync();
                     // 准备下一次心跳
                     if (HeartbeatTick == 0)
                     {
@@ -1333,7 +1337,7 @@ namespace QQChannelBot.Bot
                 case (int)Opcode.Identify:
                     Log.Info($"[WebSocket][Op02] Client send authentication!");
                     OnIdentify?.Invoke(this, wssJson);
-                    await SendIdentifyAsync().ConfigureAwait(false);
+                    await SendIdentifyAsync();
                     break;
                 // Send 客户端恢复连接
                 case (int)Opcode.Resume:
@@ -1346,7 +1350,7 @@ namespace QQChannelBot.Bot
                     Log.Info($"[WebSocket][Op07] Server asks the client to reconnect!");
                     OnReconnect?.Invoke(this, wssJson);
                     IsResume = true;
-                    await ConnectAsync(3).ConfigureAwait(false);
+                    await ConnectAsync(3);
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case (int)Opcode.InvalidSession:
@@ -1389,7 +1393,7 @@ namespace QQChannelBot.Bot
         /// <param name="RetryCount">连接服务器失败后的重试次数</param>
         public async void Start(int RetryCount = 3)
         {
-            await ConnectAsync(RetryCount).ConfigureAwait(false);
+            await ConnectAsync(RetryCount);
         }
 
         /// <summary>
@@ -1420,7 +1424,7 @@ namespace QQChannelBot.Bot
             {
                 bool tmpReportApiError = ReportApiError;
                 ReportApiError = false;
-                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info!.Id!).ConfigureAwait(false);
+                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id).ConfigureAwait(false);
                 ReportApiError = tmpReportApiError;
             }
             // 记录最后收到的一条消息
@@ -1434,9 +1438,9 @@ namespace QQChannelBot.Bot
             // 若已经启用全局消息接收，将不单独响应 AT_MESSAGES 事件，否则会造成重复响应。
             if (Intents.HasFlag(Intent.MESSAGE_CREATE) && (type == "AT_MESSAGE_CREATE")) return;
             // 从全局消息事件中识别 AT_MESSAGES 消息。
-            bool isAtMessage = message.Mentions?.Any(user => user.Id == Info!.Id) == true;
+            bool isAtMessage = message.Mentions?.Any(user => user.Id == Info.Id) == true;
             // 处理收到的数据
-            string paramStr = message.Content.Trim().TrimStartString(MsgTag.User(Info!.Id)).TrimStart();
+            string paramStr = message.Content.Trim().TrimStartString(MsgTag.User(Info.Id)).TrimStart();
             // 识别指令
             bool hasCommand = paramStr.StartsWith('/');
             paramStr = paramStr.TrimStart('/').TrimStart();

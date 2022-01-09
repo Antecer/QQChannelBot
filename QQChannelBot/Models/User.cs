@@ -16,7 +16,7 @@ namespace QQChannelBot.Models
         /// 用户名
         /// </summary>
         [JsonPropertyName("username")]
-        public string? UserName { get; set; } = "";
+        public string UserName { get; set; } = "";
         /// <summary>
         /// 用户头像地址
         /// </summary>
@@ -26,7 +26,7 @@ namespace QQChannelBot.Models
         /// 是否机器人
         /// </summary>
         [JsonPropertyName("bot")]
-        public bool Bot { get; set; }
+        public bool Bot { get; set; } = true;
         /// <summary>
         /// 特殊关联应用的 openid，需要特殊申请并配置后才会返回。如需申请，请联系平台运营人员。
         /// </summary>
