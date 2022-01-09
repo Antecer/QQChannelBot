@@ -118,11 +118,6 @@ namespace QQChannelBot.Bot
         /// </summary>
         public event Action<Message>? OnDirectMessage;
         /// <summary>
-        /// 收到 @机器人 消息后触发
-        /// </summary>
-        [Obsolete("使用 OnMsgCreate 事件处理所有聊天消息")]
-        public event Action<Message>? OnAtMessage;
-        /// <summary>
         /// 频道内有人发消息就触发 (包含 @机器人 消息)
         /// <para>
         /// Message - 消息对象<br/>
@@ -279,7 +274,7 @@ namespace QQChannelBot.Bot
         /// 此次连接所需要接收的事件
         /// <para>具体可参考 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">Intents</see></para>
         /// </summary>
-        public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGES | Intent.GUILD_MESSAGE_REACTIONS;
+        public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGE_CREATE | Intent.GUILD_MESSAGE_REACTIONS;
         /// <summary>
         /// 会话限制
         /// </summary>
@@ -1436,6 +1431,10 @@ namespace QQChannelBot.Bot
                 OnDirectMessage?.Invoke(message);
                 return;
             }
+            // 若已经启用全局消息接收，将不单独响应 AT_MESSAGES 事件，否则会造成重复响应。
+            if (Intents.HasFlag(Intent.MESSAGE_CREATE) && (type == "AT_MESSAGE_CREATE")) return;
+            // 从全局消息事件中识别 AT_MESSAGES 消息。
+            if (message.Mentions?.Any(user => user.Id == Info!.Id) == true) type = "AT_MESSAGE_CREATE";
             // 处理收到的数据
             string paramStr = message.Content.Trim().TrimStartString(MsgTag.User(Info!.Id)).TrimStart();
             paramStr = paramStr.TrimStart('/').TrimStart();
@@ -1460,15 +1459,7 @@ namespace QQChannelBot.Bot
                 if (command != null) return;
             }
             // 触发Message到达事件
-            if (type == "AT_MESSAGE_CREATE")
-            {
-                OnAtMessage?.Invoke(message);
-                OnMsgCreate?.Invoke(message, true);
-            }
-            else
-            {
-                OnMsgCreate?.Invoke(message, false);
-            }
+            OnMsgCreate?.Invoke(message, type == "AT_MESSAGE_CREATE");
         }
 
         /// <summary>
