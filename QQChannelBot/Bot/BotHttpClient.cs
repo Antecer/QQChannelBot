@@ -166,10 +166,11 @@ namespace QQChannelBot.Bot
             HttpStatusCode responseStatusCode = response.StatusCode;
             MediaTypeHeaderValue? responseContentType = response.Content?.Headers.ContentType;
 
-            _ = Task.Run(delegate
+            if ((Log.LogLevel == LogLevel.DEBUG) || (responseStatusCode >= HttpStatusCode.BadRequest))
             {
-                if ((Log.LogLevel == LogLevel.DEBUG) || (responseStatusCode >= HttpStatusCode.BadRequest))
+                _ = Task.Run(delegate
                 {
+
                     if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
                     if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json"))
                     {
@@ -186,8 +187,9 @@ namespace QQChannelBot.Bot
                     responseContent = $"[HttpHandler] Response:{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
                     if (responseStatusCode < HttpStatusCode.BadRequest) Log.Debug(responseContent);
                     else Log.Error(responseContent);
-                }
-            }, CancellationToken.None);
+
+                }, CancellationToken.None);
+            }
             return response;
         }
     }
