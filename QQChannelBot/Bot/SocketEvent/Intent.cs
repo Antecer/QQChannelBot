@@ -43,7 +43,7 @@
         /// <summary>
         /// DIRECT_MESSAGE_CREATE - 当收到用户发给机器人的私信消息时
         /// </summary>
-        DIRECT_MESSAGE = 1 << 12,
+        DIRECT_MESSAGE_CREATE = 1 << 12,
         /// <summary>
         /// <para>
         /// THREAD_CREATE - 当用户创建主题时 <br/>
@@ -68,7 +68,7 @@
         /// <summary>
         /// AT_MESSAGE_CREATE - 当收到@机器人的消息时
         /// </summary>
-        AT_MESSAGES = 1 << 30,
+        AT_MESSAGE_CREATE = 1 << 30,
     }
 
     // 服务器推送的通知类型
