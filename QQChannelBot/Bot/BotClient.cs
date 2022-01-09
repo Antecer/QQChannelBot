@@ -1239,7 +1239,7 @@ namespace QQChannelBot.Bot
                     WssMsgLastS = wssJson.GetProperty("s").GetInt32();
                     if (!wssJson.TryGetProperty("t", out JsonElement t))
                     {
-                        Log.Info($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
+                        Log.Warn($"[WebSocket][Op00] Dispatch: {wssJson.GetRawText()}");
                         break;
                     }
                     string? type = t.GetString();
@@ -1261,27 +1261,27 @@ namespace QQChannelBot.Bot
                         case "GUILD_UPDATE":
                         case "GUILD_DELETE":
                             /*频道事件*/
-                            Log.Debug($"[WebSocket][Op00] GUILD: {wssJson.GetRawText()}");
+                            Log.Info($"[WebSocket][Op00] {type}: {wssJson.GetRawText()}");
                             OnGuildMsg?.Invoke(this, wssJson);
                             break;
                         case "CHANNEL_CREATE":
                         case "CHANNEL_UPDATE":
                         case "CHANNEL_DELETE":
                             /*子频道事件*/
-                            Log.Debug($"[WebSocket][Op00] CHANNEL: {wssJson.GetRawText()}");
+                            Log.Debug($"[WebSocket][Op00] {type}: {wssJson.GetRawText()}");
                             OnChannelMsg?.Invoke(this, wssJson);
                             break;
                         case "GUILD_MEMBER_ADD":
                         case "GUILD_MEMBER_UPDATE":
                         case "GUILD_MEMBER_REMOVE":
                             /*频道成员事件*/
-                            Log.Debug($"[WebSocket][Op00] GUILD_MEMBER: {wssJson.GetRawText()}");
+                            Log.Info($"[WebSocket][Op00] {type.TrimStartString("GUILD_")}: {wssJson.GetRawText()}");
                             OnGuildMemberMsg?.Invoke(this, wssJson);
                             break;
                         case "MESSAGE_REACTION_ADD":
                         case "MESSAGE_REACTION_REMOVE":
                             /*表情表态事件*/
-                            Log.Debug($"[WebSocket][Op00] MESSAGE_REACTION: {wssJson.GetRawText()}");
+                            Log.Debug($"[WebSocket][Op00] {type.TrimStartString("MESSAGE_")}: {wssJson.GetRawText()}");
                             OnMessageReaction?.Invoke(this, wssJson);
                             break;
                         case "AUDIO_START":
@@ -1289,7 +1289,7 @@ namespace QQChannelBot.Bot
                         case "AUDIO_ON_MIC":
                         case "AUDIO_OFF_MIC":
                             /*音频事件*/
-                            Log.Debug($"[WebSocket][Op00] AUDIO: {wssJson.GetRawText()}");
+                            Log.Info($"[WebSocket][Op00] {type}: {wssJson.GetRawText()}");
                             OnAudioMsg?.Invoke(this, wssJson);
                             break;
                         case "DIRECT_MESSAGE_CREATE":   // 机器人收到私信事件
@@ -1299,7 +1299,7 @@ namespace QQChannelBot.Bot
                             // 私域消息太多，默认不打印消息(如需打印请自行订阅OnDispatch事件)
                             if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || ((message?.GuildId == SadboxGuildId) && (type != "AT_MESSAGE_CREATE")))
                             {
-                                Log.Info($"[WebSocket][Op00] MESSAGE: {wssJson.GetRawText()}");
+                                Log.Info($"[WebSocket][Op00] {type}: {wssJson.GetRawText()}");
                             }
                             await MessageCenter(message, type).ConfigureAwait(false);
                             break;
