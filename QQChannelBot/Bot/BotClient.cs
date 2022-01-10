@@ -1282,7 +1282,7 @@ namespace QQChannelBot.Bot
                             while (true)
                             {
                                 List<Guild>? guilds = await GetMeGuildsAsync(guildNext);
-                                if ((guilds == null) || (guilds.Count == 0)) break;
+                                if (guilds?.Any() != true) break;
                                 guilds.ForEach(guild => Guilds[guild.Id] = guild);
                                 if (guilds.Count < 100) break;
                                 guildNext = guilds.Last().Id;
