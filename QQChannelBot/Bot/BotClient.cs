@@ -27,6 +27,7 @@ namespace QQChannelBot.Bot
     /// SandBox - 机器人调用API的模式[true:沙箱;false:正式]；默认值=false<br/>
     /// ApiOrigin - (只读) 获取机器人当前使用的ApiUrl<br/>
     /// Intents - 订阅频道事件,详见:<see cref="Intent"/>；默认值=(GUILDS|GUILD_MEMBERS|AT_MESSAGES|GUILD_MESSAGE_REACTIONS)<br/>
+    /// Guilds - 机器人已加入的频道列表
     /// </para>
     /// </summary>
     public class BotClient
