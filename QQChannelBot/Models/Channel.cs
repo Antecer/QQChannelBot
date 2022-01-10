@@ -16,7 +16,7 @@ namespace QQChannelBot.Models
         /// 频道id
         /// </summary>
         [JsonPropertyName("guild_id")]
-        public string? GuildId { get; set; }
+        public string GuildId { get; set; } = string.Empty;
         /// <summary>
         /// 子频道名称
         /// </summary>
@@ -38,12 +38,12 @@ namespace QQChannelBot.Models
         [JsonPropertyName("position")]
         public int? Possition { get; set; }
         /// <summary>
-        /// 分组 id
+        /// 分组Id
         /// </summary>
         [JsonPropertyName("parent_id")]
         public string? ParentId { get; set; }
         /// <summary>
-        /// 创建人 id
+        /// 创建人Id
         /// </summary>
         [JsonPropertyName("owner_id")]
         public string? OwerId { get; set; }
@@ -52,7 +52,7 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("private_type")]
 
-        public ChannelPrivateType PrivateType { get; set; }
+        public ChannelPrivateType? PrivateType { get; set; }
     }
     /// <summary>
     /// 子频道类型
