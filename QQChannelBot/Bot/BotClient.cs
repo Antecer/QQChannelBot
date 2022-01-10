@@ -163,6 +163,13 @@ namespace QQChannelBot.Bot
         /// </summary>
         public string? SadboxGuildId { get; set; }
         /// <summary>
+        /// 私域频道表
+        /// <para>
+        /// 当该列表被添加频道ID后，机器人将仅响应列表内频道的消息
+        /// </para>
+        /// </summary>
+        public HashSet<string> PrivateGuilds { get; set; } = new();
+        /// <summary>
         /// 机器人用户信息
         /// </summary>
         public User Info { get; set; } = new User();
@@ -1193,12 +1200,13 @@ namespace QQChannelBot.Bot
                         Log.Warn($"[WebSocket][Op00][Dispatch] {Unicoder.Decode(wssJson.GetRawText())}");
                         break;
                     }
-                    // 若机器人工作在沙箱频道模式，将不响应其他频道的消息
-                    if (!string.IsNullOrWhiteSpace(SadboxGuildId))
+                    // 若机器人工作在私域频道模式，将不响应其它频道的消息（适用于调试机器人新功能）
+                    if (PrivateGuilds.Any())
                     {
-                        if (d.TryGetProperty("guild_id", out JsonElement jGuildId))
+                        string? guildid = d.Get("guild_id")?.GetString();
+                        if(guildid != null)
                         {
-                            if (!SadboxGuildId.Equals(jGuildId.GetString())) break;
+                            if (!PrivateGuilds.Contains(guildid)) break;
                         }
                     }
                     string data = d.GetRawText();
