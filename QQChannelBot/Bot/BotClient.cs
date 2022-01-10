@@ -352,7 +352,7 @@ namespace QQChannelBot.Bot
         /// 默认值："/"
         /// </para>
         /// </summary>
-        public string CommandPrefix { get; set; } =  "/";
+        public string CommandPrefix { get; set; } = "/";
         /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
@@ -1197,15 +1197,20 @@ namespace QQChannelBot.Bot
                         case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
                         case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
                             Message? message = d.Deserialize<Message>();
+                            if (message == null)
+                            {
+                                Log.Warn($"[WebSocket][{type}] {data}");
+                                return;
+                            }
                             if (PrivateGuilds.Any())
                             {
                                 // 私域频道模式打印全部消息（AT消息已被全域消息包含，所以要排除掉）
-                                if (!type.StartsWith('A')) Log.Debug($"[WebSocket][{type}] {data}");
+                                if (!type.StartsWith('A')) Log.Info($"[WebSocket][{type}] {data}");
                             }
                             else
                             {
                                 // 全域模式消息太多，默认仅打印 @机器人 和 /命令 消息
-                                if (!type.StartsWith('M') || (message?.Content.TrimStart()[0] == '/')) Log.Debug($"[WebSocket][{type}] {data}");
+                                if (!type.StartsWith('M') || message.Content.StartsWith(CommandPrefix)) Log.Info($"[WebSocket][{type}] {data}");
                             }
                             _ = MessageCenter(message, type); // 处理消息，不需要等待结果
                             break;
@@ -1280,8 +1285,8 @@ namespace QQChannelBot.Bot
                                 if (guilds.Count < 100) break;
                                 guildNext = guilds.Last().Id;
                             }
+                            Log.Info($"[WebSocket][GetGuilds] 机器人已加入 {Guilds.Count} 个频道");
 
-                            Log.Info($"[WebSocket][GetMeInfo] 获取机器人基本信息...");
                             Info = d.GetProperty("user").Deserialize<User>()!;
                             Info.Avatar = (await GetMeAsync())?.Avatar;
                             OnReady?.Invoke(Info);
@@ -1376,9 +1381,8 @@ namespace QQChannelBot.Bot
         /// MESSAGE_CREATE - 频道内任意消息(仅私域支持)<br/>
         /// </para></param>
         /// <returns></returns>
-        private async Task MessageCenter(Message? message, string type)
+        private async Task MessageCenter(Message message, string type)
         {
-            if (message == null) return;
             // 传递上下文数据
             message.Bot = this;
             // 记录机器人在当前频道下的身份组信息
