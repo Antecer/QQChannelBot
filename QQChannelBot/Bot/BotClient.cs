@@ -296,17 +296,18 @@ namespace QQChannelBot.Bot
         private int WebSocketLastSeq { get; set; } = 1;
         /// <summary>
         /// 此次连接所需要接收的事件
-        /// <para>具体可参考 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">Intents</see></para>
+        /// <para>具体可参考 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">事件订阅</see></para>
         /// </summary>
         public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGE_CREATE | Intent.GUILD_MESSAGE_REACTIONS;
         /// <summary>
         /// 会话限制
         /// </summary>
-        private WebSocketLimit GateLimit { get; set; } = new();
+        private WebSocketLimit? GateLimit { get; set; }
         /// <summary>
         /// 分片id
         /// <para>
         /// 分片是按照频道id进行哈希的，同一个频道的信息会固定从同一个链接推送。<br/>
+        /// 分片机制已完成，分片功能暂未实现<br/>
         /// 详见 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/shard.html">Shard机制</see>
         /// </para>
         /// </summary>
@@ -858,7 +859,7 @@ namespace QQChannelBot.Bot
         }
         #endregion
 
-        #region 用户API
+        #region 机器人用户API
         /// <summary>
         /// 获取当前用户(机器人)信息
         /// </summary>
@@ -1014,11 +1015,10 @@ namespace QQChannelBot.Bot
         /// </para>
         /// </summary>
         /// <returns>一个用于连接 websocket 的地址。<br/>同时返回建议的分片数，以及目前连接数使用情况。</returns>
-        public async Task<string?> GetWssUrlWithShared()
+        public async Task<WebSocketLimit?> GetWssUrlWithShared()
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/gateway/bot");
-            WebSocketLimit? GateLimit = respone == null ? null : await respone.Content.ReadFromJsonAsync<WebSocketLimit?>();
-            return GateLimit?.Url;
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<WebSocketLimit?>();
         }
         #endregion
 
@@ -1035,8 +1035,8 @@ namespace QQChannelBot.Bot
             {
                 try
                 {
-                    string? GatewayUrl = await GetWssUrlWithShared();
-                    if (Uri.TryCreate(GatewayUrl, UriKind.Absolute, out Uri? webSocketUri))
+                    GateLimit = await GetWssUrlWithShared();
+                    if (Uri.TryCreate(GateLimit?.Url, UriKind.Absolute, out Uri? webSocketUri))
                     {
                         if (WebSocketClient.State != WebSocketState.Open && WebSocketClient.State != WebSocketState.Connecting)
                         {
@@ -1046,7 +1046,7 @@ namespace QQChannelBot.Bot
                         }
                         break;
                     }
-                    Log.Error($"[WebSocket][Connect] Use WssUrl<{GatewayUrl}> Create WebSocketUri Failed!");
+                    Log.Error($"[WebSocket][Connect] Use WssUrl<{GateLimit?.Url}> Create WebSocketUri Failed!");
                 }
                 catch (Exception e)
                 {
@@ -1075,7 +1075,7 @@ namespace QQChannelBot.Bot
                 {
                     token = $"Bot {BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}",
                     intents = Intents,
-                    shared = new[] { ShardId % GateLimit.Shards, GateLimit.Shards }
+                    shared = new[] { ShardId % (GateLimit?.Shards ?? 1), GateLimit?.Shards ?? 1 }
                 }
             };
             Log.Debug($"[WebSocket][Identify] 鉴权连接...");
@@ -1153,13 +1153,15 @@ namespace QQChannelBot.Bot
                             await ExcuteCommand(json);
                             break;
                         default:
-                            Log.Info($"[WebSocket] {result.MessageType}");
+                            Log.Info($"[WebSocket][Receive] {result.MessageType}");
                             break;
                     }
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"[WebSocket] {e.Message}{Environment.NewLine}");
+                    WebSocketClient.Abort();
+                    Log.Error($"[WebSocket][Receive] {e.Message}{Environment.NewLine}");
+                    break;
                 }
             }
             if (HeartBeatTimer.Enabled)
@@ -1200,6 +1202,7 @@ namespace QQChannelBot.Bot
                     {
                         case "READY":
                             Log.Debug($"[WebSocket][READY] {data}");
+                            Log.Info($"[WebSocket][Op00] 服务端 鉴权成功");
                             await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
                             WebSoketSessionId = d.GetProperty("session_id").GetString();
 
@@ -1221,6 +1224,7 @@ namespace QQChannelBot.Bot
                             break;
                         case "RESUMED":
                             Log.Debug($"[WebSocket][RESUMED] {data}");
+                            Log.Info($"[WebSocket][Op00] 已恢复与服务器的连接");
                             await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
                             OnResumed?.Invoke(this, d);
                             break;
@@ -1285,45 +1289,45 @@ namespace QQChannelBot.Bot
                             _ = MessageCenter(message, type); // 处理消息，不需要等待结果
                             break;
                         default:
-                            Log.Warn($"[WebSocket][{type}] 未知事件！");
+                            Log.Warn($"[WebSocket][{type}] 未知事件");
                             break;
                     }
                     break;
                 // Send&Receive 客户端或服务端发送心跳
                 case Opcode.Heartbeat:
-                    Log.Info($"[WebSocket][Op01] {(wssJson.Get("d") == null ? "客户端" : "服务器")} 发送心跳包！");
+                    Log.Debug($"[WebSocket][Op01] {(wssJson.Get("d") == null ? "客户端" : "服务器")} 发送心跳包");
                     OnHeartbeat?.Invoke(this, wssJson);
                     await SendHeartBeatAsync();
                     HeartBeatTimer.Enabled = true;
                     break;
                 // Send 客户端发送鉴权
                 case Opcode.Identify:
-                    Log.Info($"[WebSocket][Op02] 客户端 发起鉴权！");
+                    Log.Info($"[WebSocket][Op02] 客户端 发起鉴权");
                     OnIdentify?.Invoke(this, wssJson);
                     await SendIdentifyAsync();
                     break;
                 // Send 客户端恢复连接
                 case Opcode.Resume:
-                    Log.Info($"[WebSocket][Op06] 客户端 尝试恢复连接！");
+                    Log.Info($"[WebSocket][Op06] 客户端 尝试恢复连接..");
                     IsResume = false;
                     OnResume?.Invoke(this, wssJson);
                     await SendResumeAsync();
                     break;
                 // Receive 服务端通知客户端重新连接
                 case Opcode.Reconnect:
-                    Log.Info($"[WebSocket][Op07] 服务器 要求客户端重连！");
+                    Log.Info($"[WebSocket][Op07] 服务器 要求客户端重连");
                     IsResume = true;
                     OnReconnect?.Invoke(this, wssJson);
                     await ConnectAsync(3);
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case Opcode.InvalidSession:
-                    Log.Info($"[WebSocket][Op09] 客户端鉴权信息错误！");
+                    Log.Warn($"[WebSocket][Op09] 客户端鉴权信息错误");
                     OnInvalidSession?.Invoke(this, wssJson);
                     break;
                 // Receive 当客户端与网关建立ws连接之后，网关下发的第一条消息
                 case Opcode.Hello:
-                    Log.Info($"[WebSocket][Op10] {Unicoder.Decode(wssJson.GetRawText())}\n[WebSocket][Hello] 成功与网关建立连接！");
+                    Log.Info($"[WebSocket][Op10][成功与网关建立连接] {Unicoder.Decode(wssJson.GetRawText())}");
                     OnHello?.Invoke(this, wssJson);
                     int heartbeat_interval = wssJson.Get("d")?.Get("heartbeat_interval")?.GetInt32() ?? 30000;
                     HeartBeatTimer.Interval = heartbeat_interval < 30000 ? heartbeat_interval : 30000;  // 设置心跳时间为30s
@@ -1331,7 +1335,7 @@ namespace QQChannelBot.Bot
                     break;
                 // Receive 当发送心跳成功之后，就会收到该消息
                 case Opcode.HeartbeatACK:
-                    Log.Info($"[WebSocket][Op11] 服务器 收到心跳包！");
+                    Log.Debug($"[WebSocket][Op11] 服务器 收到心跳包");
                     OnHeartbeatACK?.Invoke(this, wssJson);
                     break;
                 // 未知操作码
@@ -1348,7 +1352,6 @@ namespace QQChannelBot.Bot
         public void Close()
         {
             WebSocketClient.Abort();
-            WebSocketClient.Dispose();
         }
         /// <summary>
         /// 启动机器人

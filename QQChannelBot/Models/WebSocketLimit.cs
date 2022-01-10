@@ -3,7 +3,7 @@
 namespace QQChannelBot.Models
 {
     /// <summary>
-    /// WSS通信限制
+    /// WebSocket连接分片信息
     /// </summary>
     public class WebSocketLimit
     {
