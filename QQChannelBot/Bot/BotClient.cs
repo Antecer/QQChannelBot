@@ -179,7 +179,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 向前端指令发出者报告API错误
         /// </summary>
-        public bool ReportApiError { get; set; }
+        public bool? ReportApiError { get; set; }
         /// <summary>
         /// 集中处理机器人的HTTP请求
         /// </summary>
@@ -205,7 +205,7 @@ namespace QQChannelBot.Bot
                 }
                 if (StatusCodes.OpenapiCode.TryGetValue(errCode, out string? value)) errStr = value;
                 Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
-                if (ReportApiError)
+                if (ReportApiError == true)
                 {
                     if (LastGetMessage == null || (LastGetMessage.Timestamp.AddMinutes(5) < DateTime.Now))
                     {
@@ -298,18 +298,17 @@ namespace QQChannelBot.Bot
         /// </summary>
         public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGE_CREATE | Intent.GUILD_MESSAGE_REACTIONS;
         /// <summary>
-        /// 会话限制
+        /// 会话分片信息
         /// </summary>
         private WebSocketLimit? GateLimit { get; set; }
         /// <summary>
-        /// 分片id
+        /// 会话分片id
         /// <para>
         /// 分片是按照频道id进行哈希的，同一个频道的信息会固定从同一个链接推送。<br/>
-        /// 分片机制已完成，分片功能暂未实现<br/>
         /// 详见 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/shard.html">Shard机制</see>
         /// </para>
         /// </summary>
-        private int ShardId { get; set; } = 0;
+        public int ShardId { get; set; } = 0;
         /// <summary>
         /// Socket客户端存储的SessionId
         /// </summary>
@@ -1044,7 +1043,7 @@ namespace QQChannelBot.Bot
                         }
                         break;
                     }
-                    Log.Error($"[WebSocket][Connect] Use WssUrl<{GateLimit?.Url}> Create WebSocketUri Failed!");
+                    Log.Error($"[WebSocket][Connect] 使用网关地址<{GateLimit?.Url}> 建立连接失败！");
                 }
                 catch (Exception e)
                 {
@@ -1054,7 +1053,7 @@ namespace QQChannelBot.Bot
                 {
                     for (int i = 10; 0 < i; --i)
                     {
-                        Log.Info($"[WebSocket] Try again in {i} seconds...");
+                        Log.Info($"[WebSocket] {i} 秒后再次尝试连接（剩余重试次数：${RetryCount}）...");
                         await Task.Delay(TimeSpan.FromSeconds(1));
                     }
                 }
@@ -1168,7 +1167,7 @@ namespace QQChannelBot.Bot
                 OnWebSocketClosed?.Invoke(this);
                 for (int i = 5; 0 < i; --i)
                 {
-                    Log.Warn($"[WebSocket] Try to reconnect after {i} seconds...");
+                    Log.Warn($"[WebSocket] {i} 秒后开始重连...");
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
                 WebSocketClient = new();
