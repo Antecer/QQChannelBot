@@ -156,14 +156,12 @@ namespace QQChannelBot.Bot
         public Identity BotAccessInfo { get; set; }
         /// <summary>
         /// 沙箱频道ID
-        /// <para>用于测试机器人时不干扰正式频道</para>
+        /// <para>
+        /// 用于测试机器人时不干扰正式频道<br/>
+        /// 当该字段被填充频道ID后，机器人将仅响应该频道的消息
+        /// </para>
         /// </summary>
-        public string SadboxGuildId { get; set; } = "10751199145840861703";
-        /// <summary>
-        /// 机器人进入测试模式
-        /// <para>将仅响应沙箱频道事件</para>
-        /// </summary>
-        public bool DebugBot { get; set; } = false;
+        public string? SadboxGuildId { get; set; }
         /// <summary>
         /// 机器人用户信息
         /// </summary>
@@ -1196,37 +1194,22 @@ namespace QQChannelBot.Bot
                         Log.Warn($"[WebSocket][Op00][Dispatch] {Unicoder.Decode(wssJson.GetRawText())}");
                         break;
                     }
+                    // 若机器人工作在沙箱频道模式，将不响应其他频道的消息
+                    if (!string.IsNullOrWhiteSpace(SadboxGuildId) && SadboxGuildId.Equals(d.Get("guild_id")?.GetString())) break;
                     string data = d.GetRawText();
                     string? type = t.GetString();
                     switch (type)
                     {
-                        case "READY":
-                            Log.Debug($"[WebSocket][READY] {data}");
-                            Log.Info($"[WebSocket][Op00] 服务端 鉴权成功");
-                            await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
-                            WebSoketSessionId = d.GetProperty("session_id").GetString();
-
-                            Log.Info($"[WebSocket][GetGuilds] 获取机器人已加入的频道列表...");
-                            string? guildNext = null;
-                            while (true)
+                        case "DIRECT_MESSAGE_CREATE":   // 机器人收到私信事件
+                        case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
+                        case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
+                            // 私域消息太多，默认仅打印 @机器人 消息（如需打印所有消息请订阅 OnDispatch 事件）
+                            if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || type.Equals("AT_MESSAGE_CREATE"))
                             {
-                                List<Guild>? guilds = await GetMeGuildsAsync(guildNext);
-                                if ((guilds == null) || (guilds.Count == 0)) break;
-                                guilds.ForEach(guild => Guilds[guild.Id] = guild);
-                                if (guilds.Count < 100) break;
-                                guildNext = guilds.Last().Id;
+                                Log.Info($"[WebSocket][{type}] {data}");
                             }
-
-                            Log.Info($"[WebSocket][GetMeInfo] 获取机器人基本信息...");
-                            Info = d.GetProperty("user").Deserialize<User>()!;
-                            Info.Avatar = (await GetMeAsync())?.Avatar;
-                            OnReady?.Invoke(Info);
-                            break;
-                        case "RESUMED":
-                            Log.Debug($"[WebSocket][RESUMED] {data}");
-                            Log.Info($"[WebSocket][Op00] 已恢复与服务器的连接");
-                            await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
-                            OnResumed?.Invoke(this, d);
+                            Message? message = d.Deserialize<Message>();
+                            _ = MessageCenter(message, type); // 处理消息，不需要等待结果
                             break;
                         case "GUILD_CREATE":
                         case "GUILD_UPDATE":
@@ -1277,16 +1260,33 @@ namespace QQChannelBot.Bot
                             Log.Info($"[WebSocket][{type}] {data}");
                             OnAudioMsg?.Invoke(this, wssJson);
                             break;
-                        case "DIRECT_MESSAGE_CREATE":   // 机器人收到私信事件
-                        case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
-                        case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
-                            Message? message = d.Deserialize<Message>();
-                            // 私域消息太多，默认不打印消息(如需打印请自行订阅OnDispatch事件)
-                            if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || ((message?.GuildId == SadboxGuildId) && (type != "AT_MESSAGE_CREATE")))
+                        case "RESUMED":
+                            Log.Debug($"[WebSocket][RESUMED] {data}");
+                            Log.Info($"[WebSocket][Op00] 已恢复与服务器的连接");
+                            await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
+                            OnResumed?.Invoke(this, d);
+                            break;
+                        case "READY":
+                            Log.Debug($"[WebSocket][READY] {data}");
+                            Log.Info($"[WebSocket][Op00] 服务端 鉴权成功");
+                            await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
+                            WebSoketSessionId = d.GetProperty("session_id").GetString();
+
+                            Log.Info($"[WebSocket][GetGuilds] 获取机器人已加入的频道列表...");
+                            string? guildNext = null;
+                            while (true)
                             {
-                                Log.Info($"[WebSocket][{type}] {data}");
+                                List<Guild>? guilds = await GetMeGuildsAsync(guildNext);
+                                if ((guilds == null) || (guilds.Count == 0)) break;
+                                guilds.ForEach(guild => Guilds[guild.Id] = guild);
+                                if (guilds.Count < 100) break;
+                                guildNext = guilds.Last().Id;
                             }
-                            _ = MessageCenter(message, type); // 处理消息，不需要等待结果
+
+                            Log.Info($"[WebSocket][GetMeInfo] 获取机器人基本信息...");
+                            Info = d.GetProperty("user").Deserialize<User>()!;
+                            Info.Avatar = (await GetMeAsync())?.Avatar;
+                            OnReady?.Invoke(Info);
                             break;
                         default:
                             Log.Warn($"[WebSocket][{type}] 未知事件");
@@ -1381,8 +1381,6 @@ namespace QQChannelBot.Bot
         private async Task MessageCenter(Message? message, string type)
         {
             if (message == null) return;
-            // 如果启用了机器人Debug模式，将仅响应沙箱频道
-            if (DebugBot && !message.GuildId.Equals(SadboxGuildId)) return;
             // 传递上下文数据
             message.Bot = this;
             // 记录机器人在当前频道下的身份组信息
