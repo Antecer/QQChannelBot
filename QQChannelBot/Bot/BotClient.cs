@@ -346,6 +346,14 @@ namespace QQChannelBot.Bot
 
         #region 自定义指令注册
         /// <summary>
+        /// 自定义指令前缀
+        /// <para>
+        /// 当机器人识别到消息的头部包含指令前缀时触发指令识别功能<br/>
+        /// 默认值："/"
+        /// </para>
+        /// </summary>
+        public string CommandPrefix { get; set; } =  "/";
+        /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
         private readonly Dictionary<string, Command> Commands = new();
@@ -397,34 +405,6 @@ namespace QQChannelBot.Bot
         /// 获取所有已注册的指令
         /// </summary>
         public List<Command> GetCommands => Commands.Values.ToList();
-        /// <summary>
-        /// 注册消息指令
-        /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
-        /// </summary>
-        /// <param name="command">指令名称</param>
-        /// <param name="callBack">回调函数</param>
-        /// <param name="overwrite">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
-        /// <returns></returns>
-        [Obsolete("\n建议使用 BotClient.AddCommand(Command command, [bool overwrite = false])", false)]
-        public BotClient AddCommand(string command, Action<Message, string> callBack, bool overwrite = false)
-        {
-            AddCommand(new Command(command, callBack), overwrite);
-            return this;
-        }
-        /// <summary>
-        /// 注册管理员消息指令
-        /// <para>注: 被指令命中的消息不会触发 AtMessageAction 事件</para>
-        /// </summary>
-        /// <param name="command">指令名称</param>
-        /// <param name="callBack">回调函数</param>
-        /// <param name="overwrite">指令名称重复的处理办法<para>true:替换, false:忽略</para></param>
-        /// <returns></returns>
-        [Obsolete("\n建议使用 BotClient.AddCommand(Command command, [bool overwrite = false])", false)]
-        public BotClient AddCommandSuper(string command, Action<Message, string> callBack, bool overwrite = false)
-        {
-            AddCommand(new Command(command, callBack, null, true), overwrite);
-            return this;
-        }
         #endregion
 
         #region 频道API
@@ -1204,7 +1184,7 @@ namespace QQChannelBot.Bot
                     if (PrivateGuilds.Any())
                     {
                         string? guildid = d.Get("guild_id")?.GetString();
-                        if(guildid != null)
+                        if (guildid != null)
                         {
                             if (!PrivateGuilds.Contains(guildid)) break;
                         }
@@ -1216,12 +1196,17 @@ namespace QQChannelBot.Bot
                         case "DIRECT_MESSAGE_CREATE":   // 机器人收到私信事件
                         case "AT_MESSAGE_CREATE":       // 收到 @机器人 消息事件
                         case "MESSAGE_CREATE":          // 频道内有人发言(仅私域)
-                            // 私域消息太多，默认仅打印 @机器人 消息（如需打印所有消息请订阅 OnDispatch 事件）
-                            if (!Intents.HasFlag(Intent.MESSAGE_CREATE) || type.Equals("AT_MESSAGE_CREATE"))
-                            {
-                                Log.Info($"[WebSocket][{type}] {data}");
-                            }
                             Message? message = d.Deserialize<Message>();
+                            if (PrivateGuilds.Any())
+                            {
+                                // 私域频道模式打印全部消息（AT消息已被全域消息包含，所以要排除掉）
+                                if (!type.StartsWith('A')) Log.Debug($"[WebSocket][{type}] {data}");
+                            }
+                            else
+                            {
+                                // 全域模式消息太多，默认仅打印 @机器人 和 /命令 消息
+                                if (!type.StartsWith('M') || (message?.Content.TrimStart()[0] == '/')) Log.Debug($"[WebSocket][{type}] {data}");
+                            }
                             _ = MessageCenter(message, type); // 处理消息，不需要等待结果
                             break;
                         case "GUILD_CREATE":
@@ -1407,33 +1392,33 @@ namespace QQChannelBot.Bot
             // 记录最后收到的一条消息
             LastGetMessage = message;
             // 如果是收到私信，立即处理并不向后传递
-            if (type == "DIRECT_MESSAGE_CREATE")
+            if (type.StartsWith("D"))
             {
                 OnDirectMessage?.Invoke(message);
                 return;
             }
             // 若已经启用全局消息接收，将不单独响应 AT_MESSAGES 事件，否则会造成重复响应。
-            if (Intents.HasFlag(Intent.MESSAGE_CREATE) && (type == "AT_MESSAGE_CREATE")) return;
+            if (Intents.HasFlag(Intent.MESSAGE_CREATE) && type.StartsWith("A")) return;
             // 从全局消息事件中识别 AT_MESSAGES 消息。
             bool isAtMessage = message.Mentions?.Any(user => user.Id == Info.Id) == true;
             // 处理收到的数据
-            string paramStr = message.Content.Trim().TrimStartString(Info.Tag()).TrimStart();
+            string content = message.Content.Trim().TrimStartString(Info.Tag()).TrimStart();
             // 识别指令
-            bool hasCommand = paramStr.StartsWith('/');
-            paramStr = paramStr.TrimStart('/').TrimStart();
-            if ((hasCommand | isAtMessage) && (paramStr.Length > 0))
+            bool hasCommand = content.StartsWith(CommandPrefix);
+            content = content.TrimStartString(CommandPrefix).TrimStart();
+            if ((hasCommand | isAtMessage) && (content.Length > 0))
             {
                 bool isCommand = Commands.Values.Any(cmd =>
                 {
-                    Match cmdMatch = cmd.Rule.Match(paramStr);
+                    Match cmdMatch = cmd.Rule.Match(content);
                     if (!cmdMatch.Success) return false;
-                    paramStr = paramStr.TrimStartString(cmdMatch.Groups[0].Value);
+                    content = content.TrimStartString(cmdMatch.Groups[0].Value);
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
                         if (isAtMessage) _ = message.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");
                         else return false;
                     }
-                    else cmd.CallBack?.Invoke(message, paramStr);
+                    else cmd.CallBack?.Invoke(message, content);
                     return true;
                 });
                 if (isCommand) return;
