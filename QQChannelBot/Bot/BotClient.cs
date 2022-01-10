@@ -1194,7 +1194,13 @@ namespace QQChannelBot.Bot
                         break;
                     }
                     // 若机器人工作在沙箱频道模式，将不响应其他频道的消息
-                    if (!string.IsNullOrWhiteSpace(SadboxGuildId) && SadboxGuildId.Equals(d.Get("guild_id")?.GetString())) break;
+                    if (!string.IsNullOrWhiteSpace(SadboxGuildId))
+                    {
+                        if (d.TryGetProperty("guild_id", out JsonElement jGuildId))
+                        {
+                            if (!SadboxGuildId.Equals(jGuildId.GetString())) break;
+                        }
+                    }
                     string data = d.GetRawText();
                     string? type = t.GetString();
                     switch (type)
@@ -1385,7 +1391,7 @@ namespace QQChannelBot.Bot
             // 记录机器人在当前频道下的身份组信息
             if (!Members.ContainsKey(message.GuildId))
             {
-                bool tmpReportApiError = ReportApiError;
+                bool? tmpReportApiError = ReportApiError;
                 ReportApiError = false;
                 Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id);
                 ReportApiError = tmpReportApiError;
