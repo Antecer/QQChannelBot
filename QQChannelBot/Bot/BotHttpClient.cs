@@ -157,45 +157,35 @@ namespace QQChannelBot.Bot
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             string requestString = request.ToString();
-            string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+            string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync() : "";
             MediaTypeHeaderValue? requestContentType = request.Content?.Headers.ContentType;
+            if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
+            if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json")) requestContent = Unicoder.Decode(requestContent);
+            else if (string.IsNullOrWhiteSpace(requestContent)) requestContent = "（没有内容）";
+            else requestContent = "（内容无法解码）";
+            requestContent = $"[HttpHandler][Request]{Environment.NewLine}{requestString}{Environment.NewLine}{requestContent}";
 
             HttpResponseMessage response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Log.Error(requestContent + "\n请求已取消！");
+                return response; // 请求已取消
+            }
+
             string responseString = response.ToString();
-            string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "{}";
+            string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "";
             HttpStatusCode responseStatusCode = response.StatusCode;
             MediaTypeHeaderValue? responseContentType = response.Content?.Headers.ContentType;
 
             if ((Log.LogLevel == LogLevel.DEBUG) || (responseStatusCode >= HttpStatusCode.BadRequest))
             {
-                _ = Task.Run(delegate
-                {
-
-                    if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
-                    if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json"))
-                    {
-                        requestContent = Unicoder.Decode(requestContent);
-                    }
-                    else requestContent = "(内容无法解码)";
-                    requestContent = $"[HttpHandler] Request:{Environment.NewLine}{requestString}{Environment.NewLine}{requestContent}";
-
-                    if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
-                    if ((responseContentType?.CharSet != null) || (responseContentType?.MediaType == "application/json"))
-                    {
-                        responseContent = Unicoder.Decode(responseContent);
-                    }
-                    else responseContent = "(内容无法解码)";
-                    responseContent = $"[HttpHandler] Response:{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
-                    if (responseStatusCode < HttpStatusCode.BadRequest)
-                    {
-                        Log.Debug(requestContent + '\n' + responseContent);
-                    }
-                    else
-                    {
-                        Log.Error(requestContent + '\n' + responseContent);
-                    }
-
-                }, CancellationToken.None);
+                if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
+                if ((responseContentType?.CharSet != null) || (responseContentType?.MediaType == "application/json")) responseContent = Unicoder.Decode(responseContent);
+                else if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "（没有内容）";
+                else responseContent = "（内容无法解码）";
+                responseContent = $"[HttpHandler][Response]{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
+                if (responseStatusCode < HttpStatusCode.BadRequest) Log.Debug(requestContent + '\n' + responseContent);
+                else Log.Error(requestContent + '\n' + responseContent);
             }
             return response;
         }
