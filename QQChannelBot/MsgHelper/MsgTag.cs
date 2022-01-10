@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using QQChannelBot.Models;
 
 namespace QQChannelBot.MsgHelper
 {
@@ -34,22 +30,15 @@ namespace QQChannelBot.MsgHelper
         /// <summary>
         /// 创建 @用户 标签
         /// </summary>
-        /// <param name="userId">用户id</param>
+        /// <param name="user">用户对象</param>
         /// <returns></returns>
-        [Obsolete("请使用 MsgTag.User(string userId)")]
-        public static string UserTag(string? userId = null)
-        {
-            return userId == null ? "" : $"<@!{userId}>";
-        }
+        public static string Tag(this User user) => User(user.Id);
+
         /// <summary>
         /// 创建 #子频道 标签
         /// </summary>
-        /// <param name="channelId">子频道id</param>
+        /// <param name="channel">子频道对象</param>
         /// <returns></returns>
-        [Obsolete("请使用 MsgTag.Channel(string channelId)")]
-        public static string ChannelTag(string? channelId = null)
-        {
-            return channelId == null ? "" : $"<#{channelId}>";
-        }
+        public static string Tag(this Channel channel) => Channel(channel.Id);
     }
 }

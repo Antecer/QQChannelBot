@@ -42,7 +42,7 @@ bot.OnMsgCreate += async (sender, isAt) =>
 {
     if (isAt)
     {
-        string replyMsg = sender.Content.Replace(MsgTag.User(bot.Info.Id), MsgTag.User(sender.Author.Id));
+        string replyMsg = sender.Content.Replace(bot.Info.Tag(), sender.Author.Tag());
         await sender.ReplyAsync(replyMsg);
     }
 };
@@ -55,7 +55,7 @@ bot.OnMsgCreate += async (sender, isAt) =>
 // 　 机器回复 123
 bot.AddCommand(new Command("复读", async (sender, msg) =>
 {
-    await sender.ReplyAsync($"{MsgTag.User(sender.Author.Id)} {msg}");
+    await sender.ReplyAsync($"{sender.Author.Tag()} {msg}");
 }));
 ```
 
@@ -102,7 +102,7 @@ bot.AddCommand(new Command("创建公告", async (sender, args) =>
 {
     if (string.IsNullOrWhiteSpace(args))
     {
-        await sender.ReplyAsync($"{MsgTag.User(sender.Author.Id)} 未指定公告内容!\n正确格式：@机器人 创建公告 公告内容");
+        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定公告内容!\n正确格式：@机器人 创建公告 公告内容");
         return;
     }
     Message? sendmsg = await sender.ReplyAsync(args);
@@ -118,7 +118,7 @@ bot.AddCommand(new Command("创建全局公告", async (sender, args) =>
 {
     if (string.IsNullOrWhiteSpace(args))
     {
-        await sender.ReplyAsync($"{MsgTag.User(sender.Author.Id)} 未指定公告内容!\n正确格式：@机器人 创建全局公告 公告内容");
+        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定公告内容!\n正确格式：@机器人 创建全局公告 公告内容");
         return;
     }
     Message? sendmsg = await sender.ReplyAsync(args);
@@ -136,7 +136,7 @@ bot.AddCommand(new Command("禁言", async (sender, args) =>
     string? userId = userIdMatcher.Success ? userIdMatcher.Groups[1].Value : null;
     if (userId == null)
     {
-        await sender.ReplyAsync($"{MsgTag.User(sender.Author.Id)} 未指定禁言的用户!\n正确格式：@机器人 禁言 @用户 禁言时间");
+        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定禁言的用户!\n正确格式：@机器人 禁言 @用户 禁言时间");
         return;
     }
     Match tsm = Regex.Match(args, @"(\d{4})[-年](\d\d)[-月](\d\d)[\s日]*(\d\d)[:点时](\d\d)[:分](\d\d)秒?");
@@ -162,7 +162,7 @@ bot.AddCommand(new Command("解除禁言", async (sender, args) =>
     string? userId = userIdMatcher.Success ? userIdMatcher.Groups[1].Value : null;
     if (userId == null)
     {
-        await sender.ReplyAsync($"{MsgTag.User(sender.Author.Id)} 未指定解禁的用户!\n正确格式：@机器人 解禁 @用户");
+        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定解禁的用户!\n正确格式：@机器人 解禁 @用户");
         return;
     }
     bool isOk = await bot.MuteMemberAsync(sender.GuildId, userId, new MuteTime(0));

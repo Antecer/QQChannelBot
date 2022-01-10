@@ -1417,7 +1417,7 @@ namespace QQChannelBot.Bot
             // 从全局消息事件中识别 AT_MESSAGES 消息。
             bool isAtMessage = message.Mentions?.Any(user => user.Id == Info.Id) == true;
             // 处理收到的数据
-            string paramStr = message.Content.Trim().TrimStartString(MsgTag.User(Info.Id)).TrimStart();
+            string paramStr = message.Content.Trim().TrimStartString(Info.Tag()).TrimStart();
             // 识别指令
             bool hasCommand = paramStr.StartsWith('/');
             paramStr = paramStr.TrimStart('/').TrimStart();
@@ -1430,7 +1430,7 @@ namespace QQChannelBot.Bot
                     paramStr = paramStr.TrimStartString(cmdMatch.Groups[0].Value);
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
-                        if (isAtMessage) _ = message.ReplyAsync($"{MsgTag.User(message.Author.Id)} 你无权使用该命令！");
+                        if (isAtMessage) _ = message.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");
                         else return false;
                     }
                     else cmd.CallBack?.Invoke(message, paramStr);
