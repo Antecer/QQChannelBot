@@ -11,7 +11,7 @@ namespace QQChannelBot.Models
         /// 频道ID
         /// </summary>
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         /// <summary>
         /// 频道名称
         /// </summary>
@@ -48,9 +48,9 @@ namespace QQChannelBot.Models
         [JsonPropertyName("description")]
         public string? Description { get; set; }
         /// <summary>
-        /// 加入时间
+        /// 频道创建时间
         /// </summary>
-        [JsonPropertyName("joined_at")]
-        public DateTime? JoinedAt { get; set; }
+        [JsonPropertyName("joined_at"), JsonConverter(typeof(DateTimeToStringTimestamp))]
+        public DateTime JoinedAt { get; set; }
     }
 }

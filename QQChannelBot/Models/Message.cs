@@ -31,12 +31,12 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 消息创建时间
         /// </summary>
-        [JsonPropertyName("timestamp")]
+        [JsonPropertyName("timestamp"), JsonConverter(typeof(DateTimeToStringTimestamp))]
         public DateTime Timestamp { get; set; }
         /// <summary>
         /// 消息编辑时间
         /// </summary>
-        [JsonPropertyName("edited_timestamp")]
+        [JsonPropertyName("edited_timestamp"), JsonConverter(typeof(DateTimeToStringTimestamp))]
         public DateTime EditedTimestamp { get; set; }
         /// <summary>
         /// 是否 @全员消息

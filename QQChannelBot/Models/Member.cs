@@ -21,11 +21,11 @@ namespace QQChannelBot.Models
         /// 用户在频道内的身份组ID, 默认值可参考DefaultRoles
         /// </summary>
         [JsonPropertyName("roles")]
-        public List<string> Roles { get; set; } = new List<string>() { "1" };
+        public List<string> Roles { get; set; } = new() { "1" };
         /// <summary>
         /// 用户加入频道的时间 ISO8601 timestamp
         /// </summary>
-        [JsonPropertyName("joined_at")]
+        [JsonPropertyName("joined_at"), JsonConverter(typeof(DateTimeToStringTimestamp))]
         public DateTime? JoinedAt { get; set; }
         /// <summary>
         /// 该字段作用未知，等待官方文档更新
@@ -53,6 +53,6 @@ namespace QQChannelBot.Models
         /// 频道id
         /// </summary>
         [JsonPropertyName("guild_id")]
-        public string? GuildId { get; set; }
+        public string GuildId { get; set; } = string.Empty;
     }
 }

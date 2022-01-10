@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace QQChannelBot.Models
 {
@@ -104,6 +105,53 @@ namespace QQChannelBot.Models
                 _ => 0
             };
             return Enum.GetNames(typeof(RemindType)).Length > numCode ? (RemindType)numCode : RemindType.Never;
+        }
+    }
+
+    /// <summary>
+    /// JSON序列化JSON时将 DateTime 转换为 Timestamp<br/>
+    /// JSON反序列化JSON时将 Timestamp 转换为 DateTime
+    /// </summary>
+    public class DateTimeToStringTimestamp : JsonConverter<DateTime>
+    {
+        /// <summary>
+        /// 序列化JSON时 DateTime 转 Timestamp
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue($"{value:yyyy-MM-ddTHH:mm:sszzz}");
+        }
+        /// <summary>
+        /// 反序列化JSON时 Timestamp 转 DateTime
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="typeToConvert"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.Number:
+                    return DateTime.MinValue.AddMilliseconds(reader.GetDouble());
+                case JsonTokenType.String:
+                    string timeStamp = reader.GetString() ?? "0";
+                    Match timeMatch = Regex.Match(timeStamp, @"^\d+$");
+                    if (timeMatch.Success)
+                    {
+                        double offsetVal = double.Parse(timeMatch.Groups[0].Value);
+                        return timeStamp.Length <= 10 ? DateTime.MinValue.AddSeconds(offsetVal) : DateTime.MinValue.AddMilliseconds(offsetVal);
+                    }
+                    else
+                    {
+                        return DateTime.TryParse(timeStamp, out DateTime result) ? result : DateTime.MinValue;
+                    }
+                default:
+                    return DateTime.MinValue;
+            }
         }
     }
 }
