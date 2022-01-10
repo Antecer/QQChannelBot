@@ -11,12 +11,12 @@ namespace QQChannelBot.Models
         /// 用户Id
         /// </summary>
         [JsonPropertyName("user_id")]
-        public string? UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         /// <summary>
         /// 频道Id
         /// </summary>
         [JsonPropertyName("guild_id")]
-        public string? GuildId { get; set; }
+        public string GuildId { get; set; } = string.Empty;
         /// <summary>
         /// 子频道Id
         /// </summary>
@@ -57,18 +57,18 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 消息
         /// </summary>
-        Message,
+        消息,
         /// <summary>
         /// 帖子
         /// </summary>
-        Topic,
+        帖子,
         /// <summary>
         /// 评论
         /// </summary>
-        Review,
+        评论,
         /// <summary>
         /// 回复
         /// </summary>
-        Reply,
+        回复,
     }
 }
