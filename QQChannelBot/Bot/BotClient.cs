@@ -246,13 +246,13 @@ namespace QQChannelBot.Bot
         /// </summary>
         const string sandboxApi = "https://sandbox.api.sgroup.qq.com";
         /// <summary>
-        /// 启用沙箱模式
+        /// 启用沙箱API模式
         /// </summary>
-        public bool SandBox { get; set; } = false;
+        public bool SandBoxAPI { get; set; } = false;
         /// <summary>
         /// 机器人接口域名
         /// </summary>
-        public string ApiOrigin { get => SandBox ? sandboxApi : releaseApi; }
+        public string ApiOrigin { get => SandBoxAPI ? sandboxApi : releaseApi; }
         /// <summary>
         /// 最后一次收到的消息
         /// </summary>
@@ -303,7 +303,7 @@ namespace QQChannelBot.Bot
         /// 此次连接所需要接收的事件
         /// <para>具体可参考 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">事件订阅</see></para>
         /// </summary>
-        public Intent Intents { get; set; } = DefaultIntents.Public;
+        public Intent Intents { get; set; } = SocketEvent.Intents.Public;
         /// <summary>
         /// 会话分片信息
         /// </summary>
@@ -334,12 +334,12 @@ namespace QQChannelBot.Bot
         /// QQ频道机器人
         /// </summary>
         /// <param name="identity">机器人鉴权信息</param>
-        /// <param name="sandBox">使用沙箱API</param>
+        /// <param name="sandBoxApi">使用沙箱API</param>
         /// <param name="reportApiError">向前端用户反馈API错误</param>
-        public BotClient(Identity identity, bool sandBox = false, bool reportApiError = false)
+        public BotClient(Identity identity, bool sandBoxApi = false, bool reportApiError = false)
         {
             BotAccessInfo = identity;
-            SandBox = sandBox;
+            SandBoxAPI = sandBoxApi;
             ReportApiError = reportApiError;
             HeartBeatTimer.Elapsed += async (sender, e) => await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
         }

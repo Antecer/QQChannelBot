@@ -76,7 +76,7 @@ namespace QQChannelBot.Bot.SocketEvent
     /// <summary>
     /// 提供事件订阅的默认配置
     /// </summary>
-    public static class DefaultIntents
+    public static class Intents
     {
         /// <summary>
         /// 共域机器人默认开通的事件

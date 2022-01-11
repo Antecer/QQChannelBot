@@ -170,9 +170,7 @@ namespace QQChannelBot.Models
         /// <param name="options"></param>
         public override void Write(Utf8JsonWriter writer, Intent value, JsonSerializerOptions options)
         {
-            writer.WriteStartArray();
-            value.ToString().Split(',').ToList().ForEach(f => writer.WriteStringValue(f.Trim()));
-            writer.WriteEndArray();
+            JsonSerializer.Serialize(writer, value.ToString().Split(',').Select(f => f.Trim()), options);
         }
         /// <summary>
         /// JSON反序列化时将 StringNumber 转 RemindType
@@ -183,40 +181,8 @@ namespace QQChannelBot.Models
         /// <returns></returns>
         public override Intent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            Intent intents = DefaultIntents.Public;
-            switch (reader.TokenType)
-            {
-                case JsonTokenType.Number:
-                    int num = reader.GetInt32();
-                    if (0 < num) intents = (Intent)num;
-                    break;
-                case JsonTokenType.String:
-                    string? str = reader.GetString();
-                    if (!string.IsNullOrWhiteSpace(str)) intents = Enum.Parse<Intent>(str.ToUpper());
-                    break;
-                case JsonTokenType.StartArray:
-                    intents = 0;
-                    while (reader.Read())
-                    {
-                        switch (reader.TokenType)
-                        {
-                            case JsonTokenType.String:
-                                string? s = reader.GetString();
-                                if (!string.IsNullOrWhiteSpace(s)) intents |= Enum.Parse<Intent>(s.ToUpper());
-                                break;
-                            case JsonTokenType.Number:
-                                intents |= (Intent)reader.GetInt32();
-                                break;
-                            default:
-                                reader.Skip();
-                                break;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-            return intents;
+            var intents = JsonSerializer.Deserialize<List<string>>(ref reader, options)?.Select(s => Enum.Parse<Intent>(s));
+            return intents?.Aggregate((a, b) => a | b) ?? Intents.Public;
         }
     }
 }
