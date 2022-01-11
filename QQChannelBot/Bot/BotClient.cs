@@ -303,7 +303,7 @@ namespace QQChannelBot.Bot
         /// 此次连接所需要接收的事件
         /// <para>具体可参考 <see href="https://bot.q.qq.com/wiki/develop/api/gateway/intents.html">事件订阅</see></para>
         /// </summary>
-        public Intent Intents { get; set; } = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.AT_MESSAGE_CREATE | Intent.GUILD_MESSAGE_REACTIONS;
+        public Intent Intents { get; set; } = DefaultIntents.Public;
         /// <summary>
         /// 会话分片信息
         /// </summary>
@@ -1058,7 +1058,7 @@ namespace QQChannelBot.Bot
                 d = new
                 {
                     token = $"Bot {BotAccessInfo.BotAppId}.{BotAccessInfo.BotToken}",
-                    intents = Intents,
+                    intents = Intents.GetHashCode(),
                     shared = new[] { ShardId % (GateLimit?.Shards ?? 1), GateLimit?.Shards ?? 1 }
                 }
             };

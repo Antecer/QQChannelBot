@@ -1,4 +1,6 @@
-﻿namespace QQChannelBot.Bot.SocketEvent
+﻿using System.Text.Json.Serialization;
+
+namespace QQChannelBot.Bot.SocketEvent
 {
     /// <summary>
     /// 事件订阅权限
@@ -69,6 +71,21 @@
         /// AT_MESSAGE_CREATE - 当收到@机器人的消息时
         /// </summary>
         AT_MESSAGE_CREATE = 1 << 30,
+    }
+
+    /// <summary>
+    /// 提供事件订阅的默认配置
+    /// </summary>
+    public static class DefaultIntents
+    {
+        /// <summary>
+        /// 共域机器人默认开通的事件
+        /// </summary>
+        public const Intent Public = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.GUILD_MESSAGE_REACTIONS | Intent.AT_MESSAGE_CREATE;
+        /// <summary>
+        /// 私域机器人默认开通的事件
+        /// </summary>
+        public const Intent Private = Public | Intent.MESSAGE_CREATE;
     }
 
     // 服务器推送的通知类型

@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using QQChannelBot.Bot.SocketEvent;
 
 namespace QQChannelBot.Models
 {
@@ -152,6 +153,70 @@ namespace QQChannelBot.Models
                 default:
                     return DateTime.MinValue;
             }
+        }
+    }
+
+    /// <summary>
+    /// JSON序列化时将 Intent 转换为 StringArray<br/>
+    /// JSON反序列化时将 StringArray 转换为 Intent
+    /// </summary>
+    public class IntentToStringArrayConverter : JsonConverter<Intent>
+    {
+        /// <summary>
+        /// JSON序列化时将 RemindType 转 StringNumber
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        public override void Write(Utf8JsonWriter writer, Intent value, JsonSerializerOptions options)
+        {
+            writer.WriteStartArray();
+            value.ToString().Split(',').ToList().ForEach(f => writer.WriteStringValue(f.Trim()));
+            writer.WriteEndArray();
+        }
+        /// <summary>
+        /// JSON反序列化时将 StringNumber 转 RemindType
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="typeToConvert"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public override Intent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            Intent intents = DefaultIntents.Public;
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.Number:
+                    int num = reader.GetInt32();
+                    if (0 < num) intents = (Intent)num;
+                    break;
+                case JsonTokenType.String:
+                    string? str = reader.GetString();
+                    if (!string.IsNullOrWhiteSpace(str)) intents = Enum.Parse<Intent>(str.ToUpper());
+                    break;
+                case JsonTokenType.StartArray:
+                    intents = 0;
+                    while (reader.Read())
+                    {
+                        switch (reader.TokenType)
+                        {
+                            case JsonTokenType.String:
+                                string? s = reader.GetString();
+                                if (!string.IsNullOrWhiteSpace(s)) intents |= Enum.Parse<Intent>(s.ToUpper());
+                                break;
+                            case JsonTokenType.Number:
+                                intents |= (Intent)reader.GetInt32();
+                                break;
+                            default:
+                                reader.Skip();
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return intents;
         }
     }
 }
