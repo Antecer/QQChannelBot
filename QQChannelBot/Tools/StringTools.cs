@@ -47,5 +47,15 @@
         {
             return input.TrimStartString(query, newStr, ignoreCase).TrimEndString(query, newStr, ignoreCase);
         }
+        /// <summary>
+        /// 判断字符串是否为空
+        /// <para>效果等同于string.IsNullOrWhiteSpace()</para>
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static bool IsEmpty(this string input)
+        {
+            return string.IsNullOrWhiteSpace(input);
+        }
     }
 }
