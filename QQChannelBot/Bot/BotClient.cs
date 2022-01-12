@@ -356,7 +356,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 缓存动态注册的消息指令事件
         /// </summary>
-        private readonly Dictionary<string, Command> Commands = new();
+        private Dictionary<string, Command> Commands { get; } = new();
         /// <summary>
         /// 添加消息指令
         /// <para>
@@ -529,10 +529,15 @@ namespace QQChannelBot.Bot
         }
         /// <summary>
         /// 获取频道成员列表（仅私域可用）
+        /// <para>
+        /// guild_id - 频道Id<br/>
+        /// limit - 分页大小1-1000（默认值10）<br/>
+        /// after - 上次回包中最后一个Member的用户ID，首次请求填0
+        /// </para>
         /// </summary>
         /// <param name="guild_id">频道Id</param>
         /// <param name="limit">分页大小1-1000（默认值10）</param>
-        /// <param name="after">上次回包中最后一个Member的用户ID，如果是第一次请求填0</param>
+        /// <param name="after">上次回包中最后一个Member的用户ID，首次请求填0</param>
         /// <returns></returns>
         public async Task<List<Member>?> GetGuildMembersAsync(string guild_id, int limit = 10, string after = "0")
         {
@@ -1202,16 +1207,6 @@ namespace QQChannelBot.Bot
                                 Log.Warn($"[WebSocket][{type}] {data}");
                                 return;
                             }
-                            if (PrivateGuilds.Any())
-                            {
-                                // 私域频道模式打印全部消息（AT消息已被全域消息包含，所以要排除掉）
-                                if (!type.StartsWith('A')) Log.Info($"[WebSocket][{type}] {data}");
-                            }
-                            else
-                            {
-                                // 全域模式消息太多，默认仅打印 @机器人 和 /命令 消息
-                                if (!type.StartsWith('M') || message.Content.StartsWith(CommandPrefix)) Log.Info($"[WebSocket][{type}] {data}");
-                            }
                             _ = MessageCenter(message, type); // 处理消息，不需要等待结果
                             break;
                         case "GUILD_CREATE":
@@ -1412,11 +1407,12 @@ namespace QQChannelBot.Bot
             content = content.TrimStartString(CommandPrefix).TrimStart();
             if ((hasCommand | isAtMessage) && (content.Length > 0))
             {
+                Log.Info($"[{Guilds[message.GuildId].Name}][{message.Author.UserName}] {message.Content}");
                 bool isCommand = Commands.Values.Any(cmd =>
                 {
                     Match cmdMatch = cmd.Rule.Match(content);
                     if (!cmdMatch.Success) return false;
-                    content = content.TrimStartString(cmdMatch.Groups[0].Value);
+                    content = content.TrimStartString(cmdMatch.Groups[0].Value).TrimStart();
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
                         if (isAtMessage) _ = message.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");

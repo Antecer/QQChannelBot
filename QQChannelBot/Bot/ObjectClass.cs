@@ -12,27 +12,24 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 构造指令对象
         /// <para>
-        /// 匹配指令将调用 Rule 属性进行正则匹配（若rule未赋值，默认为 "^name"）
+        /// 匹配指令将调用 Rule 属性进行正则匹配<br/>
+        /// 若rule未赋值，默认为 "^name(?=\s|\n|&lt;@!\d+&gt;|$)"
         /// </para>
         /// </summary>
         /// <param name="name">指令名称</param>
         /// <param name="callBack">回调函数</param>
-        /// <param name="rule">匹配指令用的正则表达式<para>默认值：Regex("^name")</para></param>
+        /// <param name="rule">匹配指令用的正则表达式<para>默认值：Regex("^name(?=\s|\n|&lt;@!\d+&gt;|$)")</para></param>
         /// <param name="needAdmin">需要管理员权限</param>
         /// <param name="note">备注,用户自定义属性功能用途</param>
         public Command(string name, Action<Message, string>? callBack = null, Regex? rule = null, bool needAdmin = false, string? note = null)
         {
             Name = name;
-            rule ??= new Regex($"^{EscapeRegex.Replace(name, @"\$0")}");
+            rule ??= new Regex($@"^{Regex.Escape(name)}(?=\s|\n|<@!\d+>|$)");
             CompiledRule = new Regex(rule.ToString(), rule.Options | RegexOptions.Compiled);
             CallBack = callBack;
             NeedAdmin = needAdmin;
             Note = note;
         }
-        /// <summary>
-        /// 转义字符串中的正则特殊字符
-        /// </summary>
-        private readonly Regex EscapeRegex = new(@"[.*+?^${}()|[\]\\]", RegexOptions.Compiled);
         /// <summary>
         /// 指令名称
         /// </summary>
