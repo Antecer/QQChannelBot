@@ -1,4 +1,6 @@
-﻿namespace QQChannelBot.Bot
+﻿using System.Collections.Concurrent;
+
+namespace QQChannelBot.Bot
 {
     /// <summary>
     /// 集中处理日志信息
@@ -19,41 +21,61 @@
         /// 获取格式化的日期标签
         /// </summary>
         private static string TimeStamp { get => DateTime.Now.ToString(TimeFormatter); }
+        /// <summary>
+        /// 日志输出队列
+        /// </summary>
+        private static readonly ConcurrentQueue<string> LogQueue = new();
+
+        private static bool IsWorking = false;
+        /// <summary>
+        /// 打印日志
+        /// </summary>
+        public static void Print(string message)
+        {
+            Task.Run(() =>
+            {
+                LogQueue.Enqueue(message);
+                if (IsWorking) return;
+                IsWorking = true;
+                while (LogQueue.TryDequeue(out string? msg)) Console.WriteLine(msg);
+                IsWorking = false;
+            });
+        }
 
         /// <summary>
         /// 打印调试
         /// </summary>
         /// <param name="message"></param>
-        public static void Debug(object message)
+        public static void Debug(string message)
         {
-            if (LogLevel == LogLevel.DEBUG) Console.WriteLine($"[{TimeStamp}][D]{message}");
+            if (LogLevel == LogLevel.DEBUG) Print($"[{TimeStamp}][D]{message}");
         }
 
         /// <summary>
         /// 打印日志
         /// </summary>
         /// <param name="message"></param>
-        public static void Info(object message)
+        public static void Info(string message)
         {
-            if (LogLevel <= LogLevel.INFO) Console.WriteLine($"[{TimeStamp}][I]{message}");
+            if (LogLevel <= LogLevel.INFO) Print($"[{TimeStamp}][I]{message}");
         }
 
         /// <summary>
         /// 打印警告
         /// </summary>
         /// <param name="message"></param>
-        public static void Warn(object message)
+        public static void Warn(string message)
         {
-            if (LogLevel <= LogLevel.WARRNING) Console.WriteLine($"[{TimeStamp}][W]{message}");
+            if (LogLevel <= LogLevel.WARRNING) Print($"[{TimeStamp}][W]{message}");
         }
 
         /// <summary>
         /// 打印错误
         /// </summary>
         /// <param name="message"></param>
-        public static void Error(object message)
+        public static void Error(string message)
         {
-            if (LogLevel <= LogLevel.ERROR) Console.WriteLine($"[{TimeStamp}][E]{message}");
+            if (LogLevel <= LogLevel.ERROR) Print($"[{TimeStamp}][E]{message}");
         }
     }
 
