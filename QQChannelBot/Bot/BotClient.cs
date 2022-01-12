@@ -539,9 +539,9 @@ namespace QQChannelBot.Bot
         /// <param name="limit">分页大小1-1000（默认值10）</param>
         /// <param name="after">上次回包中最后一个Member的用户ID，首次请求填0</param>
         /// <returns></returns>
-        public async Task<List<Member>?> GetGuildMembersAsync(string guild_id, int limit = 10, string after = "0")
+        public async Task<List<Member>?> GetGuildMembersAsync(string guild_id, int limit = 10, string? after = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members?limit={limit}&after={after}");
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members?limit={limit}&after={after ?? "0"}");
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Member>?>();
         }
         /// <summary>
@@ -1407,7 +1407,8 @@ namespace QQChannelBot.Bot
             content = content.TrimStartString(CommandPrefix).TrimStart();
             if ((hasCommand | isAtMessage) && (content.Length > 0))
             {
-                Log.Info($"[{Guilds[message.GuildId].Name}][{message.Author.UserName}] {message.Content}");
+                string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions!.Find(user => user.Tag() == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
+                Log.Info($"[{Guilds[message.GuildId].Name}][{message.Author.UserName}] {msgContent}");
                 bool isCommand = Commands.Values.Any(cmd =>
                 {
                     Match cmdMatch = cmd.Rule.Match(content);
