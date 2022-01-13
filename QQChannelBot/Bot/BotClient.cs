@@ -1407,22 +1407,27 @@ namespace QQChannelBot.Bot
             content = content.TrimStartString(CommandPrefix).TrimStart();
             if ((hasCommand | isAtMessage) && (content.Length > 0))
             {
-                string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions!.Find(user => user.Tag() == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
-                Log.Info($"[{Guilds[message.GuildId].Name}][{message.Author.UserName}] {msgContent}");
-                bool isCommand = Commands.Values.Any(cmd =>
+                // 在新的线程上输出日志信息
+                _ = Task.Run(() =>
+                {
+                    string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions!.Find(user => user.Tag() == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
+                    Log.Info($"[{Guilds[message.GuildId].Name}][{message.Author.UserName}] {msgContent}");
+                });
+                // 并行遍历指令列表，提升效率
+                ParallelLoopResult result = Parallel.ForEach(Commands.Values, (cmd, state, i) =>
                 {
                     Match cmdMatch = cmd.Rule.Match(content);
-                    if (!cmdMatch.Success) return false;
+                    if (!cmdMatch.Success) return;
                     content = content.TrimStartString(cmdMatch.Groups[0].Value).TrimStart();
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
                         if (isAtMessage) _ = message.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");
-                        else return false;
+                        else return;
                     }
                     else cmd.CallBack?.Invoke(message, content);
-                    return true;
+                    state.Break();
                 });
-                if (isCommand) return;
+                if (!result.IsCompleted) return;
             }
             // 触发Message到达事件
             OnMsgCreate?.Invoke(message, isAtMessage);
