@@ -223,7 +223,7 @@ namespace QQChannelBot.Bot
                     {
                         LastGetMessage?.ReplyAsync(string.Join('\n',
                             "❌接口访问失败",
-                            "接口地址：" + url.TrimStartString(ApiOrigin),
+                            "接口地址：" + url.TrimStart(ApiOrigin),
                             "请求方式：" + method.Method,
                             "异常代码：" + errCode,
                             "异常原因：" + errStr,
@@ -1401,10 +1401,10 @@ namespace QQChannelBot.Bot
             // 从全局消息事件中识别 AT_MESSAGES 消息。
             bool isAtMessage = message.Mentions?.Any(user => user.Id == Info.Id) == true;
             // 处理收到的数据
-            string content = message.Content.Trim().TrimStartString(Info.Tag()).TrimStart();
+            string content = message.Content.Trim().TrimStart(Info.Tag()).TrimStart();
             // 识别指令
             bool hasCommand = content.StartsWith(CommandPrefix);
-            content = content.TrimStartString(CommandPrefix).TrimStart();
+            content = content.TrimStart(CommandPrefix).TrimStart();
             if ((hasCommand | isAtMessage) && (content.Length > 0))
             {
                 // 在新的线程上输出日志信息
@@ -1418,7 +1418,7 @@ namespace QQChannelBot.Bot
                 {
                     Match cmdMatch = cmd.Rule.Match(content);
                     if (!cmdMatch.Success) return;
-                    content = content.TrimStartString(cmdMatch.Groups[0].Value).TrimStart();
+                    content = content.TrimStart(cmdMatch.Groups[0].Value).TrimStart();
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
                         if (isAtMessage) _ = message.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");

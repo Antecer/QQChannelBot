@@ -192,7 +192,7 @@ namespace QQChannelBot.Models
             }
             set
             {
-                value = value?.TrimStartString("0x", "#");
+                value = value?.TrimStart("0x", "#");
                 if (value?.Length == 5) value = $"#{value[1]}{value[1]}{value[2]}{value[2]}{value[3]}{value[3]}{value[4]}{value[4]}";
                 if (string.IsNullOrWhiteSpace(value)) Color = null;
                 else Color = ColorTranslator.FromHtml(value);
