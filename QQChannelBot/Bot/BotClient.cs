@@ -1134,37 +1134,31 @@ namespace QQChannelBot.Bot
                 {
                     using IMemoryOwner<byte> memory = MemoryPool<byte>.Shared.Rent(1024 * 64);
                     ValueWebSocketReceiveResult result = await WebSocketClient.ReceiveAsync(memory.Memory, CancellationToken.None);
-                    switch (result.MessageType)
+                    if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        case WebSocketMessageType.Text:
-                            JsonElement json = JsonDocument.Parse(memory.Memory[..result.Count]).RootElement;
-                            OnWebSocketReceived?.Invoke(this, json.GetRawText());
-                            await ExcuteCommand(json);
-                            break;
-                        default:
-                            Log.Info($"[WebSocket][Receive] {result.MessageType}");
-                            break;
+                        JsonElement json = JsonDocument.Parse(memory.Memory[..result.Count]).RootElement;
+                        OnWebSocketReceived?.Invoke(this, json.GetRawText());
+                        await ExcuteCommand(json);
+                        continue;
                     }
+                    Log.Info($"[WebSocket][Receive] WebSocketMessageType：{result.MessageType}");
                 }
                 catch (Exception e)
                 {
-                    WebSocketClient.Abort();
                     Log.Error($"[WebSocket][Receive] {e.Message}{Environment.NewLine}");
-                    break;
                 }
+                WebSocketClient.Abort();
+                break;
             }
-            if (HeartBeatTimer.Enabled)
+            if (HeartBeatTimer.Enabled) HeartBeatTimer.Enabled = false;
+            OnWebSocketClosed?.Invoke(this);
+            for (int i = 5; 0 < i; --i)
             {
-                HeartBeatTimer.Enabled = false;
-                OnWebSocketClosed?.Invoke(this);
-                for (int i = 5; 0 < i; --i)
-                {
-                    Log.Warn($"[WebSocket] {i} 秒后开始重连...");
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                }
-                WebSocketClient = new();
-                await ConnectAsync(3);
+                Log.Warn($"[WebSocket] {i} 秒后开始重连...");
+                await Task.Delay(TimeSpan.FromSeconds(1));
             }
+            WebSocketClient = new();
+            await ConnectAsync(3);
         }
         /// <summary>
         /// 根据收到的数据分析用途
@@ -1259,8 +1253,7 @@ namespace QQChannelBot.Bot
                             OnAudioMsg?.Invoke(this, wssJson);
                             break;
                         case "RESUMED":
-                            Log.Debug($"[WebSocket][RESUMED] {data}");
-                            Log.Info($"[WebSocket][Op00] 已恢复与服务器的连接");
+                            Log.Info($"[WebSocket][Op00][RESUMED] 已恢复与服务器的连接");
                             await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
                             OnResumed?.Invoke(this, d);
                             break;
@@ -1316,7 +1309,7 @@ namespace QQChannelBot.Bot
                     Log.Info($"[WebSocket][Op07] 服务器 要求客户端重连");
                     IsResume = true;
                     OnReconnect?.Invoke(this, wssJson);
-                    await ConnectAsync(3);
+                    await SendResumeAsync();
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case Opcode.InvalidSession:
