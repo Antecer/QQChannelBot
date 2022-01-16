@@ -24,7 +24,7 @@ namespace QQChannelBot.Bot
         public Command(string name, Action<Message, string>? callBack = null, Regex? rule = null, bool needAdmin = false, string? note = null)
         {
             Name = name;
-            rule ??= new Regex($@"^{Regex.Escape(name)}(?=\s|\n|<@!\d+>|$)");
+            rule ??= new Regex($@"^{Regex.Escape(name)}\s*(?=\d|\n|<@!\d+>|$)");
             CompiledRule = new Regex(rule.ToString(), rule.Options | RegexOptions.Compiled);
             CallBack = callBack;
             NeedAdmin = needAdmin;
