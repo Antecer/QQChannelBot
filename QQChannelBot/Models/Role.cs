@@ -188,14 +188,18 @@ namespace QQChannelBot.Models
         {
             get
             {
-                return Color == null ? null : $"#{(uint)Color.Value.ToArgb():X8}";
+                return Color == null ? null : ColorTranslator.ToHtml(Color.Value);
             }
             set
             {
                 value = value?.TrimStart("0x", "#");
-                if (value?.Length == 5) value = $"#{value[1]}{value[1]}{value[2]}{value[2]}{value[3]}{value[3]}{value[4]}{value[4]}";
-                if (string.IsNullOrWhiteSpace(value)) Color = null;
-                else Color = ColorTranslator.FromHtml(value);
+                value = value?.Length switch
+                {
+                    4 => $"#{value[1]}{value[1]}{value[2]}{value[2]}{value[3]}{value[3]}",
+                    5 => $"#{value[1]}{value[1]}{value[2]}{value[2]}{value[3]}{value[3]}{value[4]}{value[4]}",
+                    _ => value
+                };
+                Color = string.IsNullOrWhiteSpace(value) ? null : ColorTranslator.FromHtml(value);
             }
         }
         /// <summary>
