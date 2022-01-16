@@ -208,7 +208,12 @@ namespace QQChannelBot.Bot
                 {
                     if (LastGetMessage == null || (LastGetMessage.Timestamp.AddMinutes(5) < DateTime.Now))
                     {
-                        Log.Error($"[接口访问失败] 被动消息可回复时间已超时！");
+                        Log.Error($"[接口访问失败] 被动可回复时间已超时，取消推送到前端。");
+                        return;
+                    }
+                    if (!url.Contains(LastGetMessage.GuildId) || !url.Contains(LastGetMessage.ChannelId))
+                    {
+                        Log.Error($"[接口访问失败] 被动可回复消息与接口调用频道无关，取消推送到前端。");
                         return;
                     }
                     _ = Task.Run(delegate
