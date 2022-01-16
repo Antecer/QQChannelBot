@@ -1032,7 +1032,7 @@ namespace QQChannelBot.Bot
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"[WebSocket][Connect] {e.Message}");
+                    Log.Error($"[WebSocket][Connect] {e.Message} | Status：{WebSocketClient.CloseStatus} | Description：{WebSocketClient.CloseStatusDescription}");
                 }
                 if (RetryCount > 0)
                 {
@@ -1134,11 +1134,11 @@ namespace QQChannelBot.Bot
                         await ExcuteCommand(json);
                         continue;
                     }
-                    Log.Info($"[WebSocket][Receive] WebSocketMessageType：{result.MessageType}");
+                    Log.Info($"[WebSocket][Receive] SocketType：{result.MessageType} | Status：{WebSocketClient.CloseStatus}");
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"[WebSocket][Receive] {e.Message}{Environment.NewLine}");
+                    Log.Error($"[WebSocket][Receive] {e.Message} | Status：{WebSocketClient.CloseStatus}{Environment.NewLine}");
                 }
                 WebSocketClient.Abort();
                 break;
@@ -1194,6 +1194,7 @@ namespace QQChannelBot.Bot
                                 Log.Warn($"[WebSocket][{type}] {data}");
                                 return;
                             }
+                            Log.Debug($"[WebSocket][{type}] {data}");
                             _ = MessageCenter(message, type); // 处理消息，不需要等待结果
                             break;
                         case "GUILD_CREATE":
@@ -1386,7 +1387,7 @@ namespace QQChannelBot.Bot
             if (Intents.HasFlag(Intent.MESSAGE_CREATE) && type.StartsWith("A")) return;
             // 从全局消息事件中识别 AT_MESSAGES 消息。
             bool isAtMessage = message.Mentions?.Any(user => user.Id == Info.Id) == true;
-            // 处理收到的数据
+            // 预处理收到的数据
             string content = message.Content.Trim().TrimStart(Info.Tag()).TrimStart();
             // 识别指令
             bool hasCommand = content.StartsWith(CommandPrefix);
