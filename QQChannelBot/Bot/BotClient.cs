@@ -155,14 +155,6 @@ namespace QQChannelBot.Bot
         /// </summary>
         public Identity BotAccessInfo { get; set; }
         /// <summary>
-        /// 沙箱频道ID
-        /// <para>
-        /// 用于测试机器人时不干扰正式频道<br/>
-        /// 当该字段被填充频道ID后，机器人将仅响应该频道的消息
-        /// </para>
-        /// </summary>
-        public string? SadboxGuildId { get; set; }
-        /// <summary>
         /// 私域频道表
         /// <para>
         /// 当该列表被添加频道ID后，机器人将仅响应列表内频道的消息
