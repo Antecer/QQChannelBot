@@ -59,7 +59,7 @@ namespace QQChannelBot.Bot
         {
             string reqUrl = request.RequestUri!.ToString();
             if (FreezeUrl.TryGetValue(reqUrl, out FreezeTime? freezeTime) && freezeTime.EndTime > DateTime.Now) return null;
-            HttpResponseMessage response = await HttpClient.SendAsync(request);
+            HttpResponseMessage response = await HttpClient.SendAsync(request).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
                 if (FreezeUrl.ContainsKey(reqUrl)) FreezeUrl.Remove(reqUrl);
