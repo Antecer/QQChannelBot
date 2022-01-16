@@ -164,7 +164,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 机器人用户信息
         /// </summary>
-        public User Info { get; set; } = new User();
+        public User Info { get; private set; } = new User();
         /// <summary>
         /// 保存机器人在各频道内的角色信息
         /// <para>
@@ -172,7 +172,7 @@ namespace QQChannelBot.Bot
         /// Member - 角色信息
         /// </para>
         /// </summary>
-        public Dictionary<string, Member?> Members { get; set; } = new();
+        public Dictionary<string, Member?> Members { get; private set; } = new();
 
         #region Http客户端配置
         /// <summary>
@@ -275,7 +275,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 机器人已加入的频道
         /// </summary>
-        public Dictionary<string, Guild> Guilds { get; set; } = new();
+        public Dictionary<string, Guild> Guilds { get; private set; } = new();
         #endregion
 
         #region Socket客户端配置
