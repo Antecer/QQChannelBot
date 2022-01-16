@@ -142,7 +142,7 @@ namespace QQChannelBot.Bot
     /// </summary>
     public class HttpLoggingHandler : DelegatingHandler
     {
-        const int printLength = 2048;
+        const int printLength = 1024;
         /// <summary>
         /// HttpClient请求拦截器构造函数
         /// </summary>
