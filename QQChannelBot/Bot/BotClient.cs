@@ -178,7 +178,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 向前端指令发出者报告API错误
         /// </summary>
-        public bool? ReportApiError { get; set; }
+        public bool ReportApiError { get; set; }
         /// <summary>
         /// 集中处理机器人的HTTP请求
         /// </summary>
@@ -1369,7 +1369,7 @@ namespace QQChannelBot.Bot
             // 记录机器人在当前频道下的身份组信息
             if (!Members.ContainsKey(message.GuildId))
             {
-                bool? tmpReportApiError = ReportApiError;
+                bool tmpReportApiError = ReportApiError;
                 ReportApiError = false;
                 Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id);
                 ReportApiError = tmpReportApiError;

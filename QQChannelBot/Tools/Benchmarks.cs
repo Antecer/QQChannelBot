@@ -72,7 +72,7 @@ namespace QQChannelBot.Tools
             bool isOk;
             BotClient bot = sender.Bot!;
             string botId = bot.Info.Id;
-            bool? tmpReportApiError = bot.ReportApiError;
+            bool tmpReportApiError = bot.ReportApiError;
             bot.ReportApiError = false;
 
             Message? message = await sender.ReplyAsync("自检开始...\n01｜通过｜消息发送");
