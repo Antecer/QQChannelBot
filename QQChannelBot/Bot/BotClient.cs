@@ -224,27 +224,23 @@ namespace QQChannelBot.Bot
                             ));
                     });
                 }
-            }).ConfigureAwait(false);
+            });
         }
         /// <summary>
         /// 正式环境
         /// </summary>
-        const string releaseApi = "https://api.sgroup.qq.com";
+        private static string ReleaseApi => "https://api.sgroup.qq.com";
         /// <summary>
         /// 沙箱环境
         /// <para>
         /// 沙箱环境只会收到测试频道的事件，且调用openapi仅能操作测试频道
         /// </para>
         /// </summary>
-        const string sandboxApi = "https://sandbox.api.sgroup.qq.com";
-        /// <summary>
-        /// 启用沙箱API模式
-        /// </summary>
-        public bool SandBoxAPI { get; set; } = false;
+        private static string SandboxApi => "https://sandbox.api.sgroup.qq.com";
         /// <summary>
         /// 机器人接口域名
         /// </summary>
-        public string ApiOrigin { get => SandBoxAPI ? sandboxApi : releaseApi; }
+        public string ApiOrigin { get; init; }
         /// <summary>
         /// 最后一次收到的消息
         /// </summary>
@@ -331,7 +327,7 @@ namespace QQChannelBot.Bot
         public BotClient(Identity identity, bool sandBoxApi = false, bool reportApiError = false)
         {
             BotAccessInfo = identity;
-            SandBoxAPI = sandBoxApi;
+            ApiOrigin = sandBoxApi ? SandboxApi : ReleaseApi;
             ReportApiError = reportApiError;
             HeartBeatTimer.Elapsed += async (sender, e) => await ExcuteCommand(JsonDocument.Parse("{\"op\":" + (int)Opcode.Heartbeat + "}").RootElement);
         }
