@@ -58,7 +58,11 @@ namespace QQChannelBot.Bot
         public static async Task<HttpResponseMessage?> SendAsync(HttpRequestMessage request, Action<HttpResponseMessage, FreezeTime>? action = null)
         {
             string reqUrl = request.RequestUri!.ToString();
-            if (FreezeUrl.TryGetValue(reqUrl, out FreezeTime? freezeTime) && freezeTime.EndTime > DateTime.Now) return null;
+            if (FreezeUrl.TryGetValue(reqUrl, out FreezeTime? freezeTime) && freezeTime.EndTime > DateTime.Now)
+            {
+                Log.Warn($"[HttpSend] 目标接口处于冻结状态，暂时无法访问：{reqUrl}");
+                return null;
+            }
             HttpResponseMessage response = await HttpClient.SendAsync(request).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
@@ -69,23 +73,23 @@ namespace QQChannelBot.Bot
             {
                 string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
-                // 打击11264和11265错误，无接口访问权限
-                if (err?.Code == 11264 || err?.Code == 11265)
+                if (err?.Code >= 400)
                 {
                     if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
                     {
                         freezeTime.AddTime *= 2;
-                        if (freezeTime.AddTime > FreezeMaxTime) FreezeAddTime = FreezeMaxTime;
-                        freezeTime.EndTime = DateTime.Now + FreezeAddTime;
+                        if (freezeTime.AddTime > FreezeMaxTime) freezeTime.AddTime = FreezeMaxTime;
+                        freezeTime.EndTime = DateTime.Now + freezeTime.AddTime;
                     }
                     else
                     {
-                        freezeTime = new FreezeTime() { EndTime = DateTime.Now + FreezeAddTime, AddTime = FreezeAddTime };
+                        freezeTime = new FreezeTime() { AddTime = TimeSpan.FromSeconds(5) };
+                        // 重点打击11264和11265错误，无接口访问权限；轻微处理其它错误
+                        freezeTime.EndTime = DateTime.Now + ((err?.Code == 11264 || err?.Code == 11265) ? FreezeAddTime : freezeTime.AddTime);
                     }
                 }
             }
-            freezeTime ??= new FreezeTime() { EndTime = DateTime.Now + TimeSpan.FromSeconds(5), AddTime = TimeSpan.FromSeconds(5) };
-            FreezeUrl[reqUrl] = freezeTime;
+            freezeTime ??= new FreezeTime() { EndTime = DateTime.Now, AddTime = TimeSpan.FromSeconds(5) };
             action?.Invoke(response, freezeTime);
             return null;
         }
@@ -165,7 +169,7 @@ namespace QQChannelBot.Bot
             else requestContent = "（内容无法解码）";
             requestContent = $"[HttpHandler][Request]{Environment.NewLine}{requestString}{Environment.NewLine}{requestContent}";
 
-            HttpResponseMessage response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
             if (cancellationToken.IsCancellationRequested)
             {
                 Log.Error(requestContent + "\n请求已取消！");

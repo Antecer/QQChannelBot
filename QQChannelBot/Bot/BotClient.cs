@@ -204,16 +204,16 @@ namespace QQChannelBot.Bot
                 }
                 if (StatusCodes.OpenapiCode.TryGetValue(errCode, out string? value)) errStr = value;
                 Log.Error($"[接口访问失败] 代码：{errCode}，内容：{errStr}");
-                if (ReportApiError == true)
+                if (ReportApiError)
                 {
                     if (LastGetMessage == null || (LastGetMessage.Timestamp.AddMinutes(5) < DateTime.Now))
                     {
-                        Log.Error($"[接口访问失败] 被动可回复时间已超时，取消推送到前端。");
+                        Log.Info($"[接口访问失败] 被动可回复时间已超时，取消推送到前端。");
                         return;
                     }
-                    if (!url.Contains(LastGetMessage.GuildId) || !url.Contains(LastGetMessage.ChannelId))
+                    if (!url.Contains(LastGetMessage.GuildId) && !url.Contains(LastGetMessage.ChannelId))
                     {
-                        Log.Error($"[接口访问失败] 被动可回复消息与接口调用频道无关，取消推送到前端。");
+                        Log.Info($"[接口访问失败] 被动可回复消息与接口调用频道无关，取消推送到前端。");
                         return;
                     }
                     _ = Task.Run(delegate
@@ -224,11 +224,11 @@ namespace QQChannelBot.Bot
                             "请求方式：" + method.Method,
                             "异常代码：" + errCode,
                             "异常原因：" + errStr,
-                            $"接口冻结：暂停使用此接口 {freezeTime.AddTime.Minutes}分{freezeTime.AddTime.Seconds}秒",
-                            $"解冻时间：{freezeTime.EndTime:yyyy-MM-dd HH:mm:ss}"
+                            freezeTime.EndTime > DateTime.Now ? $"接口冻结：暂停使用此接口 {freezeTime.AddTime.Minutes}分{freezeTime.AddTime.Seconds}秒\n解冻时间：{freezeTime.EndTime:yyyy-MM-dd HH:mm:ss}" : null
                             ));
                     });
                 }
+                else Log.Info($"[接口访问失败] 机器人已配置ReportApiError=false，取消推送到前端。");
             });
         }
         /// <summary>
