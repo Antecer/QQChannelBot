@@ -51,8 +51,13 @@ namespace QQChannelBot.Models
         /// 子频道私密类型
         /// </summary>
         [JsonPropertyName("private_type")]
-
         public ChannelPrivateType? PrivateType { get; set; }
+        /// <summary>
+        /// #频道名 标签
+        /// <para>数据内容为：&lt;#ChannelId&gt;</para>
+        /// </summary>
+        [JsonIgnore]
+        public string Tag => $"<#{Id}>";
     }
     /// <summary>
     /// 子频道类型
