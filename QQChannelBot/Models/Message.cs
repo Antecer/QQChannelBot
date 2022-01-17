@@ -6,7 +6,7 @@ namespace QQChannelBot.Models
     /// <summary>
     /// 消息对象
     /// </summary>
-    public class Message
+    public record class Message
     {
         /// <summary>
         /// 消息id
@@ -32,12 +32,12 @@ namespace QQChannelBot.Models
         /// 消息创建时间
         /// </summary>
         [JsonPropertyName("timestamp"), JsonConverter(typeof(DateTimeToStringTimestamp))]
-        public DateTime Timestamp { get; set; }
+        public DateTime CreateTime { get; set; }
         /// <summary>
         /// 消息编辑时间
         /// </summary>
         [JsonPropertyName("edited_timestamp"), JsonConverter(typeof(DateTimeToStringTimestamp))]
-        public DateTime EditedTimestamp { get; set; }
+        public DateTime EditedTime { get; set; }
         /// <summary>
         /// 是否 @全员消息
         /// </summary>
@@ -88,7 +88,7 @@ namespace QQChannelBot.Models
         /// <returns></returns>
         public async Task<Message?> ReplyAsync(MessageToCreate message)
         {
-            message.MsgId = Id;
+            message.Id = Id;
             return Bot != null ? await Bot.SendMessageAsync(ChannelId, message) : null;
         }
         /// <summary>
@@ -129,10 +129,11 @@ namespace QQChannelBot.Models
         [JsonPropertyName("image")]
         public string? Image { get; set; }
         /// <summary>
-        /// 要回复的消息 id。带了 msg_id 视为被动回复消息，否则视为主动推送消息
+        /// 要回复的目标消息Id
+        /// <para>带了 id 视为被动回复消息，否则视为主动推送消息</para>
         /// </summary>
         [JsonPropertyName("msg_id")]
-        public string? MsgId { get; set; }
+        public string? Id { get; set; }
     }
 
     /// <summary>

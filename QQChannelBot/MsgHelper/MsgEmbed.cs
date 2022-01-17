@@ -24,7 +24,7 @@ namespace QQChannelBot.MsgHelper
             string? replyMsgId = null
             )
         {
-            MsgId = replyMsgId;
+            Id = replyMsgId;
             EmbedFields = embedFields ?? new();
             EmbedClass = new MessageEmbed()
             {
@@ -44,7 +44,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgEmbed SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
+        public MsgEmbed SetReplyMsgId(string? msgId) { Id = msgId; return this; }
         /// <summary>
         /// 标题
         /// </summary>

@@ -17,7 +17,7 @@ namespace QQChannelBot.MsgHelper
             string? replyMsgId = null
             )
         {
-            MsgId = replyMsgId;
+            Id = replyMsgId;
             Image = image;
         }
         /// <summary>
@@ -25,7 +25,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgImage SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
+        public MsgImage SetReplyMsgId(string? msgId) { Id = msgId; return this; }
         /// <summary>
         /// 设置图片网址
         /// </summary>

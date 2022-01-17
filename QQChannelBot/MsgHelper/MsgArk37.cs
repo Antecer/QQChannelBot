@@ -29,7 +29,7 @@ namespace QQChannelBot.MsgHelper
             string? replyMsgId = null
             )
         {
-            MsgId = replyMsgId;
+            Id = replyMsgId;
             Prompt = prompt;
             MetaTitle = metaTitle;
             MetaSubTitle = metaSubTitle;
@@ -59,7 +59,7 @@ namespace QQChannelBot.MsgHelper
         /// </summary>
         /// <param name="msgId">目标消息的Id</param>
         /// <returns></returns>
-        public MsgArk37 SetReplyMsgId(string? msgId) { MsgId = msgId; return this; }
+        public MsgArk37 SetReplyMsgId(string? msgId) { Id = msgId; return this; }
         /// <summary>
         /// 提示
         /// </summary>
