@@ -37,5 +37,11 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("union_user_account")]
         public string? UnionUserAccount { get; set; }
+        /// <summary>
+        /// @用户 标签
+        /// <para>数据内容为：&lt;@!UserId&gt;</para>
+        /// </summary>
+        [JsonIgnore]
+        public string Tag => $"<@!{Id}>";
     }
 }
