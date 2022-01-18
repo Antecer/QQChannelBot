@@ -54,6 +54,7 @@ namespace QQChannelBot.Bot
         public string ChannelId => this.Message.ChannelId;
         /// <summary>
         /// 向发件人报告API调用失败的错误信息
+        /// <para>默认值为 <see cref="BotClient.ReportApiError"/></para>
         /// </summary>
         public bool ReportError { get; set; }
         /// <summary>
