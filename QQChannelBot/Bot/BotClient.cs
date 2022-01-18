@@ -156,6 +156,11 @@ namespace QQChannelBot.Bot
         /// </para>
         /// </summary>
         public event Action<Sender?, ApiErrorInfo>? OnApiError;
+        /// <summary>
+        /// 消息过滤器
+        /// <para>当返回值为True时，该消息将被拦截并丢弃</para>
+        /// </summary>
+        public Func<Sender, bool>? MessageFilter;
         #endregion
 
         /// <summary>
@@ -1281,7 +1286,7 @@ namespace QQChannelBot.Bot
                         Log.Warn($"[WebSocket][Op00][Dispatch] {Unicoder.Decode(wssJson.GetRawText())}");
                         break;
                     }
-                    // 若机器人工作在私域频道模式，将不响应其它频道的消息（适用于调试机器人新功能）
+                    // 若机器人工作在私域频道模式，将丢弃其它频道的消息（适用于调试机器人新功能）
                     if (PrivateGuilds.Any())
                     {
                         string? guildid = d.Get("guild_id")?.GetString();
@@ -1478,6 +1483,8 @@ namespace QQChannelBot.Bot
             Sender sender = new(message, this);
             // 记录机器人在当前频道下的身份组信息
             if (!Members.ContainsKey(message.GuildId)) Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id);
+            // 调用消息拦截器
+            if (MessageFilter?.Invoke(sender) == true) return;
             // 如果是收到私信，立即处理并不向后传递
             if (type.StartsWith("D"))
             {

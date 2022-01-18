@@ -23,10 +23,13 @@ BotClient bot = new(new()
 });
 // 配置频道事件监听
 bot.Intents = Intents.Public;
-// 配置私域频道表（填充此表后，机器人将仅响应已填入频道Id的消息）
-bot.PrivateGuilds = new HashSet<string> { "频道Id1", "频道Id2"};
 // 配置自定义指令前缀（私域机器人可自定义前缀触发指令匹配功能，默认值"/"；公域机器人无需配置）
 bot.CommandPrefix = "/";
+// 配置消息过滤器（结果为true的消息将被拦截）
+bot.MessageFilter = (sender) =>
+{
+    return sender.ChannelId != "2500191";
+};
 ```
 
 3.框架事件订阅演示
