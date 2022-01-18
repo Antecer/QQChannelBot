@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.5.0</Version>
+    <Version>1.5.1</Version>
     <Description>QQ机器人框架</Description>
     <Copyright>Copyright © 2021 Antecer. All rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/Antecer/QQChannelBot</PackageProjectUrl>
@@ -14,7 +14,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>重构工程,使用新的Sender对象处理所有收到的消息(不再往Message对象塞BotClient);更多更新细节见GitHub</PackageReleaseNotes>
+    <PackageReleaseNotes>增加消息过滤器MessageFilter,现在开始可以自由拦截不需要的消息</PackageReleaseNotes>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageIcon>logo.png</PackageIcon>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
