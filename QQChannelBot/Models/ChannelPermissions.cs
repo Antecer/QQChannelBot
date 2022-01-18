@@ -27,11 +27,36 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 用户拥有的子频道权限
         /// <para>
-        /// "0" - 可查看子频道 <br/>
-        /// "1" - 可管理子频道
+        /// "1" - 查看 <br/>
+        /// "2" - 管理 <br/>
+        /// "4" - 发言
         /// </para>
         /// </summary>
-        [JsonPropertyName("permissions")]
-        public string Permissions { get; set; } = "0";
+        [JsonPropertyName("permissions"), JsonConverter(typeof(PrivacyTypeToStringNumberConverter))]
+        public PrivacyType Permissions { get; set; }
+    }
+
+    /// <summary>
+    /// 子频道私密权限
+    /// </summary>
+    [Flags]
+    public enum PrivacyType
+    {
+        /// <summary>
+        /// 没有任何权限
+        /// </summary>
+        隐藏 = 0,
+        /// <summary>
+        /// 可查看子频道	
+        /// </summary>
+        查看 = 1 << 0,
+        /// <summary>
+        /// 可管理子频道
+        /// </summary>
+        管理 = 1 << 1,
+        /// <summary>
+        /// 可发言子频道
+        /// </summary>
+        发言 = 1 << 2
     }
 }
