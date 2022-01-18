@@ -1118,6 +1118,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task ConnectAsync(int RetryCount)
         {
+            int retryEndTime = 10;
+            int retryAddTime = 10;
             while (RetryCount-- > 0)
             {
                 try
@@ -1141,11 +1143,16 @@ namespace QQChannelBot.Bot
                 }
                 if (RetryCount > 0)
                 {
-                    for (int i = 10; 0 < i; --i)
+                    for (int i = retryEndTime; 0 < i; --i)
                     {
                         Log.Info($"[WebSocket] {i} 秒后再次尝试连接（剩余重试次数：${RetryCount}）...");
                         await Task.Delay(TimeSpan.FromSeconds(1));
                     }
+                    retryEndTime += retryAddTime;
+                }
+                else
+                {
+                    Log.Error($"[WebSocket] 重连次数已耗尽，无法与频道服务器建立连接！");
                 }
             }
         }
@@ -1250,13 +1257,10 @@ namespace QQChannelBot.Bot
             }
             if (HeartBeatTimer.Enabled) HeartBeatTimer.Enabled = false;
             OnWebSocketClosed?.Invoke(this);
-            for (int i = 5; 0 < i; --i)
-            {
-                Log.Warn($"[WebSocket] {i} 秒后开始重连...");
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
+            Log.Warn($"[WebSocket] 重新建立到服务器的连接...");
+            await Task.Delay(TimeSpan.FromSeconds(1));
             WebSocketClient = new();
-            await ConnectAsync(3);
+            await ConnectAsync(30);
         }
         /// <summary>
         /// 根据收到的数据分析用途
