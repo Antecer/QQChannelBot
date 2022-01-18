@@ -53,4 +53,23 @@ namespace QQChannelBot.Models
         [JsonPropertyName("joined_at"), JsonConverter(typeof(DateTimeToStringTimestamp))]
         public DateTime JoinedAt { get; set; }
     }
+
+    /// <summary>
+    /// 频道信息
+    /// </summary>
+    public class GuildInfo : Guild
+    {
+        /// <summary>
+        /// 子频道列表
+        /// </summary>
+        public HashSet<Channel> Channels { get; set; } = new();
+        /// <summary>
+        /// 角色列表
+        /// </summary>
+        public HashSet<Role> Roles { get; set; } = new();
+        /// <summary>
+        /// 成员列表
+        /// </summary>
+        public HashSet<Member> Members { get; set; } = new();
+    }
 }
