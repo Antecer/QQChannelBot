@@ -6,7 +6,7 @@ namespace QQChannelBot.Models
     /// <summary>
     /// 消息对象
     /// </summary>
-    public record class Message
+    public class Message
     {
         /// <summary>
         /// 消息id
@@ -73,34 +73,6 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("ark")]
         public MessageArk? Ark { get; set; }
-        /// <summary>
-        /// 存储BotClient对象，方便快速回复消息
-        /// </summary>
-        [JsonIgnore]
-        public BotClient? Bot { get; set; }
-        /// <summary>
-        /// 快速回复
-        /// <para>自动设置子频道Id和消息Id<br/>
-        /// <em>使用快速回复会强制覆盖子频道Id和消息Id参数</em>
-        /// </para>
-        /// </summary>
-        /// <param name="message">MessageToCreate消息对象(或其扩展对象)</param>
-        /// <returns></returns>
-        public async Task<Message?> ReplyAsync(MessageToCreate message)
-        {
-            message.Id = Id;
-            return Bot != null ? await Bot.SendMessageAsync(ChannelId, message) : null;
-        }
-        /// <summary>
-        /// 快速回复文字消息
-        /// <para>自动添加子频道id参数</para>
-        /// </summary>
-        /// <param name="msg">文字消息内容</param>
-        /// <returns></returns>
-        public async Task<Message?> ReplyAsync(string msg)
-        {
-            return await ReplyAsync(new MessageToCreate() { Content = msg });
-        }
     }
 
     /// <summary>
@@ -289,5 +261,24 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("value")]
         public string? Value { get; set; }
+    }
+
+    /// <summary>
+    /// 拉取消息的操作类型
+    /// </summary>
+    public enum GetMsgTypesEnum
+    {
+        /// <summary>
+        /// 获取目标id前后的消息
+        /// </summary>
+        around,
+        /// <summary>
+        /// 获取目标id之前的消息
+        /// </summary>
+        before,
+        /// <summary>
+        /// 获取目标id之后的消息
+        /// </summary>
+        after
     }
 }

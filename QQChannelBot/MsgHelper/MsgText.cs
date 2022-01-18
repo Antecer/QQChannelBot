@@ -11,7 +11,7 @@ namespace QQChannelBot.MsgHelper
         /// 构建文字消息
         /// </summary>
         /// <param name="content">消息内容</param>
-        /// <param name="replyMsgId">要回复的消息id</param>
+        /// <param name="replyMsgId">要回复的消息Id</param>
         public MsgText(
             string? content = null,
             string? replyMsgId = null
