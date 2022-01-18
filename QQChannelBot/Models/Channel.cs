@@ -21,7 +21,7 @@ namespace QQChannelBot.Models
         /// 子频道名称
         /// </summary>
         [JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         /// <summary>
         /// 子频道类型
         /// </summary>
@@ -36,7 +36,7 @@ namespace QQChannelBot.Models
         /// 频道位置排序，非必填，但不能够和其他子频道的值重复
         /// </summary>
         [JsonPropertyName("position")]
-        public int? Possition { get; set; }
+        public int Possition { get; set; }
         /// <summary>
         /// 分组Id
         /// </summary>
@@ -51,7 +51,7 @@ namespace QQChannelBot.Models
         /// 子频道私密类型
         /// </summary>
         [JsonPropertyName("private_type")]
-        public ChannelPrivateType? PrivateType { get; set; }
+        public ChannelPrivateType PrivateType { get; set; }
         /// <summary>
         /// #频道名 标签
         /// <para>数据内容为：&lt;#ChannelId&gt;</para>
