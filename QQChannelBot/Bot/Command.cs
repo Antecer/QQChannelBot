@@ -21,7 +21,7 @@ namespace QQChannelBot.Bot
         /// <param name="rule">匹配指令用的正则表达式<para>默认值：Regex("^name(?=\s|\n|&lt;@!\d+&gt;|$)")</para></param>
         /// <param name="needAdmin">需要管理员权限</param>
         /// <param name="note">备注,用户自定义属性功能用途</param>
-        public Command(string name, Action<Message, string>? callBack = null, Regex? rule = null, bool needAdmin = false, string? note = null)
+        public Command(string name, Action<Sender, string>? callBack = null, Regex? rule = null, bool needAdmin = false, string? note = null)
         {
             Name = name;
             rule ??= new Regex($@"^{Regex.Escape(name)}\s*(?=\s|\d|\n|<@!\d+>|$)");
@@ -38,7 +38,7 @@ namespace QQChannelBot.Bot
         /// 指令命中后的回调函数
         /// <para>例：(sender, args)=>{}</para>
         /// </summary>
-        public Action<Message, string>? CallBack { get; set; }
+        public Action<Sender, string>? CallBack { get; set; }
         /// <summary>
         /// 编译为程序集的正则表达式（可加快正则匹配速度）
         /// </summary>
