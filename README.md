@@ -7,27 +7,36 @@
 
 ## 使用说明
 
-1.配置日志输出等级（默认值：LogLevel.Info）
+1.配置日志输出等级（默认值：LogLevel.INFO）
 ``` cs
-Log.LogLevel = LogLevel.Debug;
+Log.LogLevel = LogLevel.DEBUG;
 ```
 
 2.创建机器人, 配置参数请查阅 [QQ机器管理后台](https://bot.q.qq.com/#/developer/developer-setting)
 ```cs
+// 配置鉴权信息
 BotClient bot = new(new()
 {
     BotAppId = 开发者ID,
     BotToken = 机器人令牌,
     BotSecret = 机器人密钥
 });
+// 配置频道事件监听
+bot.Intents = Intents.Public;
+// 配置私域频道表（填充此表后，机器人将仅响应已填入频道Id的消息）
+bot.PrivateGuilds = new HashSet<string> { "频道Id1", "频道Id2"};
+// 配置自定义指令前缀（私域机器人可自定义前缀触发指令匹配功能，默认值"/"；公域机器人无需配置）
+bot.CommandPrefix = "/";
 ```
 
-3.订阅 OnReady 事件，这里根据机器人信息修改控制台标题
+3.框架事件订阅演示
 ```
+// 订阅 OnReady 事件，这里根据机器人信息修改控制台标题
 bot.OnReady += (sender) =>
 {
     var sdk = typeof(BotClient).Assembly.GetName();
-    Console.Title = $"{sender?.UserName}{(bot.DebugBot ? "-DEBUG" : "")} <{sender?.Id}> - SDK版本：{sdk.Name}_{sdk.Version}";
+    consoleTitle = $"{sender.UserName}{(bot.PrivateGuilds.Any() ? "_Private" : "_Public")} <{sender.Id}> - SDK版本：{sdk.Name}_{sdk.Version}；　连接状态：";
+    Console.Title = consoleTitle;
 };
 ```
 
@@ -42,7 +51,7 @@ bot.OnMsgCreate += async (sender, isAt) =>
 {
     if (isAt)
     {
-        string replyMsg = sender.Content.Replace(bot.Info.Tag(), sender.Author.Tag());
+        string replyMsg = sender.Content.Replace(sender.Bot.Info.Tag, sender.Author.Tag);
         await sender.ReplyAsync(replyMsg);
     }
 };
@@ -52,10 +61,10 @@ bot.OnMsgCreate += async (sender, isAt) =>
 ```cs
 // 注册自定义命令，这里让机器人复读用户的消息
 // 如:用户发送 @机器人 复读 123
-// 　 机器回复 123
+// 　 机器回复 @用户 123
 bot.AddCommand(new Command("复读", async (sender, msg) =>
 {
-    await sender.ReplyAsync($"{sender.Author.Tag()} {msg}");
+    await sender.ReplyAsync($"{sender.Author.Tag} {msg}");
 }));
 ```
 
@@ -71,7 +80,7 @@ bot.Start();
 // 注：这里排除了Command属性Note有内容的指令
 bot.AddCommand(new Command("菜单", async (sender, args) =>
 {
-    await sender.ReplyAsync(string.join('、', bot.GetCommands.Where(cmd => string.IsNullOrWhiteSpace(cmd.Note)).Select(cmd => cmd.Name).ToList()));
+    await sender.ReplyAsync(string.join('、', sender.Bot.GetCommands.Where(cmd => string.IsNullOrWhiteSpace(cmd.Note)).Select(cmd => cmd.Name).ToList()));
 }, note: "hide"));
 // 注册自定义命令，这里测试embed消息 ( 实现功能为获取用户信息，指令格式： @机器人 UserInfo @用户 )
 bot.AddCommand(new Command("用户信息", async (sender, msg) =>
@@ -100,101 +109,328 @@ bot.AddCommand(new Command("用户信息", async (sender, msg) =>
 // 指令格式：@机器人 创建公告 公告内容
 bot.AddCommand(new Command("创建公告", async (sender, args) =>
 {
-    if (string.IsNullOrWhiteSpace(args))
+    if (args.IsBlank())
     {
-        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定公告内容!\n正确格式：@机器人 创建公告 公告内容");
+        await sender.ReplyAsync($"{sender.Author.Tag} 未指定公告内容！正确格式：\n创建公告 公告内容");
         return;
     }
     Message? sendmsg = await sender.ReplyAsync(args);
-    await bot.CreateAnnouncesAsync(sendmsg!);
-}, needAdmin: true));
+    Announces? announces = null;
+    if (sendmsg != null) announces = await sender.CreateAnnouncesAsync(sendmsg);
+    if (sendmsg == null || announces == null) await sender.ReplyAsync($"{sender.Author.Tag} 公告创建失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+    else await sender.ReplyAsync($"{sender.Author.Tag} 公告已发布");
+}, null, true));
 // 指令格式：@机器人 删除公告
 bot.AddCommand(new Command("删除公告", async (sender, args) =>
 {
-    await bot.DeleteAnnouncesAsync(sender.ChannelId);
-}, needAdmin: true));
+    if (await sender.DeleteAnnouncesAsync()) await sender.ReplyAsync($"{sender.Author.Tag} 公告已删除！");
+    else await sender.ReplyAsync($"{sender.Bot.Info.UserName} 无权删除公告！");
+}, null, true));
 // 指令格式：@机器人 创建全局公告 公告内容
 bot.AddCommand(new Command("创建全局公告", async (sender, args) =>
 {
-    if (string.IsNullOrWhiteSpace(args))
+    if (args.IsBlank())
     {
-        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定公告内容!\n正确格式：@机器人 创建全局公告 公告内容");
+        await sender.ReplyAsync($"{sender.Author.Tag} 未指定公告内容！正确格式：\n创建全局公告 公告内容");
         return;
     }
     Message? sendmsg = await sender.ReplyAsync(args);
-    await bot.CreateAnnouncesGlobalAsync(sendmsg!);
-}, needAdmin: true));
+    Announces? announces = null;
+    if (sendmsg != null) announces = await sender.CreateAnnouncesGlobalAsync(sendmsg);
+    if (sendmsg == null || announces == null) await sender.ReplyAsync($"{sender.Author.Tag} 全局公告创建失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+    else await sender.ReplyAsync($"{sender.Author.Tag} 全局公告已发布");
+}, null, true));
 // 指令格式：@机器人 删除全局公告
 bot.AddCommand(new Command("删除全局公告", async (sender, args) =>
 {
-    await bot.DeleteAnnouncesGlobalAsync(sender.ChannelId);
-}, needAdmin: true));
+    if (await sender.DeleteAnnouncesGlobalAsync()) await sender.ReplyAsync($"{sender.Author.Tag} 全局公告已删除！");
+    else await sender.ReplyAsync($"{sender.Bot.Info.UserName} 无权删除全局公告！");
+}, null, true));
 // 指令格式：@机器人 禁言 @用户 10天(或：到2077-12-12 23:59:59)
 bot.AddCommand(new Command("禁言", async (sender, args) =>
 {
-    Match userIdMatcher = Regex.Match(args, @"<@!(\d+)>");
-    string? userId = userIdMatcher.Success ? userIdMatcher.Groups[1].Value : null;
-    if (userId == null)
+    List<User>? users = sender.Mentions?.ToHashSet().ToList();
+    users?.RemoveAll(user => user.Id == sender.Bot.Info.Id); // 排除机器人自己
+    if (users?.Any() != true)
     {
-        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定禁言的用户!\n正确格式：@机器人 禁言 @用户 禁言时间");
+        await sender.ReplyAsync($"{sender.Author.Tag} 未指定禁言的用户！正确格式：\n禁言 @用户 禁言时间(年|星期|周|日|天|小时|分|秒；默认单位分钟)\n禁言 禁言时间 @用户(可多个)");
         return;
     }
+    string? muteMakerAfter = null;
+    string muteMakerDelay = "1分钟";
+    args = Regex.Replace(args, @"<@!\d+>", "");
     Match tsm = Regex.Match(args, @"(\d{4})[-年](\d\d)[-月](\d\d)[\s日]*(\d\d)[:点时](\d\d)[:分](\d\d)秒?");
-    if (tsm.Success)
-    {
-        string timeStampStr = tsm.Groups[0].Value;
-        bool isOk = await bot.MuteMemberAsync(sender.GuildId, userId, new MuteMaker(timeStampStr));
-        if (isOk) await sender.ReplyAsync($"{sender.Mentions!.Find(u => u.Id == userId)?.UserName} 已被禁言，解除时间：{timeStampStr}");
-        else await sender.ReplyAsync($"禁言失败,可能没有权限!");
-    }
+    if (tsm.Success) muteMakerAfter = tsm.Groups[0].Value;
     else
     {
         Match tdm = Regex.Match(args, @"(\d+)\s*(年|星期|周|日|天|小?时|分钟?|秒钟?)");
-        bool isOk = await bot.MuteMemberAsync(sender.GuildId, userId, tdm.Success ? new MuteMaker(tdm.Groups[0].Value) : new MuteTime(60));
-        if (isOk) await sender.ReplyAsync($"{sender.Mentions!.Find(u => u.Id == userId)?.UserName} 已被禁言{(tdm.Success ? tdm.Groups[0] : "1分钟")}");
-        else await sender.ReplyAsync($"禁言失败,可能没有权限!");
+        if (tdm.Success) muteMakerDelay = tdm.Groups[0].Value;
+        else
+        {
+            Match ttm = Regex.Match(args, @"\d+");
+            if (ttm.Success) muteMakerDelay = ttm.Groups[0].Value + "分钟";
+        }
     }
-}, needAdmin: true));
+    string muteTimeAt = muteMakerAfter != null ? $"解除时间：{muteMakerAfter}" : $"持续时间：{muteMakerDelay}";
+    MuteMaker muteMaker = new(muteMakerAfter ?? muteMakerDelay);
+    foreach (var user in users)
+    {
+        if (await sender.MuteMemberAsync(user, muteMaker))
+        {
+            await sender.ReplyAsync($"{user.UserName} 已被禁言，{muteTimeAt}");
+        }
+        else await sender.ReplyAsync($"禁言失败，{sender.Bot.Info.UserName} 无权禁言用户：{user.UserName}");
+    }
+}, new Regex(@"^禁言(?=(\d|\s|<@!\d+>)|$)"), true));
 // 指令格式：@机器人 解除禁言 @用户
 bot.AddCommand(new Command("解除禁言", async (sender, args) =>
 {
-    Match userIdMatcher = Regex.Match(args, @"<@!(\d+)>");
-    string? userId = userIdMatcher.Success ? userIdMatcher.Groups[1].Value : null;
-    if (userId == null)
+    List<User>? users = sender.Mentions;
+    users?.RemoveAll(user => user.Id == sender.Bot.Info.Id); // 排除机器人自己
+    if (users?.Any() != true)
     {
-        await sender.ReplyAsync($"{sender.Author.Tag()} 未指定解禁的用户!\n正确格式：@机器人 解禁 @用户");
+        await sender.ReplyAsync($"{sender.Author.Tag} 未指定解禁的用户!\n正确格式：解除禁言 @用户(可多个)");
         return;
     }
-    bool isOk = await bot.MuteMemberAsync(sender.GuildId, userId, new MuteTime(0));
-    if (isOk) await sender.ReplyAsync($"{sender.Mentions!.Find(u => u.Id == userId)?.UserName} 已解除禁言");
-    else await sender.ReplyAsync($"解除禁言失败,可能没有权限!");
-}, needAdmin: true));
+    MuteTime muteTime = new(0);
+    foreach (var user in users)
+    {
+        if (await sender.MuteMemberAsync(user, muteTime))
+        {
+            await sender.ReplyAsync($"{user.UserName} 已解除禁言");
+        }
+        else await sender.ReplyAsync($"解禁失败，{sender.Bot.Info.UserName} 无权解禁用户：{user.UserName}");
+    }
+}, new Regex(@"^(解除|取消)禁言(?=(\s|<@!\d+>)|$)"), true));
 // 指令格式：@机器人 全体禁言 10天(或：到2077年12月12日23点59分59秒)
 bot.AddCommand(new Command("全员禁言", async (sender, args) =>
 {
     Match tsm = Regex.Match(args, @"(\d{4})[-年](\d\d)[-月](\d\d)[\s日]*(\d\d)[:点时](\d\d)[:分](\d\d)秒?");
-    if (tsm.Success)
-    {
-        string timeStampStr = tsm.Groups[0].Value;
-        bool isOk = await bot.MuteGuildAsync(sender.GuildId, new MuteMaker(timeStampStr));
-        if (isOk) await sender.ReplyAsync($"已启用全员禁言，解除时间：{timeStampStr}");
-        else await sender.ReplyAsync($"全员禁言失败,可能没有权限!");
-    }
+    string? muteMakerAfter = null;
+    string muteMakerDelay = "1分钟";
+    if (tsm.Success) muteMakerAfter = tsm.Groups[0].Value;
     else
     {
         Match tdm = Regex.Match(args, @"(\d+)\s*(年|星期|周|日|天|小?时|分钟?|秒钟?)");
-        bool isOk = await bot.MuteGuildAsync(sender.GuildId, tdm.Success ? new MuteMaker(tdm.Groups[0].Value) : new MuteTime(60));
-        if (isOk) await sender.ReplyAsync($"已启用全员禁言{(tdm.Success ? tdm.Groups[0] : "1分钟")}");
-        else await sender.ReplyAsync($"全员禁言失败,可能没有权限!");
+        if (tdm.Success) muteMakerDelay = tdm.Groups[0].Value;
+        else
+        {
+            await sender.ReplyAsync($"{sender.Author.Tag} 时间格式不正确！正确格式：\n全员禁言 禁言时间(年|星期|周|日|天|小时|分|秒)\n全员禁言 禁言时间(xxxx年xx月xx日xx点(时)xx分xx秒)");
+            return;
+        }
     }
-}, needAdmin: true));
+    string muteTimeAt = muteMakerAfter != null ? $"解除时间：{muteMakerAfter}" : $"持续时间：{muteMakerDelay}";
+    if (await sender.MuteGuildAsync(new MuteMaker(muteMakerAfter ?? muteMakerDelay)))
+    {
+        await sender.ReplyAsync($"已启用全员禁言，{muteTimeAt}");
+    }
+    else await sender.ReplyAsync($"全员禁言失败，{sender.Bot.Info.UserName} 无权启用全员禁言!");
+}, null, true));
 // 指令格式：@机器人 解除全体禁言
 bot.AddCommand(new Command("解除全员禁言", async (sender, args) =>
 {
-    bool isOk = await bot.MuteGuildAsync(sender.GuildId, new MuteTime(0));
-    if (isOk) await sender.ReplyAsync($"已解除全员禁言");
-    else await sender.ReplyAsync($"解除全员禁言失败,可能没有权限!");
-}, needAdmin: true));
+    bool isOk = await sender.MuteGuildAsync(new MuteTime(0));
+    await sender.ReplyAsync(isOk ? "已解除全员禁言" : $"解除全员禁言失败，{sender.Bot.Info.UserName} 无权解除全员禁言!");
+}, new Regex(@"^(解除|取消)全员禁言$"), true));
+// 指令格式：@机器人 创建身份组
+bot.AddCommand(new Command("创建角色", async (sender, args) =>
+{
+    Match roleParams = Regex.Match(args, @"([^#;\s]+);(#[0-9a-fA-F]+)(;分组)?");
+    if (!roleParams.Success)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 参数不正确！正确格式(使用';'连接参数)：\n￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣\n创建角色 名称;颜色(格式#FFFFFF);分组(可选)\n＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿\n例：创建角色 新角色;#FF7788;分组\n　　新建角色 新角色2;#F0F");
+        return;
+    }
+    string roleName = roleParams.Groups[1].Value;
+    string roleColor = roleParams.Groups[2].Value;
+    bool roleGroup = !string.IsNullOrWhiteSpace(roleParams.Groups[3].Value);
+    Role? role = await sender.CreateRoleAsync(new Info(roleName, roleColor, roleGroup));
+    if (role != null) await sender.ReplyAsync($"{sender.Author.Tag} 成功创建新角色：\n{role.Name};{role.ColorHtml};{(role.Hoist ? "已" : "未")}分组");
+    else await sender.ReplyAsync($"{sender.Author.Tag} 新角色创建失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+}, new Regex(@"^(创|新)建角色(\s|\n|$)"), true));
+// 指令格式：@机器人 遍历身份组
+bot.AddCommand(new Command("统计角色", async (sender, args) =>
+{
+    Guild? guild = await sender.GetGuildAsync();
+    string guildInfo = guild == null ? "" : $"{guild.Name}，成员总数：{guild.MemberCount}\n";
+    List<Role>? roles = await sender.GetRolesAsync();
+    if (roles == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 获取角色列表失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+        return;
+    }
+    var roleInfoList = roles.Select(r => $"{r.Name}：{r.Number}；{r.ColorHtml}；{(r.Hoist ? "已" : "未") }分组；编号:{r.Id}");
+    await sender.ReplyAsync($"{sender.Author.Tag} {guildInfo}共找到 {roleInfoList.Count()} 个身份角色：\n" + string.Join('\n', roleInfoList));
+    return;
+}, null, true));
+// 指令格式：@机器人 修改身份组
+bot.AddCommand(new Command("修改角色", async (sender, args) =>
+{
+    Match m = Regex.Match(args, @"(\S+)\n\s*([^#;\s]+)?;?(#[0-9a-fA-F]+)?;?(分组)?", RegexOptions.RightToLeft);
+    string rNameL = m.Groups[1].Value;
+    string? rNameR = m.Groups[2].Value;
+    if (rNameR.IsBlank()) rNameR = null;
+    string? rColor = m.Groups[3].Value;
+    if (rColor.IsBlank()) rColor = null;
+    bool rGroup = !m.Groups[4].Value.IsBlank();
+    if (!m.Success || rNameL.IsBlank())
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 参数不正确！正确格式(使用';'连接参数)：\n￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣\n修改角色 原角色名(或角色ID)\n新角色名(可选);颜色(格式#FFFFFF|可选);分组(可选)");
+        return;
+    }
+    List<Role>? roles = await sender.GetRolesAsync();
+    if (roles == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 遍历角色列表失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+        return;
+    }
+    Role? role = roles.Find(x => x.Id == rNameL);
+    if (role == null)
+    {
+        roles.RemoveAll(r => r.Name != rNameL);
+        if (!roles.Any()) role = null;
+        else if (roles.Count == 1) role = roles[0];
+        else
+        {
+            var roleInfoList = roles.Select(r => $"{r.Name}；{r.ColorHtml}；{(r.Hoist ? "已" : "未") }分组；编号:{r.Id}");
+            await sender.ReplyAsync($"{sender.Author.Tag} 找到多个同名角色，请使用角色ID重新发送指令：\n" + string.Join('\n', roleInfoList));
+            return;
+        }
+    }
+    if (role == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 在列表中找不到角色：{rNameL}");
+        return;
+    }
+    role = await sender.EditRoleAsync(role.Id, new Info(rNameR, rColor, rGroup));
+    if (role != null) await sender.ReplyAsync($"{sender.Author.Tag} 成功修改角色：\n{role.Name}；{role.ColorHtml}；{(role.Hoist ? "已" : "未") }分组；编号:{role.Id}");
+    else await sender.ReplyAsync($"{sender.Author.Tag} 修改角色失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+}, null, true));
+// 指令格式：@机器人 删除身份组
+bot.AddCommand(new Command("删除角色", async (sender, args) =>
+{
+    string rName = args;
+    if (rName.IsBlank())
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 参数不正确！正确格式：\n￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣\n删除角色 角色名(或角色ID)");
+        return;
+    }
+    List<Role>? roles = await sender.GetRolesAsync();
+    if (roles == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 遍历角色列表失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+        return;
+    }
+    Role? role = roles.Find(x => x.Id == rName);
+    if (role == null)
+    {
+        roles.RemoveAll(r => r.Name != rName);
+        if (!roles.Any()) role = null;
+        else if (roles.Count == 1) role = roles[0];
+        else
+        {
+            var roleInfoList = roles.Select(r => $"{r.Name}；{r.ColorHtml}；{(r.Hoist ? "已" : "未") }分组；编号:{r.Id}");
+            await sender.ReplyAsync($"{sender.Author.Tag} 找到多个同名角色，请使用角色ID重新发送指令：\n" + string.Join('\n', roleInfoList));
+            return;
+        }
+    }
+    if (role == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 在列表中找不到角色：{rName}");
+        return;
+    }
+    if (await sender.DeleteRoleAsync(role.Id))
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 成功删除角色：\n{role.Name}；{role.ColorHtml}；{(role.Hoist ? "已" : "未") }分组；编号:{role.Id}");
+    }
+    else await sender.ReplyAsync($"{sender.Author.Tag} 删除角色失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+}, null, true));
+// 指令格式：@机器人 增加身份组成员 @用户 @用户2
+bot.AddCommand(new Command("增加角色成员", async (sender, args) =>
+{
+    string rName = Regex.Replace(args, @"<@!\d+>", "").Trim();
+    List<User>? users = sender.Mentions;
+    if (!args.Contains(sender.Bot.Info.Tag)) users?.RemoveAll(user => user.Id == sender.Bot.Info.Id); // 排除机器人自己
+    users = users?.ToHashSet().ToList();
+    if (rName.IsBlank() || users?.Any() != true)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 参数不正确！正确格式：\n￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣\n增加角色成员 角色名(或角色ID) @用户(可同时添加多个)");
+        return;
+    }
+    List<Role>? roles = await sender.GetRolesAsync();
+    if (roles == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 遍历角色列表失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+        return;
+    }
+    Role? role = roles.Find(x => x.Id == rName);
+    if (role == null)
+    {
+        roles.RemoveAll(r => r.Name != rName);
+        if (!roles.Any()) role = null;
+        else if (roles.Count == 1) role = roles[0];
+        else
+        {
+            var roleInfoList = roles.Select(r => $"{r.Name}；{r.ColorHtml}；{(r.Hoist ? "已" : "未") }分组；编号:{r.Id}");
+            await sender.ReplyAsync($"{sender.Author.Tag} 找到多个同名角色，请使用角色ID重新发送指令：\n" + string.Join('\n', roleInfoList));
+            return;
+        }
+    }
+    if (role == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 在列表中找不到角色：{rName}");
+        return;
+    }
+    foreach (var user in users)
+    {
+        bool isOk = await sender.AddRoleMemberAsync(user, role.Id, role.Id == "5" ? sender.ChannelId : null);
+        string replyMsg = isOk ? "成功" : $"失败，{sender.Bot.Info.UserName} 无权执行该操作！";
+        await sender.ReplyAsync($"{user.Tag} 加入角色组 {role.Name} {replyMsg}");
+    }
+}, null, true));
+// 指令格式：@机器人 删除身份组成员 @用户 @用户2
+bot.AddCommand(new Command("删除角色成员", async (sender, args) =>
+{
+    string rName = Regex.Replace(args, @"<@!\d+>", "").Trim();
+    List<User>? users = sender.Mentions;
+    if (!args.Contains(sender.Bot.Info.Tag)) users?.RemoveAll(user => user.Id == sender.Bot.Info.Id); // 排除机器人自己
+    users = users?.ToHashSet().ToList();
+    if (rName.IsBlank() || users?.Any() != true)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 参数不正确！正确格式：\n￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣\n删除角色成员 角色名(或角色ID) @用户(可同时添加多个)");
+        return;
+    }
+    List<Role>? roles = await sender.GetRolesAsync();
+    if (roles == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 遍历角色列表失败，{sender.Bot.Info.UserName} 无权执行该操作！");
+        return;
+    }
+    Role? role = roles.Find(x => x.Id == rName);
+    if (role == null)
+    {
+        roles.RemoveAll(r => r.Name != rName);
+        if (!roles.Any()) role = null;
+        else if (roles.Count == 1) role = roles[0];
+        else
+        {
+            var roleInfoList = roles.Select(r => $"{r.Name}；{r.ColorHtml}；{(r.Hoist ? "已" : "未") }分组；编号:{r.Id}");
+            await sender.ReplyAsync($"{sender.Author.Tag} 找到多个同名角色，请使用角色ID重新发送指令：\n" + string.Join('\n', roleInfoList));
+            return;
+        }
+    }
+    if (role == null)
+    {
+        await sender.ReplyAsync($"{sender.Author.Tag} 在列表中找不到角色：{rName}");
+        return;
+    }
+    foreach (var user in users)
+    {
+        bool isOk = await sender.DeleteRoleMemberAsync(user, role.Id, role.Id == "5" ? sender.ChannelId : null);
+        string replyMsg = isOk ? "成功" : $"失败，{sender.Bot.Info.UserName} 无权执行该操作！";
+        await sender.ReplyAsync($"{user.Tag} 移出角色组 {role.Name} {replyMsg}");
+    }
+}, null, true));
 ```
 
 ## Ark模板消息构建方法
