@@ -72,7 +72,7 @@ namespace QQChannelBot.Bot
             if (response.Content.Headers.ContentType?.MediaType == "application/json")
             {
                 string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                ApiError? err = JsonSerializer.Deserialize<ApiError>(responseContent);
+                ApiStatus? err = JsonSerializer.Deserialize<ApiStatus>(responseContent);
                 if (err?.Code >= 400)
                 {
                     if (FreezeUrl.TryGetValue(reqUrl, out freezeTime))
