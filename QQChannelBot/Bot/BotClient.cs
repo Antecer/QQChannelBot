@@ -218,7 +218,8 @@ namespace QQChannelBot.Bot
                     if (err?.Message != null) errInfo.Detail = err.Message;
                 }
                 if (StatusCodes.OpenapiCode.TryGetValue(errInfo.Code, out string? value)) errInfo.Detail = value;
-                Log.Error($"[接口访问失败] 代码：{errInfo.Code}，详情：{errInfo.Detail}");
+                string guildName = sender == null ? "" : $"[{sender.Bot.Guilds[sender.GuildId].Name}]";
+                Log.Error($"[接口访问失败]{guildName} 代码：{errInfo.Code}，详情：{errInfo.Detail}");
 
                 OnApiError?.Invoke(sender, errInfo);
                 if (sender != null)
@@ -779,6 +780,7 @@ namespace QQChannelBot.Bot
         /// <param name="role_id">身份组Id</param>
         /// <param name="add">添加的权限</param>
         /// <param name="remove">删除的权限</param>
+        /// <param name="sender"></param>
         /// <returns></returns>
         public async Task<bool> EditMemberChannelPermissionsAsync(string channel_id, string role_id, string add = "0", string remove = "0", Sender? sender = null)
         {
