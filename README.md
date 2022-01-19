@@ -77,7 +77,7 @@ bot.Start();
 ```
 
 ## 以下是API调用玩法示例
-#### 注：AddCommand注册指令；[点此查看Command指令对象详细参数](https://github.com/Antecer/QQChannelBot/blob/main/QQChannelBot/Bot/ObjectClass.cs)
+#### 注：AddCommand注册指令；[点此查看Command指令对象详细参数](https://github.com/Antecer/QQChannelBot/blob/main/QQChannelBot/Bot/Command.cs)
 ```
 // 指令格式：@机器人 菜单
 // 注：这里排除了Command属性Note有内容的指令
