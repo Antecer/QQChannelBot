@@ -1,5 +1,4 @@
 ﻿using System.Buffers;
-using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
@@ -1179,8 +1178,9 @@ namespace QQChannelBot.Bot
                     shared = new[] { ShardId % (GateLimit?.Shards ?? 1), GateLimit?.Shards ?? 1 }
                 }
             };
-            Log.Debug($"[WebSocket][Identify] 鉴权连接...");
-            await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
+            string sendMsg = JsonSerializer.Serialize(data);
+            Log.Debug("[WebSocket][SendIdentify] " + Regex.Replace(sendMsg, @"(?<=Bot\s+)[^""]+", (m) => Regex.Replace(m.Groups[0].Value, @"[^\.]", "*"))); // 敏感信息脱敏处理
+            await WebSocketSendAsync(sendMsg, WebSocketMessageType.Text, true);
         }
         /// <summary>
         /// 发送心跳
@@ -1190,7 +1190,9 @@ namespace QQChannelBot.Bot
         {
             if (WebSocketClient.State == WebSocketState.Open)
             {
-                await WebSocketSendAsync("{\"op\": 1, \"d\":" + WebSocketLastSeq + "}", WebSocketMessageType.Text, true);
+                string sendMsg = "{\"op\": 1, \"d\":" + WebSocketLastSeq + "}";
+                Log.Debug($"[WebSocket][SendHeartbeat] {sendMsg}");
+                await WebSocketSendAsync(sendMsg, WebSocketMessageType.Text, true);
             }
             else Log.Error($"[WebSocket][Heartbeat] 未建立连接！");
         }
@@ -1212,8 +1214,9 @@ namespace QQChannelBot.Bot
                         seq = WebSocketLastSeq
                     }
                 };
-                Log.Debug($"[WebSocket] Resume Sending...");
-                await WebSocketSendAsync(JsonSerializer.Serialize(data), WebSocketMessageType.Text, true);
+                string sendMsg = JsonSerializer.Serialize(data);
+                Log.Debug($"[WebSocket][SendResume] {sendMsg}");
+                await WebSocketSendAsync(sendMsg, WebSocketMessageType.Text, true);
             }
             catch (Exception e)
             {
@@ -1230,7 +1233,6 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         private async Task WebSocketSendAsync(string data, WebSocketMessageType msgType = WebSocketMessageType.Text, bool endOfMsg = true, CancellationToken? cancelToken = null)
         {
-            Log.Debug($"[WebSocket][Send] {data}");
             OnWebSoketSending?.Invoke(this, data);
             await WebSocketClient.SendAsync(Encoding.UTF8.GetBytes(data), msgType, endOfMsg, cancelToken ?? CancellationToken.None);
         }
@@ -1285,7 +1287,7 @@ namespace QQChannelBot.Bot
                     WebSocketLastSeq = wssJson.GetProperty("s").GetInt32();
                     if (!wssJson.TryGetProperty("t", out JsonElement t) || !wssJson.TryGetProperty("d", out JsonElement d))
                     {
-                        Log.Warn($"[WebSocket][Op00][Dispatch] {Unicoder.Decode(wssJson.GetRawText())}");
+                        Log.Warn($"[WebSocket][Op00][Dispatch] {wssJson.GetRawText()}");
                         break;
                     }
                     // 若机器人工作在私域频道模式，将丢弃其它频道的消息（适用于调试机器人新功能）
@@ -1428,7 +1430,7 @@ namespace QQChannelBot.Bot
                     break;
                 // Receive 当客户端与网关建立ws连接之后，网关下发的第一条消息
                 case Opcode.Hello:
-                    Log.Info($"[WebSocket][Op10][成功与网关建立连接] {Unicoder.Decode(wssJson.GetRawText())}");
+                    Log.Info($"[WebSocket][Op10][成功与网关建立连接] {wssJson.GetRawText()}");
                     OnHello?.Invoke(this, wssJson);
                     int heartbeat_interval = wssJson.Get("d")?.Get("heartbeat_interval")?.GetInt32() ?? 30000;
                     HeartBeatTimer.Interval = heartbeat_interval < 30000 ? heartbeat_interval : 30000;  // 设置心跳时间为30s

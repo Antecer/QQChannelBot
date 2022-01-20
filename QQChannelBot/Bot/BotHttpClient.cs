@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Tools;
 
@@ -160,11 +161,11 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            string requestString = request.ToString();
+            string requestString = Regex.Replace(request.ToString(), @"(?<=Bot\s+)[^\n]+", (m) => Regex.Replace(m.Groups[0].Value, @"[^\.]", "*")); // 敏感信息脱敏
             string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync() : "";
             MediaTypeHeaderValue? requestContentType = request.Content?.Headers.ContentType;
             if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
-            if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json")) requestContent = Unicoder.Decode(requestContent);
+            if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json")) { }
             else if (string.IsNullOrWhiteSpace(requestContent)) requestContent = "（没有内容）";
             else requestContent = "（内容无法解码）";
             requestContent = $"[HttpHandler][Request]{Environment.NewLine}{requestString}{Environment.NewLine}{requestContent}";
@@ -181,16 +182,13 @@ namespace QQChannelBot.Bot
             HttpStatusCode responseStatusCode = response.StatusCode;
             MediaTypeHeaderValue? responseContentType = response.Content?.Headers.ContentType;
 
-            if ((Log.LogLevel == LogLevel.DEBUG) || (responseStatusCode >= HttpStatusCode.BadRequest))
-            {
-                if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
-                if ((responseContentType?.CharSet != null) || (responseContentType?.MediaType == "application/json")) responseContent = Unicoder.Decode(responseContent);
-                else if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "（没有内容）";
-                else responseContent = "（内容无法解码）";
-                responseContent = $"[HttpHandler][Response]{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
-                if (responseStatusCode < HttpStatusCode.BadRequest) Log.Debug(requestContent + '\n' + responseContent);
-                else Log.Error(requestContent + '\n' + responseContent);
-            }
+            if (responseContent.Length > printLength) responseContent = responseContent[..printLength];
+            if ((responseContentType?.CharSet != null) || (responseContentType?.MediaType == "application/json")) { }
+            else if (string.IsNullOrWhiteSpace(responseContent)) responseContent = "（没有内容）";
+            else responseContent = "（内容无法解码）";
+            responseContent = $"[HttpHandler][Response]{Environment.NewLine}{responseString}{Environment.NewLine}{responseContent}{Environment.NewLine}";
+            if (responseStatusCode < HttpStatusCode.BadRequest) Log.Debug(requestContent + '\n' + responseContent);
+            else Log.Error(requestContent + '\n' + responseContent);
             return response;
         }
     }
