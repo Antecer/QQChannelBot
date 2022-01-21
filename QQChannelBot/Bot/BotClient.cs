@@ -9,7 +9,6 @@ using QQChannelBot.Bot.SocketEvent;
 using QQChannelBot.Bot.StatusCode;
 using QQChannelBot.Models;
 using QQChannelBot.MsgHelper;
-using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
 {
@@ -1261,6 +1260,8 @@ namespace QQChannelBot.Bot
                 {
                     Log.Error($"[WebSocket][Receive] {e.Message} | Status：{WebSocketClient.CloseStatus}{Environment.NewLine}");
                 }
+                // 关闭代码4009表示频道服务器要求的重连，可以进行Resume
+                if (WebSocketClient.CloseStatus.GetHashCode() == 4009) IsResume = true;
                 WebSocketClient.Abort();
                 break;
             }
@@ -1419,9 +1420,8 @@ namespace QQChannelBot.Bot
                 // Receive 服务端通知客户端重新连接
                 case Opcode.Reconnect:
                     Log.Info($"[WebSocket][Op07] 服务器 要求客户端重连");
-                    IsResume = true;
                     OnReconnect?.Invoke(this, wssJson);
-                    await SendResumeAsync();
+                    //await SendResumeAsync();
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case Opcode.InvalidSession:
