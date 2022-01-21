@@ -3,6 +3,29 @@
 namespace QQChannelBot.Models
 {
     /// <summary>
+    /// 消息类型枚举
+    /// </summary>
+    public enum MessageType
+    {
+        /// <summary>
+        /// 公共
+        /// </summary>
+        Public,
+        /// <summary>
+        /// @机器人
+        /// </summary>
+        AtMe,
+        /// <summary>
+        /// @全员
+        /// </summary>
+        AtAll,
+        /// <summary>
+        /// 私聊
+        /// </summary>
+        Private
+    }
+
+    /// <summary>
     /// 消息对象
     /// </summary>
     public class Message
@@ -28,6 +51,16 @@ namespace QQChannelBot.Models
         [JsonPropertyName("content")]
         public string Content { get; set; } = "";
         /// <summary>
+        /// 是否 私聊消息
+        /// </summary>
+        [JsonPropertyName("direct_message")]
+        public bool DirectMessage { get; set; }
+        /// <summary>
+        /// 是否 @全员消息
+        /// </summary>
+        [JsonPropertyName("mention_everyone")]
+        public bool MentionEveryone { get; set; }
+        /// <summary>
         /// 消息创建时间
         /// </summary>
         [JsonPropertyName("timestamp"), JsonConverter(typeof(DateTimeToStringTimestamp))]
@@ -37,11 +70,6 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("edited_timestamp"), JsonConverter(typeof(DateTimeToStringTimestamp))]
         public DateTime EditedTime { get; set; }
-        /// <summary>
-        /// 是否 @全员消息
-        /// </summary>
-        [JsonPropertyName("mention_everyone")]
-        public bool MentionEveryone { get; set; }
         /// <summary>
         /// 消息创建者
         /// </summary>
@@ -279,5 +307,65 @@ namespace QQChannelBot.Models
         /// 获取目标id之后的消息
         /// </summary>
         after
+    }
+
+    /// <summary>
+    /// 消息审核对象
+    /// </summary>
+    public class MessageAudited
+    {
+        /// <summary>
+        /// 消息审核Id
+        /// </summary>
+        [JsonPropertyName("audit_id")]
+        public string AuditId { get; set; } = string.Empty;
+        /// <summary>
+        /// 被审核的消息Id
+        /// <para>只有审核通过事件才会有值</para>
+        /// </summary>
+        [JsonPropertyName("message_id")]
+        public string? MessageId { get; set; }
+        /// <summary>
+        /// 频道Id
+        /// </summary>
+        [JsonPropertyName("guild_id")]
+        public string GuildId { get; set; } = string.Empty;
+        /// <summary>
+        /// 子频道Id
+        /// </summary>
+        [JsonPropertyName("channel_id")]
+        public string ChannelId { get; set; } = string.Empty;
+        /// <summary>
+        /// 消息审核时间
+        /// </summary>
+        [JsonPropertyName("audit_time"), JsonConverter(typeof(DateTimeToStringTimestamp))]
+        public DateTime AuditTime { get; set; }
+        /// <summary>
+        /// 消息创建时间
+        /// </summary>
+        [JsonPropertyName("create_time"), JsonConverter(typeof(DateTimeToStringTimestamp))]
+        public DateTime CreateTime { get; set; }
+    }
+
+    /// <summary>
+    /// 私信会话对象（DMS）
+    /// </summary>
+    public record struct DirectMessageSource
+    {
+        /// <summary>
+        /// 私信会话关联的频道Id
+        /// </summary>
+        [JsonPropertyName("guild_id")]
+        public string GuildId { get; init; }
+        /// <summary>
+        /// 私信会话关联的子频道Id
+        /// </summary>
+        [JsonPropertyName("channel_id")]
+        public string ChannelId { get; init; }
+        /// <summary>
+        /// 创建私信会话时间戳
+        /// </summary>
+        [JsonPropertyName("create_time"), JsonConverter(typeof(DateTimeToStringTimestamp))]
+        public DateTime CreateTime { get; init; }
     }
 }
