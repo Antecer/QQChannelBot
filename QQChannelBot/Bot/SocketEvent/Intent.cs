@@ -23,6 +23,7 @@ namespace QQChannelBot.Bot.SocketEvent
         /// </para>
         /// </summary>
         GUILDS = 1 << 0,
+
         /// <summary>
         /// <para>
         /// GUILD_MEMBER_ADD - 当成员加入时 <br/>
@@ -31,10 +32,12 @@ namespace QQChannelBot.Bot.SocketEvent
         /// </para>
         /// </summary>
         GUILD_MEMBERS = 1 << 1,
+
         /// <summary>
         /// MESSAGE_CREATE - 频道内发送的所有消息的事件（仅私域可用）
         /// </summary>
         MESSAGE_CREATE = 1 << 9,
+
         /// <summary>
         /// <para>
         /// MESSAGE_REACTION_ADD - 为消息添加表情表态 <br/>
@@ -42,10 +45,18 @@ namespace QQChannelBot.Bot.SocketEvent
         /// </para>
         /// </summary>
         GUILD_MESSAGE_REACTIONS = 1 << 10,
+
         /// <summary>
         /// DIRECT_MESSAGE_CREATE - 当收到用户发给机器人的私信消息时
         /// </summary>
         DIRECT_MESSAGE_CREATE = 1 << 12,
+
+        /// <summary>
+        /// MESSAGE_AUDIT_PASS - 消息审核通过
+        /// MESSAGE_AUDIT_REJECT - 消息审核被拒绝
+        /// </summary>
+        MESSAGE_AUDIT = 1 << 27,
+
         /// <summary>
         /// <para>
         /// THREAD_CREATE - 当用户创建主题时 <br/>
@@ -58,6 +69,7 @@ namespace QQChannelBot.Bot.SocketEvent
         /// </para>
         /// </summary>
         FORUM_EVENT = 1 << 28,
+
         /// <summary>
         /// <para>
         /// AUDIO_START - 音频播放开始时 <br/>
@@ -67,6 +79,7 @@ namespace QQChannelBot.Bot.SocketEvent
         /// </para>
         /// </summary>
         AUDIO_ACTION = 1 << 29,
+
         /// <summary>
         /// AT_MESSAGE_CREATE - 当收到@机器人的消息时
         /// </summary>
@@ -79,9 +92,15 @@ namespace QQChannelBot.Bot.SocketEvent
     public static class Intents
     {
         /// <summary>
-        /// 共域机器人默认开通的事件
+        /// 公域机器人默认开通的事件
         /// </summary>
-        public const Intent Public = Intent.GUILDS | Intent.GUILD_MEMBERS | Intent.GUILD_MESSAGE_REACTIONS | Intent.AT_MESSAGE_CREATE;
+        public const Intent Public = Intent.GUILDS
+            | Intent.GUILD_MEMBERS
+            | Intent.GUILD_MESSAGE_REACTIONS
+            | Intent.DIRECT_MESSAGE_CREATE
+            | Intent.MESSAGE_AUDIT
+            | Intent.AUDIO_ACTION
+            | Intent.AT_MESSAGE_CREATE;
         /// <summary>
         /// 私域机器人默认开通的事件
         /// </summary>
