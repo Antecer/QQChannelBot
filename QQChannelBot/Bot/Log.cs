@@ -63,7 +63,7 @@ namespace QQChannelBot.Bot
                             LogLevel.ERROR => ConsoleColor.DarkRed,
                             _ => ConsoleColor.Magenta,
                         };
-                        Console.WriteLine(entry.Message);
+                        Console.WriteLine(Unicoder.Decode(entry.Message));
                         LogTo?.Invoke(entry);
                     }
                 }
