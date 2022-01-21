@@ -29,6 +29,10 @@ namespace QQChannelBot.Bot
         /// </summary>
         public Message Message { get; init; }
         /// <summary>
+        /// 消息类型
+        /// </summary>
+        public MessageType MessageType { get; set; } = MessageType.Public;
+        /// <summary>
         /// 发件人的消息内容
         /// </summary>
         public string Content => this.Message.Content;
@@ -66,7 +70,7 @@ namespace QQChannelBot.Bot
         public async Task<Message?> ReplyAsync(MessageToCreate message)
         {
             message.Id = this.Message.Id;
-            return await Bot.SendMessageAsync(this.ChannelId, message, this);
+            return await (this.MessageType == MessageType.Private ? Bot.SendPMAsync(this.GuildId, message) : Bot.SendMessageAsync(this.ChannelId, message, this));
         }
         /// <summary>
         /// 回复发件人
@@ -271,6 +275,20 @@ namespace QQChannelBot.Bot
         /// </summary>
         /// <returns></returns>
         public async Task<bool> DeleteLastMessageAsync() => await Bot.DeleteLastMessageAsync(this.Message, this);
+        /// <summary>
+        /// 创建私信会话
+        /// </summary>
+        /// <param name="user">私信用户对象</param>
+        /// <returns></returns>
+        public async Task<DirectMessageSource?> CreateDMSAsync(User user) => await Bot.CreateDMSAsync(user.Id, this.GuildId, this);
+        /// <summary>
+        /// 发送私信
+        /// </summary>
+        /// <param name="message">准备要发送的消息对象</param>
+        /// <param name="guild_id">私信会话频道Id</param>
+        /// <returns></returns>
+        public async Task<Message?> SendPMAsync(MessageToCreate message, string? guild_id = null) => await Bot.SendPMAsync(guild_id ?? this.GuildId, message, this);
+
         /// <summary>
         /// 禁言全员
         /// </summary>

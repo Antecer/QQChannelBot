@@ -134,17 +134,13 @@ namespace QQChannelBot.Bot
         /// </summary>
         public event Action<BotClient, JsonElement?>? OnAudioMsg;
         /// <summary>
-        /// 机器人收到私信后触发
-        /// </summary>
-        public event Action<Sender>? OnDirectMessage;
-        /// <summary>
         /// 频道内有人发消息就触发 (包含 @机器人 消息)
         /// <para>
         /// Sender - 发件人对象<br/>
-        /// bool - 是否为AT消息
+        /// <see cref="Sender.MessageType"/> 包含消息类别（公开，AT机器人，AT全员，私聊）
         /// </para>
         /// </summary>
-        public event Action<Sender, bool>? OnMsgCreate;
+        public event Action<Sender>? OnMsgCreate;
         /// <summary>
         /// API调用出错时触发
         /// <para>
@@ -171,13 +167,6 @@ namespace QQChannelBot.Bot
         /// <para>注：该属性作为 <see cref="Sender.ReportError"/> 的默认值使用</para>
         /// </summary>
         public bool ReportApiError { get; set; }
-        /// <summary>
-        /// 私域频道表
-        /// <para>
-        /// 当该列表被添加频道ID后，机器人将仅响应列表内频道的消息
-        /// </para>
-        /// </summary>
-        public HashSet<string> PrivateGuilds { get; set; } = new();
         /// <summary>
         /// 机器人用户信息
         /// </summary>
@@ -216,8 +205,8 @@ namespace QQChannelBot.Bot
                     if (err?.Message != null) errInfo.Detail = err.Message;
                 }
                 if (StatusCodes.OpenapiCode.TryGetValue(errInfo.Code, out string? value)) errInfo.Detail = value;
-                string guildName = sender == null ? "" : $"[{sender.Bot.Guilds[sender.GuildId].Name}]";
-                Log.Error($"[接口访问失败]{guildName} 代码：{errInfo.Code}，详情：{errInfo.Detail}");
+                string senderMaster = (sender?.Bot.Guilds.TryGetValue(sender.GuildId, out var guild) == true ? guild.Name : null) ?? sender?.Author.UserName ?? "";
+                Log.Error($"[接口访问失败]{senderMaster} 代码：{errInfo.Code}，详情：{errInfo.Detail}");
 
                 OnApiError?.Invoke(sender, errInfo);
                 if (sender != null)
@@ -271,7 +260,8 @@ namespace QQChannelBot.Bot
         private Message? LastSendMessage(Message? msg, bool push = false)
         {
             if (msg == null) return null;
-            StackSendMessage.RemoveAll(m => m.CreateTime.AddMinutes(10) < DateTime.Now);
+            DateTime outTime = DateTime.Now.AddMinutes(-10);
+            StackSendMessage.RemoveAll(m => m.CreateTime < outTime);
             if (push) StackSendMessage.Add(msg);
             else
             {
@@ -885,6 +875,36 @@ namespace QQChannelBot.Bot
         }
         #endregion Pass
 
+        #region 私信API
+        /// <summary>
+        /// 创建私信会话
+        /// </summary>
+        /// <param name="recipient_id">接收者Id</param>
+        /// <param name="source_guild_id">源频道Id</param>
+        /// <param name="sender"></param>
+        /// <returns></returns>
+        public async Task<DirectMessageSource?> CreateDMSAsync(string recipient_id, string source_guild_id, Sender sender)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me/dms", HttpMethod.Post, JsonContent.Create(new { recipient_id, source_guild_id }), sender);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<DirectMessageSource?>();
+        }
+        /// <summary>
+        /// 发送私信
+        /// <para>用于发送私信消息，前提是已经创建了私信会话。</para>
+        /// </summary>
+        /// <param name="guild_id">私信频道Id</param>
+        /// <param name="message">消息对象</param>
+        /// <param name="sender"></param>
+        /// <returns></returns>
+        public async Task<Message?> SendPMAsync(string guild_id, MessageToCreate message, Sender? sender = null)
+        {
+            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/dms/{guild_id}/messages", HttpMethod.Post, JsonContent.Create(message), sender);
+            Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+            return LastSendMessage(result, true);
+        }
+
+        #endregion
+
         #region 禁言API
         /// <summary>
         /// 频道全局禁言
@@ -1291,15 +1311,6 @@ namespace QQChannelBot.Bot
                         Log.Warn($"[WebSocket][Op00][Dispatch] {wssJson.GetRawText()}");
                         break;
                     }
-                    // 若机器人工作在私域频道模式，将丢弃其它频道的消息（适用于调试机器人新功能）
-                    if (PrivateGuilds.Any())
-                    {
-                        string? guildid = d.Get("guild_id")?.GetString();
-                        if (guildid != null)
-                        {
-                            if (!PrivateGuilds.Contains(guildid)) break;
-                        }
-                    }
                     string data = d.GetRawText();
                     string? type = t.GetString();
                     switch (type)
@@ -1421,7 +1432,6 @@ namespace QQChannelBot.Bot
                 case Opcode.Reconnect:
                     Log.Info($"[WebSocket][Op07] 服务器 要求客户端重连");
                     OnReconnect?.Invoke(this, wssJson);
-                    //await SendResumeAsync();
                     break;
                 // Receive 当identify或resume的时候，如果参数有错，服务端会返回该消息
                 case Opcode.InvalidSession:
@@ -1485,32 +1495,34 @@ namespace QQChannelBot.Bot
         {
             // 记录Sender信息
             Sender sender = new(message, this);
+            // 识别私聊消息
+            if (message.DirectMessage) sender.MessageType = MessageType.Private;
+            // 识别AT全员消息
+            else if (message.MentionEveryone) sender.MessageType = MessageType.AtAll;
+            // 识别AT机器人消息
+            else if (message.Mentions?.Any(user => user.Id == Info.Id) == true) sender.MessageType = MessageType.AtMe;
             // 记录机器人在当前频道下的身份组信息
-            if (!Members.ContainsKey(message.GuildId)) Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id);
+            if ((sender.MessageType != MessageType.Private) && !Members.ContainsKey(message.GuildId))
+            {
+                Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id);
+            }
             // 调用消息拦截器
             if (MessageFilter?.Invoke(sender) == true) return;
-            // 如果是收到私信，立即处理并不向后传递
-            if (type.StartsWith("D"))
-            {
-                OnDirectMessage?.Invoke(sender);
-                return;
-            }
             // 若已经启用全局消息接收，将不单独响应 AT_MESSAGES 事件，否则会造成重复响应。
             if (Intents.HasFlag(Intent.MESSAGE_CREATE) && type.StartsWith("A")) return;
-            // 从全局消息事件中识别 AT_MESSAGES 消息。
-            bool isAtMessage = message.Mentions?.Any(user => user.Id == Info.Id) == true;
             // 预处理收到的数据
             string content = message.Content.Trim().TrimStart(Info.Tag()).TrimStart();
             // 识别指令
             bool hasCommand = content.StartsWith(CommandPrefix);
             content = content.TrimStart(CommandPrefix).TrimStart();
-            if ((hasCommand | isAtMessage) && (content.Length > 0))
+            if ((hasCommand || (sender.MessageType == MessageType.AtMe) || (sender.MessageType == MessageType.Private)) && (content.Length > 0))
             {
                 // 在新的线程上输出日志信息
                 _ = Task.Run(() =>
                 {
                     string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions!.Find(user => user.Tag() == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
-                    Log.Info($"[{Guilds[message.GuildId].Name}][{message.Author.UserName}] {msgContent}");
+                    string senderMaster = (sender.Bot.Guilds.TryGetValue(sender.GuildId, out var guild) ? guild.Name : null) ?? sender.Author.UserName;
+                    Log.Info($"[{senderMaster}][{message.Author.UserName}] {msgContent}");
                 });
                 // 并行遍历指令列表，提升效率
                 ParallelLoopResult result = Parallel.ForEach(Commands.Values, (cmd, state, i) =>
@@ -1520,7 +1532,7 @@ namespace QQChannelBot.Bot
                     content = content.TrimStart(cmdMatch.Groups[0].Value).TrimStart();
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
-                        if (isAtMessage) _ = sender.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");
+                        if (sender.MessageType == MessageType.AtMe) _ = sender.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");
                         else return;
                     }
                     else cmd.CallBack?.Invoke(sender, content);
@@ -1529,7 +1541,7 @@ namespace QQChannelBot.Bot
                 if (!result.IsCompleted) return;
             }
             // 触发Message到达事件
-            OnMsgCreate?.Invoke(sender, isAtMessage);
+            OnMsgCreate?.Invoke(sender);
         }
         /// <summary>
         /// 返回SDK相关信息
