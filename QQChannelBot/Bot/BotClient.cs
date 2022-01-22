@@ -130,6 +130,16 @@ namespace QQChannelBot.Bot
         /// </summary>
         public event Action<BotClient, MessageReaction, string>? OnMessageReaction;
         /// <summary>
+        /// 消息审核出结果后触发
+        /// <para>
+        /// 消息审核通过才有MessageId属性<br/>
+        /// BotClient - 机器人对象<br/>
+        /// MessageAudited - 消息审核对象<br/>
+        /// MessageAudited.IsPassed - 消息审核是否通过
+        /// </para>
+        /// </summary>
+        public event Action<BotClient, MessageAudited>? OnMessageAudit;
+        /// <summary>
         /// 音频状态变更后触发
         /// </summary>
         public event Action<BotClient, JsonElement?>? OnAudioMsg;
@@ -1367,6 +1377,14 @@ namespace QQChannelBot.Bot
                             Log.Debug($"[WebSocket][{type}] {data}");
                             MessageReaction messageReaction = d.Deserialize<MessageReaction>()!;
                             OnMessageReaction?.Invoke(this, messageReaction, type);
+                            break;
+                        case "MESSAGE_AUDIT_PASS":
+                        case "MESSAGE_AUDIT_REJECT":
+                            /*消息审核事件*/
+                            Log.Info($"[WebSocket][{type}] {data}");
+                            MessageAudited messageAudited = d.Deserialize<MessageAudited>()!;
+                            messageAudited.IsPassed = type == "MESSAGE_AUDIT_PASS";
+                            OnMessageAudit?.Invoke(this, messageAudited);
                             break;
                         case "AUDIO_START":
                         case "AUDIO_FINISH":

@@ -345,6 +345,11 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("create_time"), JsonConverter(typeof(DateTimeToStringTimestamp))]
         public DateTime CreateTime { get; set; }
+        /// <summary>
+        /// 扩展属性，用于标注审核是否通过
+        /// </summary>
+        [JsonIgnore]
+        public bool IsPassed { get; set; } = false;
     }
 
     /// <summary>
