@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.5.2</Version>
+    <Version>1.5.3</Version>
     <Description>QQ机器人框架</Description>
     <Copyright>Copyright © 2021 Antecer. All rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/Antecer/QQChannelBot</PackageProjectUrl>
@@ -14,7 +14,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>日志中的重要信息脱敏处理；给控制台的日志进行上色处理。</PackageReleaseNotes>
+    <PackageReleaseNotes>新增私信API</PackageReleaseNotes>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageIcon>logo.png</PackageIcon>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
