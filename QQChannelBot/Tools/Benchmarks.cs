@@ -128,7 +128,7 @@ namespace QQChannelBot.Tools
 
             //isOk = await sender.DeleteGuildMemberAsync(TestUser);
             //await sender.ReplyAsync(GetLog("删除频道成员:频道管理助手（私域）", isOk));
-            await sender.ReplyAsync(GetLog("删除频道成员（私域｜不适合测试）"));
+            await sender.ReplyAsync(GetLog("删除频道成员（私域｜不适合测试）"));    // 此项已单独测试通过
 
             Announces? announces = await sender.CreateAnnouncesGlobalAsync(sender.Message);
             await sender.ReplyAsync(GetLog("创建频道全局公告", announces != null));
