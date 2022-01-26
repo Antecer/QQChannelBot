@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
@@ -258,28 +259,39 @@ namespace QQChannelBot.Bot
         /// </summary>
         public string ApiOrigin { get; init; }
         /// <summary>
-        /// 缓存最后一次发送的消息
+        /// 缓存消息
+        /// <para>
+        /// string - UserId<br/>
+        /// List&lt;Message&gt; - 用户消息列表
+        /// </para>
         /// </summary>
-        private List<Message> StackSendMessage { get; set; } = new();
+        private ConcurrentDictionary<string, List<Message>> StackMessage { get; set; } = new();
         /// <summary>
         /// 存取最后一次发送的消息
-        /// <para>注：目的是为了用于撤回消息，所以自动删除5分钟以上的记录</para>
+        /// <para>注：目的是为了用于撤回消息（自动删除已过5分钟的记录）</para>
         /// </summary>
         /// <param name="msg">需要存储的msg，或者用于检索同频道的msg</param>
         /// <param name="push">fase-出栈；true-入栈</param>
-        private Message? LastSendMessage(Message? msg, bool push = false)
+        private Message? LastMessage(Message? msg, bool push = false)
         {
             if (msg == null) return null;
             DateTime outTime = DateTime.Now.AddMinutes(-10);
-            StackSendMessage.RemoveAll(m => m.CreateTime < outTime);
-            if (push) StackSendMessage.Add(msg);
+            string userId = msg.Author.Id;
+            StackMessage.TryGetValue(userId, out var messages);
+            if (push)
+            {
+                messages?.RemoveAll(m => m.CreateTime < outTime);
+                messages ??= new();
+                messages.Add(msg);
+                StackMessage[userId] = messages;
+            }
             else
             {
-                int stackIndex = StackSendMessage.FindLastIndex(m => m.GuildId.Equals(msg.GuildId) && m.ChannelId.Equals(msg.ChannelId));
+                int stackIndex = messages?.FindLastIndex(m => m.GuildId.Equals(msg.GuildId) && m.ChannelId.Equals(msg.ChannelId)) ?? -1;
                 if (stackIndex >= 0)
                 {
-                    msg = StackSendMessage[stackIndex];
-                    StackSendMessage.RemoveAt(stackIndex);
+                    msg = messages![stackIndex];
+                    messages.RemoveAt(stackIndex);
                 }
                 else msg = null;
             }
@@ -854,7 +866,7 @@ namespace QQChannelBot.Bot
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages", HttpMethod.Post, JsonContent.Create(message), sender);
             Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
-            return LastSendMessage(result, true);
+            return LastMessage(result, true);
         }
         /// <summary>
         /// 撤回消息
@@ -869,19 +881,22 @@ namespace QQChannelBot.Bot
             return respone?.StatusCode == HttpStatusCode.OK;
         }
         /// <summary>
-        /// 撤回机器人在当前子频道发出的最后一条消息
+        /// 撤回目标用户在当前子频道发出的最后一条消息
         /// <para>
         /// 需要传入指令发出者的消息对象<br/>
         /// 用于检索指令发出者所在频道信息
         /// </para>
         /// </summary>
-        /// <param name="senderMessage">发件人消息对象</param>
+        /// <param name="masterMessage">
+        /// 被撤回消息的目标用户信息<br/>
+        /// 需要：message.GuildId、message.ChannelId、message.Author.Id
+        /// </param>
         /// <param name="sender"></param>
         /// <returns></returns>
-        public async Task<bool> DeleteLastMessageAsync(Message senderMessage, Sender? sender = null)
+        public async Task<bool?> DeleteLastMessageAsync(Message? masterMessage, Sender? sender = null)
         {
-            Message? lastMessage = LastSendMessage(senderMessage);
-            return lastMessage != null && await DeleteMessageAsync(lastMessage.ChannelId, lastMessage.Id, sender);
+            Message? lastMessage = LastMessage(masterMessage);
+            return lastMessage == null ? null : await DeleteMessageAsync(lastMessage.ChannelId, lastMessage.Id, sender);
         }
         #endregion Pass
 
@@ -910,7 +925,7 @@ namespace QQChannelBot.Bot
         {
             HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/dms/{guild_id}/messages", HttpMethod.Post, JsonContent.Create(message), sender);
             Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
-            return LastSendMessage(result, true);
+            return LastMessage(result, true);
         }
 
         #endregion
@@ -1513,22 +1528,22 @@ namespace QQChannelBot.Bot
         {
             // 记录Sender信息
             Sender sender = new(message, this);
-            // 识别私聊消息
+            // 识别消息类型（私聊，AT全员，AT机器人）
             if (message.DirectMessage) sender.MessageType = MessageType.Private;
-            // 识别AT全员消息
             else if (message.MentionEveryone) sender.MessageType = MessageType.AtAll;
-            // 识别AT机器人消息
             else if (message.Mentions?.Any(user => user.Id == Info.Id) == true) sender.MessageType = MessageType.AtMe;
             // 记录机器人在当前频道下的身份组信息
             if ((sender.MessageType != MessageType.Private) && !Members.ContainsKey(message.GuildId))
             {
                 Members[message.GuildId] = await GetMemberAsync(message.GuildId, Info.Id);
             }
-            // 调用消息拦截器
-            if (MessageFilter?.Invoke(sender) == true) return;
             // 若已经启用全局消息接收，将不单独响应 AT_MESSAGES 事件，否则会造成重复响应。
             if (Intents.HasFlag(Intent.MESSAGE_CREATE) && type.StartsWith("A")) return;
-            // 预处理收到的数据
+            // 调用消息拦截器
+            if (MessageFilter?.Invoke(sender) == true) return;
+            // 记录收到的消息
+            LastMessage(message, true);
+            // 预判收到的消息
             string content = message.Content.Trim().TrimStart(Info.Tag()).TrimStart();
             // 识别指令
             bool hasCommand = content.StartsWith(CommandPrefix);

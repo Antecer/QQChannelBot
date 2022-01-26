@@ -271,10 +271,15 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteMessageAsync(Message message) => await Bot.DeleteMessageAsync(message.ChannelId, message.Id, this);
         /// <summary>
-        /// 撤回机器人在当前子频道发出的最后一条消息
+        /// 撤回目标用户（默认机器人）在当前子频道发出的最后一条消息
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> DeleteLastMessageAsync() => await Bot.DeleteLastMessageAsync(this.Message, this);
+        public async Task<bool?> DeleteLastMessageAsync(User? user = null)
+        {
+            Message msg = this.Message;
+            msg.Author = user ?? this.Bot.Info;
+            return await Bot.DeleteLastMessageAsync(msg, this);
+        }
         /// <summary>
         /// 创建私信会话
         /// </summary>
