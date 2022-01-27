@@ -1585,6 +1585,6 @@ namespace QQChannelBot.Bot
         /// <em>作者夹带的一点私货</em>
         /// </para>
         /// </summary>
-        public static string SDK => $"{InfoSDK.Name}_{InfoSDK.Version}\n{InfoSDK.GitHTTPS.Replace('.', '。')}\n{InfoSDK.Copyright}";
+        public static string SDK => $"{InfoSDK.Name}_{InfoSDK.Version}\n{InfoSDK.GitHTTPS}\n{InfoSDK.Copyright}";
     }
 }
