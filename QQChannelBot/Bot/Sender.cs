@@ -259,6 +259,9 @@ namespace QQChannelBot.Bot
         public async Task<Message?> GetMessageAsync(Message message) => await Bot.GetMessageAsync(message.ChannelId, message.Id, this);
         /// <summary>
         /// 发送消息
+        /// <para>
+        /// 不传递要回复的MsgId则视为主动消息
+        /// </para>
         /// </summary>
         /// <param name="message">准备要发送的消息对象</param>
         /// <param name="channel_id">目标子频道Id（默认为发件人当前子频道）</param>

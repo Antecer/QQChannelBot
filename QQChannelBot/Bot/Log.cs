@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Text;
 using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
@@ -54,7 +55,7 @@ namespace QQChannelBot.Bot
                     if (LogLevel <= entry.Level)
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write(entry.TimeStamp);
+                        Console.Write($"{entry.TimeStamp}[{entry.Level.ToString()[0]}]");
                         Console.ForegroundColor = entry.Level switch
                         {
                             LogLevel.DEBUG => ConsoleColor.Gray,
