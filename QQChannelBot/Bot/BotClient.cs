@@ -139,7 +139,7 @@ namespace QQChannelBot.Bot
         /// MessageAudited.IsPassed - 消息审核是否通过
         /// </para>
         /// </summary>
-        public event Action<BotClient, MessageAudited>? OnMessageAudit;
+        public event Action<BotClient, MessageAudited?>? OnMessageAudit;
         /// <summary>
         /// 音频状态变更后触发
         /// </summary>
@@ -1397,7 +1397,7 @@ namespace QQChannelBot.Bot
                         case "MESSAGE_AUDIT_REJECT":
                             /*消息审核事件*/
                             Log.Info($"[WebSocket][{type}] {data}");
-                            MessageAudited messageAudited = d.Deserialize<MessageAudited>()!;
+                            MessageAudited? messageAudited = d.Deserialize<MessageAudited>()!;
                             messageAudited.IsPassed = type == "MESSAGE_AUDIT_PASS";
                             OnMessageAudit?.Invoke(this, messageAudited);
                             break;
@@ -1544,7 +1544,7 @@ namespace QQChannelBot.Bot
             // 记录收到的消息
             LastMessage(message, true);
             // 预判收到的消息
-            string content = message.Content.Trim().TrimStart(Info.Tag()).TrimStart();
+            string content = message.Content.Trim().TrimStart(Info.Tag).TrimStart();
             // 识别指令
             bool hasCommand = content.StartsWith(CommandPrefix);
             content = content.TrimStart(CommandPrefix).TrimStart();
@@ -1553,9 +1553,9 @@ namespace QQChannelBot.Bot
                 // 在新的线程上输出日志信息
                 _ = Task.Run(() =>
                 {
-                    string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions!.Find(user => user.Tag() == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
+                    string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions?.Find(user => user.Tag == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
                     string senderMaster = (sender.Bot.Guilds.TryGetValue(sender.GuildId, out var guild) ? guild.Name : null) ?? sender.Author.UserName;
-                    Log.Info($"[{senderMaster}][{message.Author.UserName}] {msgContent}");
+                    Log.Info($"[{senderMaster}][{message.Author.UserName}] {msgContent.Replace("\xA0", " ")}"); // 替换 \xA0 字符为普通空格
                 });
                 // 并行遍历指令列表，提升效率
                 ParallelLoopResult result = Parallel.ForEach(Commands.Values, (cmd, state, i) =>
@@ -1565,7 +1565,7 @@ namespace QQChannelBot.Bot
                     content = content.TrimStart(cmdMatch.Groups[0].Value).TrimStart();
                     if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
-                        if (sender.MessageType == MessageType.AtMe) _ = sender.ReplyAsync($"{message.Author.Tag()} 你无权使用该命令！");
+                        if (sender.MessageType == MessageType.AtMe) _ = sender.ReplyAsync($"{message.Author.Tag} 你无权使用该命令！");
                         else return;
                     }
                     else cmd.CallBack?.Invoke(sender, content);

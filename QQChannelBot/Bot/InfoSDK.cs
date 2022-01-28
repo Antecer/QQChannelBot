@@ -19,7 +19,7 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// SDK开源地址HTTPS
         /// </summary>
-        public static string GitHTTPS => @"https://github\uFEFF.com/Antecer/QQChannelBot";
+        public static string GitHTTPS => "https://github\uFEFF.com/Antecer/QQChannelBot";
         /// <summary>
         /// SDK开源地址SSH
         /// </summary>
