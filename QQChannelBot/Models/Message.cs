@@ -123,6 +123,11 @@ namespace QQChannelBot.Models
         [JsonPropertyName("ark")]
         public MessageArk? Ark { get; set; }
         /// <summary>
+        /// 引用消息（需要传递被引用的消息Id）
+        /// </summary>
+        [JsonPropertyName("message_reference")]
+        public MessageReference? Reference { get; set; }
+        /// <summary>
         /// 图片 url 地址
         /// </summary>
         [JsonPropertyName("image")]
@@ -165,6 +170,23 @@ namespace QQChannelBot.Models
         /// </summary>
         [JsonPropertyName("fields")]
         public List<MessageEmbedField>? Fields { get; set; }
+    }
+
+    /// <summary>
+    /// 引用消息
+    /// </summary>
+    public class MessageReference
+    {
+        /// <summary>
+        /// 需要引用回复的消息 id
+        /// </summary>
+        [JsonPropertyName("message_id")]
+        public string? MessageId { get; set; }
+        /// <summary>
+        /// 是否忽略获取引用消息详情错误，默认否
+        /// </summary>
+        [JsonPropertyName("ignore_get_message_error")]
+        public bool IgnoreGetMessageError { get; set; } = false;
     }
 
     /// <summary>
