@@ -29,4 +29,18 @@ namespace QQChannelBot.Bot
         /// </summary>
         public static string Copyright => "Copyright © 2021 Antecer. All rights reserved.";
     }
+
+    public partial class BotClient
+    {
+        /// <summary>
+        /// 返回SDK相关信息
+        /// <para>
+        /// 框架名称_版本号<br/>
+        /// 代码仓库地址<br/>
+        /// 版权信息<br/>
+        /// <em>作者夹带的一点私货</em>
+        /// </para>
+        /// </summary>
+        public static string SDK => $"{InfoSDK.Name}_{InfoSDK.Version}\n{InfoSDK.GitHTTPS}\n{InfoSDK.Copyright}";
+    }
 }

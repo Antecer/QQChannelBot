@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using QQChannelBot.Models;
 
 namespace QQChannelBot.Bot
 {
