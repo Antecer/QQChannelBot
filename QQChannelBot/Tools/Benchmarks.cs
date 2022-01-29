@@ -71,6 +71,12 @@ namespace QQChannelBot.Tools
             Index = 0;
             bool isOk;
 
+            List<APIPermission>? guildPermissions =  await sender.GetGuildPermissions();
+            if ((guildPermissions?.Any() == true) && sender.Bot.Guilds.TryGetValue(sender.GuildId, out var guild)) 
+            {
+                guild.APIPermissions = guildPermissions;
+            }
+
             Message? message = await sender.ReplyAsync("自检开始...\n01｜通过｜消息发送");
             GetLog("消息发送", message != null);
             if (message == null) return Index;
