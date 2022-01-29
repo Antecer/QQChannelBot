@@ -33,6 +33,10 @@ namespace QQChannelBot.Bot
         /// </summary>
         public MessageType MessageType { get; set; } = MessageType.Public;
         /// <summary>
+        /// 是否 @机器人
+        /// </summary>
+        public bool AtMe => this.MessageType == MessageType.AtMe;
+        /// <summary>
         /// 发件人的消息内容
         /// </summary>
         public string Content => this.Message.Content;
@@ -66,10 +70,12 @@ namespace QQChannelBot.Bot
         /// <para>自动填充被动消息参数</para>
         /// </summary>
         /// <param name="message">MessageToCreate消息构造对象(或其扩展对象)</param>
+        /// <param name="isQuote">是否引用发件人消息</param>
         /// <returns></returns>
-        public async Task<Message?> ReplyAsync(MessageToCreate message)
+        public async Task<Message?> ReplyAsync(MessageToCreate message, bool isQuote = false)
         {
             message.Id = this.Message.Id;
+            if (isQuote) message.Reference = new() { MessageId = this.Message.Id, IgnoreGetMessageError = true };
             return await (this.MessageType == MessageType.Private ? Bot.SendPMAsync(this.GuildId, message) : Bot.SendMessageAsync(this.ChannelId, message, this));
         }
         /// <summary>
@@ -77,8 +83,9 @@ namespace QQChannelBot.Bot
         /// <para>自动填充被动消息参数</para>
         /// </summary>
         /// <param name="message">文字消息内容</param>
+        /// <param name="isQuote">是否引用发件人消息</param>
         /// <returns></returns>
-        public async Task<Message?> ReplyAsync(string message) => await ReplyAsync(new MsgText(message));
+        public async Task<Message?> ReplyAsync(string message, bool isQuote = false) => await ReplyAsync(new MsgText(message), isQuote);
 
         #region 简化API调用
         /// <summary>
@@ -114,7 +121,7 @@ namespace QQChannelBot.Bot
         /// <para>目标子频道为发件人当前子频道</para>
         /// </summary>
         /// <returns></returns>
-        public async Task<Channel?> GetChannelAsync() => await Bot.GetChannelAsync(this.ChannelId, this);
+        public async Task<Channel?> GetChannelAsync(string? channelId = null) => await Bot.GetChannelAsync(channelId ?? this.ChannelId, this);
         /// <summary>
         /// 创建子频道（仅私域可用）
         /// <para>
@@ -383,6 +390,21 @@ namespace QQChannelBot.Bot
         /// <param name="channel_id">子频道Id（默认为发件人当前子频道）</param>
         /// <returns></returns>
         public async Task<Message?> AudioControlAsync(AudioControl audioControl, string? channel_id = null) => await Bot.AudioControlAsync(channel_id ?? this.ChannelId, audioControl, this);
+
+        /// <summary>
+        /// 获取频道可用权限列表
+        /// <para>此API无需任何权限</para>
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<APIPermission>?> GetGuildPermissions() => await Bot.GetGuildPermissions(this.GuildId, this);
+        /// <summary>
+        /// 创建频道 API 接口权限授权链接
+        /// <para>此API无需任何权限，但限制：3次/日/频道</para>
+        /// </summary>
+        /// <param name="api_identify">权限需求标识对象</param>
+        /// <param name="desc">机器人申请对应的 API 接口权限后可以使用功能的描述</param>
+        /// <returns></returns>
+        public async Task<APIPermissionDemand?> SendPermissionDemand(APIPermissionDemandIdentify api_identify, string desc = "") => await Bot.SendPermissionDemand(this.GuildId, this.ChannelId, api_identify, desc, this);
         #endregion
     }
 }
