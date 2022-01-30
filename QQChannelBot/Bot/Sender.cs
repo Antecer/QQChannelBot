@@ -230,7 +230,12 @@ namespace QQChannelBot.Bot
         /// <param name="user">目标用户</param>
         /// <param name="channel_id">目标子频道Id（默认为发件人当前子频道）</param>
         /// <returns></returns>
-        public async Task<bool> EditChannelPermissionsAsync(PrivacyType permission, User user, string? channel_id = null) => await Bot.EditChannelPermissionsAsync(channel_id ?? this.ChannelId, user.Id, permission, this);
+        public async Task<bool> EditChannelPermissionsAsync(PrivacyType permission, User user, string? channel_id = null)
+        {
+            string AddPermissions = permission.GetHashCode().ToString();
+            string DelPermissions = (0x07 ^ permission.GetHashCode()).ToString();
+            return await Bot.EditChannelPermissionsAsync(channel_id ?? this.ChannelId, user.Id, AddPermissions, DelPermissions, this);
+        }
         /// <summary>
         /// 获取子频道身份组权限
         /// </summary>
@@ -246,7 +251,12 @@ namespace QQChannelBot.Bot
         /// <param name="role_id">目标身份组Id</param>
         /// <param name="channel_id">目标子频道Id（默认为发件人当前子频道）</param>
         /// <returns></returns>
-        public async Task<bool> EditMemberChannelPermissionsAsync(PrivacyType permission, string role_id, string? channel_id = null) => await Bot.EditMemberChannelPermissionsAsync(channel_id ?? this.ChannelId, role_id, permission, this);
+        public async Task<bool> EditMemberChannelPermissionsAsync(PrivacyType permission, string role_id, string? channel_id = null)
+        {
+            string AddPermissions = permission.GetHashCode().ToString();
+            string DelPermissions = (0x07 ^ permission.GetHashCode()).ToString();
+            return await Bot.EditMemberChannelPermissionsAsync(channel_id ?? this.ChannelId, role_id, AddPermissions, DelPermissions, this);
+        }
 
         /// <summary>
         /// 获取消息列表（待验证）
@@ -396,7 +406,7 @@ namespace QQChannelBot.Bot
         /// <para>此API无需任何权限</para>
         /// </summary>
         /// <returns></returns>
-        public async Task<List<APIPermission>?> GetGuildPermissions() => await Bot.GetGuildPermissions(this.GuildId, this);
+        public async Task<List<APIPermission>?> GetGuildPermissionsAsync() => await Bot.GetGuildPermissionsAsync(this.GuildId, this);
         /// <summary>
         /// 创建频道 API 接口权限授权链接
         /// <para>此API无需任何权限，但限制：3次/日/频道</para>
@@ -404,7 +414,7 @@ namespace QQChannelBot.Bot
         /// <param name="api_identify">权限需求标识对象</param>
         /// <param name="desc">机器人申请对应的 API 接口权限后可以使用功能的描述</param>
         /// <returns></returns>
-        public async Task<APIPermissionDemand?> SendPermissionDemand(APIPermissionDemandIdentify api_identify, string desc = "") => await Bot.SendPermissionDemand(this.GuildId, this.ChannelId, api_identify, desc, this);
+        public async Task<APIPermissionDemand?> SendPermissionDemandAsync(APIPermissionDemandIdentify api_identify, string desc = "") => await Bot.SendPermissionDemandAsync(this.GuildId, this.ChannelId, api_identify, desc, this);
         #endregion
     }
 }

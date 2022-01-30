@@ -212,7 +212,7 @@ namespace QQChannelBot.Bot
                             {
                                 case "GUILD_CREATE":
                                 case "GUILD_UPDATE":
-                                    guild.APIPermissions = await GetGuildPermissions(guild.Id);
+                                    guild.APIPermissions = await GetGuildPermissionsAsync(guild.Id);
                                     Guilds[guild.Id] = guild;
                                     break;
                                 case "GUILD_DELETE":
@@ -289,7 +289,7 @@ namespace QQChannelBot.Bot
                                 Log.Info($"[WebSocket][GetGuilds] 获取已加入的频道列表，第 {page:00} 页成功，数量：{guilds.Count}");
                                 Parallel.ForEach(guilds, (guild, state, i) =>
                                 {
-                                    guild.APIPermissions = GetGuildPermissions(guild.Id).Result;
+                                    guild.APIPermissions = GetGuildPermissionsAsync(guild.Id).Result;
                                     Guilds[guild.Id] = guild;
                                 });
                                 guildNext = guilds.Last().Id;
