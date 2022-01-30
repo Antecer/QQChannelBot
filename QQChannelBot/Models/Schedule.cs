@@ -1,5 +1,4 @@
-﻿using System.Runtime.Serialization;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace QQChannelBot.Models
 {
@@ -11,7 +10,11 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 构造日程
         /// </summary>
-        public Schedule() { }
+        public Schedule()
+        {
+            StartTime = DateTime.Now.AddMinutes(10);
+            EndTime = StartTime.AddHours(1);
+        }
         /// <summary>
         /// 新建日程
         /// <para>
@@ -36,8 +39,8 @@ namespace QQChannelBot.Models
         {
             Name = name;
             Description = desc;
-            StartTimestamp = new DateTimeOffset(startTime ?? DateTime.Now.AddMinutes(5)).ToUnixTimeMilliseconds().ToString();
-            EndTimestamp = new DateTimeOffset(endTime ?? DateTime.Now.AddMinutes(65)).ToUnixTimeMilliseconds().ToString();
+            StartTime = startTime ?? DateTime.Now.AddMinutes(10);
+            EndTime = endTime ?? StartTime.AddHours(1);
             JumpChannelId = jumpChannel?.Id;
             RemindType = remindType;
         }
@@ -61,13 +64,33 @@ namespace QQChannelBot.Models
         /// <para>必须大于当前时间</para>
         /// </summary>
         [JsonPropertyName("start_timestamp")]
-        public string? StartTimestamp { get; set; }
+        public string StartTimestamp
+        {
+            get => new DateTimeOffset(StartTime).ToUnixTimeMilliseconds().ToString();
+            set => StartTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(value)).DateTime;
+        }
+        /// <summary>
+        /// 日程开始时间
+        /// <para>必须大于当前时间</para>
+        /// </summary>
+        [JsonIgnore]
+        public DateTime StartTime { get; set; }
         /// <summary>
         /// 日程结束时间戳(ms)
         /// <para>必须大于开始时间</para>
         /// </summary>
         [JsonPropertyName("end_timestamp")]
-        public string? EndTimestamp { get; set; }
+        public string EndTimestamp
+        {
+            get => new DateTimeOffset(EndTime).ToUnixTimeMilliseconds().ToString();
+            set => EndTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(value)).DateTime;
+        }
+        /// <summary>
+        /// 日程结束时间
+        /// <para>必须大于开始时间</para>
+        /// </summary>
+        [JsonIgnore]
+        public DateTime EndTime { get; set; }
         /// <summary>
         /// 创建者
         /// </summary>
@@ -80,7 +103,6 @@ namespace QQChannelBot.Models
         public string? JumpChannelId { get; set; }
         /// <summary>
         /// 日程提醒类型
-        /// <para>请勿直接读写此属性，而是应该通过RemindType属性读写</para>
         /// </summary>
         [JsonPropertyName("remind_type"), JsonConverter(typeof(RemindTypeToStringNumberConverter))]
         public RemindType RemindType { get; set; }
