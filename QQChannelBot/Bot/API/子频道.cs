@@ -6,14 +6,15 @@ namespace QQChannelBot.Bot
     public partial class BotClient
     {
         /// <summary>
-        /// 获取子频道信息
+        /// 获取子频道详情
         /// </summary>
         /// <param name="channel_id">子频道Id</param>
         /// <param name="sender"></param>
         /// <returns>Channel?</returns>
         public async Task<Channel?> GetChannelAsync(string channel_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", null, null, sender);
+            BotAPI api = APIList.获取子频道详情;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id), api.Method, null, sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
         }
         /// <summary>
@@ -26,7 +27,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<List<Channel>?> GetChannelsAsync(string guild_id, ChannelType? channelType = null, ChannelSubType? channelSubType = null, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/channels", null, null, sender);
+            BotAPI api = APIList.获取子频道列表;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, null, sender);
             List<Channel>? channels = respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Channel>?>();
             if (channels != null)
             {
@@ -38,62 +40,13 @@ namespace QQChannelBot.Bot
         /// <summary>
         /// 创建子频道（仅私域可用）
         /// </summary>
-        /// <param name="guild_id">频道Id</param>
-        /// <param name="name">子频道名称</param>
-        /// <param name="type">子频道类型</param>
-        /// <param name="subType">子频道子类型</param>
-        /// <param name="privateType">子频道私密类型</param>
-        /// <param name="position">子频道排序</param>
-        /// <param name="parent_id">子频道所属分组Id</param>
-        /// <param name="sender"></param>
-        /// <returns></returns>
-        public async Task<Channel?> CreateChannelAsync(string guild_id, string name, ChannelType type = ChannelType.文字, ChannelSubType subType = ChannelSubType.闲聊, ChannelPrivateType privateType = ChannelPrivateType.Public, int position = 0, string? parent_id = null, Sender? sender = null)
-        {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/channels", HttpMethod.Post, JsonContent.Create(new
-            {
-                name,
-                type = type.GetHashCode(),
-                sub_type = subType.GetHashCode(),
-                private_type = privateType.GetHashCode(),
-                position,
-                parent_id
-            }), sender);
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
-        }
-        /// <summary>
-        /// 创建子频道（仅私域可用）
-        /// </summary>
         /// <param name="channel">用于创建子频道的对象（需提前填充必要字段）</param>
         /// <param name="sender"></param>
         /// <returns></returns>
         public async Task<Channel?> CreateChannelAsync(Channel channel, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{channel.GuildId}/channels", HttpMethod.Post, JsonContent.Create(channel), sender);
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
-        }
-        /// <summary>
-        /// 修改子频道（仅私域可用）
-        /// </summary>
-        /// <param name="channel_id">子频道Id</param>
-        /// <param name="name">子频道名称</param>
-        /// <param name="type">子频道类型</param>
-        /// <param name="subType">子频道子类型</param>
-        /// <param name="privateType">子频道私密类型</param>
-        /// <param name="position">子频道排序</param>
-        /// <param name="parent_id">子频道所属分组Id</param>
-        /// <param name="sender"></param>
-        /// <returns></returns>
-        public async Task<Channel?> EditChannelAsync(string channel_id, string name, ChannelType type, ChannelSubType subType, ChannelPrivateType privateType, int position, string? parent_id, Sender? sender = null)
-        {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Patch, JsonContent.Create(new
-            {
-                name,
-                type = type.GetHashCode(),
-                sub_type = subType.GetHashCode(),
-                private_type = privateType.GetHashCode(),
-                position,
-                parent_id
-            }), sender);
+            BotAPI api = APIList.创建子频道;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", channel.GuildId), api.Method, JsonContent.Create(channel), sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
         }
         /// <summary>
@@ -104,7 +57,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Channel?> EditChannelAsync(Channel channel, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel.Id}", HttpMethod.Patch, JsonContent.Create(channel), sender);
+            BotAPI api = APIList.修改子频道;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel.Id), api.Method, JsonContent.Create(channel), sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Channel?>();
         }
         /// <summary>
@@ -115,7 +69,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteChannelAsync(string channel_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}", HttpMethod.Delete, null, sender);
+            BotAPI api = APIList.删除子频道;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id), api.Method, null, sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
     }

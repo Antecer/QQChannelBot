@@ -14,7 +14,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> AudioControlAsync(string channel_id, AudioControl audioControl, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/audio", HttpMethod.Post, JsonContent.Create(audioControl), sender);
+            BotAPI api = APIList.音频控制;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id), api.Method, JsonContent.Create(audioControl), sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
         }
     }

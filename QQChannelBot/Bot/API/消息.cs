@@ -6,20 +6,6 @@ namespace QQChannelBot.Bot
     public partial class BotClient
     {
         /// <summary>
-        /// 获取消息列表（2022年1月29日暂未开通）
-        /// </summary>
-        /// <param name="message">作为坐标的消息（需要消息Id和子频道Id）</param>
-        /// <param name="limit">分页大小（1-20）</param>
-        /// <param name="typesEnum">拉取类型（默认拉取最新消息）</param>
-        /// <param name="sender"></param>
-        /// <returns></returns>
-        public async Task<List<Message>?> GetMessagesAsync(Message message, int limit = 20, GetMsgTypesEnum? typesEnum = null, Sender? sender = null)
-        {
-            string type = typesEnum == null ? "" : $"&type={typesEnum}";
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{message.ChannelId}/messages?limit={limit}&id={message.Id}{type}", null, null, sender);
-            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Message>?>();
-        }
-        /// <summary>
         /// 获取指定消息
         /// </summary>
         /// <param name="channel_id">子频道Id</param>
@@ -28,8 +14,24 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> GetMessageAsync(string channel_id, string message_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}", null, null, sender);
+            BotAPI api = APIList.获取指定消息;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id).Replace("{message_id}", message_id), api.Method, null, sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
+        }
+        /// <summary>
+        /// 获取消息列表（2022年1月29日暂未开通）
+        /// </summary>
+        /// <param name="message">作为坐标的消息（需要消息Id和子频道Id）</param>
+        /// <param name="limit">分页大小（1-20）</param>
+        /// <param name="typesEnum">拉取类型（默认拉取最新消息）</param>
+        /// <param name="sender"></param>
+        /// <returns></returns>
+        public async Task<List<Message>?> GetMessagesAsync(Message message, int limit = 20, GetMsgTypesEnum? typesEnum = GetMsgTypesEnum.latest, Sender? sender = null)
+        {
+            BotAPI api = APIList.获取消息列表;
+            string type = typesEnum == null ? "" : $"&type={typesEnum}";
+            HttpResponseMessage? respone = await HttpSendAsync($"{api.Path.Replace("{channel_id}", message.ChannelId)}?limit={limit}&id={message.Id}{type}", api.Method, null, sender);
+            return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Message>?>();
         }
         /// <summary>
         /// 发送消息
@@ -47,7 +49,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> SendMessageAsync(string channel_id, MessageToCreate message, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages", HttpMethod.Post, JsonContent.Create(message), sender);
+            BotAPI api = APIList.发送消息;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id), api.Method, JsonContent.Create(message), sender);
             Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
             return LastMessage(result, true);
         }
@@ -60,7 +63,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteMessageAsync(string channel_id, string message_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/messages/{message_id}", HttpMethod.Delete, null, sender);
+            BotAPI api = APIList.撤回消息;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id).Replace("{message_id}", message_id), api.Method, null, sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>

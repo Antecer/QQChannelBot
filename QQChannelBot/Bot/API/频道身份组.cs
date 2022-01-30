@@ -13,7 +13,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<List<Role>?> GetRolesAsync(string guild_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", null, null, sender);
+            BotAPI api = APIList.获取频道身份组列表;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, null, sender);
             var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<GuildRoles?>();
             return result?.Roles;
         }
@@ -27,8 +28,9 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Role?> CreateRoleAsync(string guild_id, Info info, Filter? filter = null, Sender? sender = null)
         {
+            BotAPI api = APIList.创建频道身份组;
             filter ??= new Filter(!string.IsNullOrWhiteSpace(info.Name), info.Color != null, info.Hoist ?? false);
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles", HttpMethod.Post, JsonContent.Create(new { filter, info }), sender);
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, JsonContent.Create(new { filter, info }), sender);
             var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<CreateRoleRes?>();
             return result?.Role;
 
@@ -44,13 +46,14 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Role?> EditRoleAsync(string guild_id, string role_id, Info info, Filter? filter = null, Sender? sender = null)
         {
+            BotAPI api = APIList.修改频道身份组;
             filter ??= new Filter(!string.IsNullOrWhiteSpace(info.Name), info.Color != null, info.Hoist ?? false);
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Patch, JsonContent.Create(new { filter, info }), sender);
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id).Replace("{role_id}", role_id), api.Method, JsonContent.Create(new { filter, info }), sender);
             var result = respone == null ? null : await respone.Content.ReadFromJsonAsync<ModifyRolesRes?>();
             return result?.Role;
         }
         /// <summary>
-        /// 删除身份组
+        /// 删除频道身份组
         /// <para><em>HTTP状态码 204 表示成功</em></para>
         /// </summary>
         /// <param name="guild_id">频道Id</param>
@@ -59,7 +62,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteRoleAsync(string guild_id, string role_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/roles/{role_id}", HttpMethod.Delete, null, sender);
+            BotAPI api = APIList.删除频道身份组;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id).Replace("{role_id}", role_id), api.Method, null, sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -77,8 +81,9 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> AddRoleMemberAsync(string guild_id, string user_id, string role_id, string? channel_id = null, Sender? sender = null)
         {
+            BotAPI api = APIList.添加频道身份组成员;
             HttpContent? httpContent = channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } });
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Put, httpContent, sender);
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id).Replace("{user_id}", user_id).Replace("{role_id}", role_id), api.Method, httpContent, sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -97,8 +102,9 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> DeleteRoleMemberAsync(string guild_id, string user_id, string role_id, string? channel_id = null, Sender? sender = null)
         {
+            BotAPI api = APIList.删除频道身份组成员;
             HttpContent? httpContent = channel_id == null ? null : JsonContent.Create(new { channel = new Channel { Id = channel_id } });
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/roles/{role_id}", HttpMethod.Delete, httpContent, sender);
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id).Replace("{user_id}", user_id).Replace("{role_id}", role_id), api.Method, httpContent, sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
     }

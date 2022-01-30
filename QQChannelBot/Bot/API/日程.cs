@@ -19,12 +19,13 @@ namespace QQChannelBot.Bot
         /// <returns>List&lt;Schedule&gt;?</returns>
         public async Task<List<Schedule>?> GetSchedulesAsync(string channel_id, DateTime? since = null, Sender? sender = null)
         {
+            BotAPI api = APIList.获取频道日程列表;
             string param = since == null ? "" : $"?since={new DateTimeOffset(since.Value).ToUnixTimeMilliseconds()}";
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules{param}", null, null, sender);
+            HttpResponseMessage? respone = await HttpSendAsync($"{api.Path.Replace("{channel_id}", channel_id)}{param}", api.Method, null, sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Schedule>?>();
         }
         /// <summary>
-        /// 获取单个日程信息
+        /// 获取日程详情
         /// </summary>
         /// <param name="channel_id">日程子频道Id</param>
         /// <param name="schedule_id">日程Id</param>
@@ -32,7 +33,8 @@ namespace QQChannelBot.Bot
         /// <returns>目标 Schedule 对象</returns>
         public async Task<Schedule?> GetScheduleAsync(string channel_id, string schedule_id, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule_id}", null, null, sender);
+            BotAPI api = APIList.获取日程详情;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id).Replace("{schedule_id}", schedule_id), api.Method, null, sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
         }
         /// <summary>
@@ -49,7 +51,8 @@ namespace QQChannelBot.Bot
         /// <returns>新创建的 Schedule 对象</returns>
         public async Task<Schedule?> CreateScheduleAsync(string channel_id, Schedule schedule, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules", HttpMethod.Post, JsonContent.Create(new { schedule }), sender);
+            BotAPI api = APIList.创建日程;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id), api.Method, JsonContent.Create(new { schedule }), sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
         }
         /// <summary>
@@ -65,7 +68,8 @@ namespace QQChannelBot.Bot
         /// <returns>修改后的 Schedule 对象</returns>
         public async Task<Schedule?> EditScheduleAsync(string channel_id, Schedule schedule, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Patch, JsonContent.Create(new { schedule }), sender);
+            BotAPI api = APIList.修改日程;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id).Replace("{schedule_id}", schedule.Id), api.Method, JsonContent.Create(new { schedule }), sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<Schedule?>();
         }
         /// <summary>
@@ -81,7 +85,8 @@ namespace QQChannelBot.Bot
         /// <returns>HTTP 状态码 204</returns>
         public async Task<bool> DeleteScheduleAsync(string channel_id, Schedule schedule, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/channels/{channel_id}/schedules/{schedule.Id}", HttpMethod.Delete, null, sender);
+            BotAPI api = APIList.删除日程;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{channel_id}", channel_id).Replace("{schedule_id}", schedule.Id), api.Method, null, sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
     }

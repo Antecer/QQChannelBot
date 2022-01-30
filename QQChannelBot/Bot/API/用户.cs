@@ -13,7 +13,8 @@ namespace QQChannelBot.Bot
         /// <returns>当前用户对象</returns>
         public async Task<User?> GetMeAsync(Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me", null, null, sender);
+            BotAPI api = APIList.获取用户详情;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path, api.Method, null, sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<User?>();
         }
         /// <summary>
@@ -27,8 +28,9 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<List<Guild>?> GetMeGuildsAsync(string? guild_id = null, bool route = false, int limit = 100, Sender? sender = null)
         {
+            BotAPI api = APIList.获取用户频道列表;
             guild_id = string.IsNullOrWhiteSpace(guild_id) ? "" : $"&{(route ? "before" : "after")}={guild_id}";
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me/guilds?limit={limit}{guild_id}", null, null, sender);
+            HttpResponseMessage? respone = await HttpSendAsync($"{api.Path}?limit={limit}{guild_id}", api.Method, null, sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<List<Guild>?>();
         }
     }

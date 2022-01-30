@@ -14,7 +14,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<DirectMessageSource?> CreateDMSAsync(string recipient_id, string source_guild_id, Sender sender)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/users/@me/dms", HttpMethod.Post, JsonContent.Create(new { recipient_id, source_guild_id }), sender);
+            BotAPI api = APIList.创建私信会话;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path, api.Method, JsonContent.Create(new { recipient_id, source_guild_id }), sender);
             return respone == null ? null : await respone.Content.ReadFromJsonAsync<DirectMessageSource?>();
         }
         /// <summary>
@@ -27,7 +28,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<Message?> SendPMAsync(string guild_id, MessageToCreate message, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/dms/{guild_id}/messages", HttpMethod.Post, JsonContent.Create(message), sender);
+            BotAPI api = APIList.发送私信;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, JsonContent.Create(message), sender);
             Message? result = respone == null ? null : await respone.Content.ReadFromJsonAsync<Message?>();
             return LastMessage(result, true);
         }

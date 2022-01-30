@@ -19,7 +19,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> MuteGuildAsync(string guild_id, MuteTime muteTime, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/mute", HttpMethod.Patch, JsonContent.Create(muteTime), sender);
+            BotAPI api = APIList.禁言全员;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, JsonContent.Create(muteTime), sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
         /// <summary>
@@ -37,7 +38,8 @@ namespace QQChannelBot.Bot
         /// <returns></returns>
         public async Task<bool> MuteMemberAsync(string guild_id, string user_id, MuteTime muteTime, Sender? sender = null)
         {
-            HttpResponseMessage? respone = await HttpSendAsync($"{ApiOrigin}/guilds/{guild_id}/members/{user_id}/mute", HttpMethod.Patch, JsonContent.Create(muteTime), sender);
+            BotAPI api = APIList.禁言指定成员;
+            HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id).Replace("{user_id}", user_id), api.Method, JsonContent.Create(muteTime), sender);
             return respone?.IsSuccessStatusCode ?? false;
         }
     }

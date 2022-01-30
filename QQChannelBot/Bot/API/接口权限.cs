@@ -14,7 +14,7 @@ namespace QQChannelBot.Bot
         /// <param name="guild_id">频道Id</param>
         /// <param name="sender"></param>
         /// <returns></returns>
-        public async Task<List<APIPermission>?> GetGuildPermissions(string guild_id, Sender? sender = null)
+        public async Task<List<APIPermission>?> GetGuildPermissionsAsync(string guild_id, Sender? sender = null)
         {
             BotAPI api = APIList.获取频道可用权限列表;
             HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, null, sender);
@@ -30,7 +30,7 @@ namespace QQChannelBot.Bot
         /// <param name="desc">机器人申请对应的 API 接口权限后可以使用功能的描述</param>
         /// <param name="sender"></param>
         /// <returns></returns>
-        public async Task<APIPermissionDemand?> SendPermissionDemand(string guild_id, string channel_id, APIPermissionDemandIdentify api_identify, string desc = "", Sender? sender = null)
+        public async Task<APIPermissionDemand?> SendPermissionDemandAsync(string guild_id, string channel_id, APIPermissionDemandIdentify api_identify, string desc = "", Sender? sender = null)
         {
             BotAPI api = APIList.创建频道接口授权链接;
             HttpResponseMessage? respone = await HttpSendAsync(api.Path.Replace("{guild_id}", guild_id), api.Method, JsonContent.Create(new
