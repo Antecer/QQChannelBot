@@ -328,7 +328,11 @@ namespace QQChannelBot.Models
         /// <summary>
         /// 获取目标id之后的消息
         /// </summary>
-        after
+        after,
+        /// <summary>
+        /// 最新limit的消息
+        /// </summary>
+        latest
     }
 
     /// <summary>
