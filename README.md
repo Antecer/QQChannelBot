@@ -1,10 +1,9 @@
 # QQ机器人框架
 
-[![NuGet](https://img.shields.io/nuget/v/QQChannelBot.svg)](https://www.nuget.org/packages/QQChannelBot)
-[![NuGet downloads](https://img.shields.io/nuget/dt/QQChannelBot)](https://www.nuget.org/packages/QQChannelBot)
-[![License](https://img.shields.io/github/license/Antecer/QQChannelBot)](https://www.nuget.org/packages/QQChannelBot)
-[![Platform](https://img.shields.io/badge/platform-.net6-blue)](https://www.nuget.org/packages/QQChannelBot)
-[![Benchmarks](https://img.shields.io/badge/benchmarks-%E2%9C%9437%20%7C%20%E2%9C%982%20%7C%20%E2%9E%9C2-orange)](https://github.com/Antecer/QQChannelBot/blob/main/QQChannelBot/Tools/Benchmarks.cs)
+[![NuGet](https://buildstats.info/nuget/QQChannelBot)](https://www.nuget.org/packages/QQChannelBot)
+[![License](https://img.shields.io/github/license/Antecer/QQChannelBot?logo=GitHub)](https://www.nuget.org/packages/QQChannelBot)
+[![Platform](https://img.shields.io/badge/platform-.net6-blue?logo=Visual%20Studio)](https://www.nuget.org/packages/QQChannelBot)
+[![Benchmarks](https://img.shields.io/badge/benchmarks-%E2%9C%9437%20%7C%20%E2%9C%982%20%7C%20%E2%9E%9C2-orange?logo=TestCafe)](https://github.com/Antecer/QQChannelBot/blob/main/QQChannelBot/Tools/Benchmarks.cs)
 
 使用.NET6技术封装的QQ机器人通信框架，无需任何第三方依赖。   
 傻瓜式封装，极简的调用接口，让新手也能快速入门！
