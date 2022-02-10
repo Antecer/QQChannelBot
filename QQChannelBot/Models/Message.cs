@@ -79,12 +79,12 @@ namespace QQChannelBot.Models
         /// 附件(可多个)
         /// </summary>
         [JsonPropertyName("attachments")]
-        public MessageAttachment[]? Attachments { get; set; }
+        public List<MessageAttachment>? Attachments { get; set; }
         /// <summary>
         /// embed
         /// </summary>
         [JsonPropertyName("embeds")]
-        public MessageEmbed[]? Embeds { get; set; }
+        public List<MessageEmbed>? Embeds { get; set; }
         /// <summary>
         /// 消息中@的人
         /// </summary>
@@ -224,10 +224,43 @@ namespace QQChannelBot.Models
     public class MessageAttachment
     {
         /// <summary>
+        /// 附件Id
+        /// </summary>
+        [JsonPropertyName("id")]
+
+        public string? Id { get; set; }
+        /// <summary>
+        /// 附件类型
+        /// </summary>
+        [JsonPropertyName("content_type")]
+        public string? ContentType { get; set; }
+        /// <summary>
         /// 下载地址
         /// </summary>
         [JsonPropertyName("url")]
-        public string? Url { set; get; }
+        public string Url { set; get; } = string.Empty;
+        /// <summary>
+        /// 文件名
+        /// </summary>
+        [JsonPropertyName("filename")]
+        public string? FileName { get; set; }
+        /// <summary>
+        /// 附件大小
+        /// </summary>
+        [JsonPropertyName("size")]
+        public long? Size { get; set; }
+        /// <summary>
+        /// 图片宽度
+        /// <para>仅附件为图片时才有</para>
+        /// </summary>
+        [JsonPropertyName("width")]
+        public int? Width { get; set; }
+        /// <summary>
+        /// 图片高度
+        /// <para>仅附件为图片时才有</para>
+        /// </summary>
+        [JsonPropertyName("height")]
+        public int? Height { get; set; }
     }
 
     /// <summary>
