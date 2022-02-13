@@ -162,7 +162,7 @@ namespace QQChannelBot.Bot
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             string requestString = Regex.Replace(request.ToString(), @"(?<=Bot\s+)[^\n]+", (m) => Regex.Replace(m.Groups[0].Value, @"[^\.]", "*")); // 敏感信息脱敏
-            string requestContent = request.Content != null ? await request.Content.ReadAsStringAsync() : "";
+            string requestContent = request.Content == null ? "" : await request.Content.ReadAsStringAsync(CancellationToken.None);
             MediaTypeHeaderValue? requestContentType = request.Content?.Headers.ContentType;
             if (requestContent.Length > printLength) requestContent = requestContent[..printLength];
             if ((requestContentType?.CharSet != null) || (requestContentType?.MediaType == "application/json")) { }
@@ -178,7 +178,7 @@ namespace QQChannelBot.Bot
             }
 
             string responseString = response.ToString();
-            string responseContent = response.Content != null ? await response.Content.ReadAsStringAsync() : "";
+            string responseContent = response.Content == null ? "" : await response.Content.ReadAsStringAsync(CancellationToken.None);
             HttpStatusCode responseStatusCode = response.StatusCode;
             MediaTypeHeaderValue? responseContentType = response.Content?.Headers.ContentType;
 
