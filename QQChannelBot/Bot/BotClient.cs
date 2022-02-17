@@ -26,6 +26,11 @@ namespace QQChannelBot.Bot
     /// </summary>
     public partial class BotClient
     {
+        /// <summary>
+        /// 记录机器人启动时间
+        /// </summary>
+        public static DateTime StartTime { get; private set; } = DateTime.Now;
+
         #region 可以监听的固定事件列表
         /// <summary>
         /// WebSocketClient连接后触发
@@ -366,6 +371,7 @@ namespace QQChannelBot.Bot
         /// <param name="RetryCount">连接服务器失败后的重试次数</param>
         public async void Start(int RetryCount = 3)
         {
+            StartTime = DateTime.Now;
             await ConnectAsync(RetryCount);
         }
         /// <summary>
