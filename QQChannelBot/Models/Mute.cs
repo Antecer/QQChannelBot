@@ -88,7 +88,8 @@ namespace QQChannelBot.Models
                         "分钟" => 60,
                         "分" => 60,
                         _ => 1
-                    } * int.Parse(mtd.Groups[1].Value);
+                    };
+                    if (int.TryParse(mtd.Groups[1].Value, out int timeVal)) seconds *= timeVal;
                     MuteSeconds = seconds.ToString();
                 }
             }
