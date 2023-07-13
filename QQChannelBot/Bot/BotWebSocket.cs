@@ -45,7 +45,7 @@ namespace QQChannelBot.Bot
                 {
                     for (int i = retryEndTime; 0 < i; --i)
                     {
-                        Log.Info($"[WebSocket] {i} 秒后再次尝试连接（剩余重试次数：${RetryCount}）...");
+                        Log.Info($"[WebSocket] {i} 秒后再次尝试连接（剩余重试次数：{RetryCount}）...");
                         await Task.Delay(TimeSpan.FromSeconds(1));
                     }
                     retryEndTime += retryAddTime;

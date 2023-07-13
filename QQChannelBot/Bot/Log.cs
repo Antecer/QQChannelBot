@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Text;
 using QQChannelBot.Tools;
 
 namespace QQChannelBot.Bot
