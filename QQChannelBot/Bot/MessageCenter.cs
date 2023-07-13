@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using QQChannelBot.Bot.SocketEvent;
 using QQChannelBot.Models;
 
@@ -51,21 +52,25 @@ namespace QQChannelBot.Bot
                     Log.Info($"[{senderMaster}][{message.Author.UserName}] {msgContent.Replace("\xA0", " ")}"); // 替换 \xA0 字符为普通空格
                 });
                 // 并行遍历指令列表，提升效率
-                ParallelLoopResult result = Parallel.ForEach(Commands.Values, (cmd, state, i) =>
+                Command? selectedCMD = Commands.Values.AsParallel().FirstOrDefault(cmd =>
                 {
-                    Match cmdMatch = cmd.Rule.Match(content);
-                    if (!cmdMatch.Success) return;
+                    Match? cmdMatch = cmd?.Rule.Match(content);
+                    if (cmdMatch?.Success != true) return false;
                     content = content.TrimStart(cmdMatch.Groups[0].Value).TrimStart();
-                    if (cmd.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
+                    return true;
+                }, null);
+                if (selectedCMD != null)
+                {
+                    if (selectedCMD.NeedAdmin && !(message.Member.Roles.Any(r => "24".Contains(r)) || message.Author.Id.Equals(GodId)))
                     {
                         if (sender.MessageType == MessageType.AtMe) _ = sender.ReplyAsync($"{message.Author.Tag} 你无权使用该命令！");
                         else return;
                     }
-                    else cmd.CallBack?.Invoke(sender, content);
-                    state.Break();
-                });
-                if (!result.IsCompleted) return;
+                    else selectedCMD.CallBack?.Invoke(sender, content);
+                    return;
+                }
             }
+
             // 触发Message到达事件
             OnMsgCreate?.Invoke(sender);
         }
