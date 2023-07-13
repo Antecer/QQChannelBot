@@ -26,6 +26,7 @@ namespace QQChannelBot.Bot
             if (message.DirectMessage) sender.MessageType = MessageType.Private;
             else if (message.MentionEveryone) sender.MessageType = MessageType.AtAll;
             else if (message.Mentions?.Any(user => user.Id == Info.Id) == true) sender.MessageType = MessageType.AtMe;
+            else if (message.Content.Contains($"@{Info.UserName}")) sender.MessageType = MessageType.AtMe;
             // 记录机器人在当前频道下的身份组信息
             if ((sender.MessageType != MessageType.Private) && !Members.ContainsKey(message.GuildId))
             {
@@ -38,19 +39,18 @@ namespace QQChannelBot.Bot
             // 记录收到的消息
             LastMessage(message, true);
             // 预判收到的消息
-            string content = message.Content.Trim().TrimStart(Info.Tag).TrimStart();
+            string content = message.Content.Trim();
+            if (content.StartsWith(Info.Tag)) content = content.TrimStart(Info.Tag).TrimStart();
+            else if (content.StartsWith($"@{Info.UserName}")) content = content.TrimStart($"@{Info.UserName}").TrimStart();
             // 识别指令
             bool hasCommand = content.StartsWith(CommandPrefix);
             content = content.TrimStart(CommandPrefix).TrimStart();
             if ((hasCommand || (sender.MessageType == MessageType.AtMe) || (sender.MessageType == MessageType.Private)) && (content.Length > 0))
             {
-                // 在新的线程上输出日志信息
-                _ = Task.Run(() =>
-                {
-                    string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions?.Find(user => user.Tag == m.Groups[0].Value)?.UserName.Insert(0, "@") ?? m.Value);
-                    string senderMaster = (sender.Bot.Guilds.TryGetValue(sender.GuildId, out var guild) ? guild.Name : null) ?? sender.Author.UserName;
-                    Log.Info($"[{senderMaster}][{message.Author.UserName}] {msgContent.Replace("\xA0", " ")}"); // 替换 \xA0 字符为普通空格
-                });
+                // 输出日志信息 (替换 <@!botid> 为 <@botname>)
+                string msgContent = Regex.Replace(message.Content, @"<@!\d+>", m => message.Mentions?.Find(user => user.Tag == m.Groups[0].Value)?.UserName.Insert(0, "<@") + ">" ?? m.Value);
+                string senderMaster = (sender.Bot.Guilds.TryGetValue(sender.GuildId, out var guild) ? guild.Name : null) ?? sender.Author.UserName;
+                Log.Info($"[{senderMaster}][{message.Author.UserName}] {msgContent.Replace("\xA0", " ")}"); // 替换 \xA0 字符为普通空格
                 // 并行遍历指令列表，提升效率
                 Command? selectedCMD = Commands.Values.AsParallel().FirstOrDefault(cmd =>
                 {
